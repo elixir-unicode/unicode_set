@@ -18,8 +18,8 @@ defmodule Unicode.Set.Operation do
     expand(operation)
   end
 
-  def expand({:merge, [this, that]}) do
-    merge(expand(this), expand(that))
+  def expand({:union, [this, that]}) do
+    union(expand(this), expand(that))
   end
 
   def expand({:difference, [this, that]}) do
@@ -27,7 +27,7 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({:intersection, [this, that]}) do
-    intersection(expand(this), expand(that))
+    intersect(expand(this), expand(that))
   end
 
   def expand({:in, ranges}) do
@@ -50,8 +50,9 @@ defmodule Unicode.Set.Operation do
   prior to merging.
 
   """
-  def merge(this, that) do
-
+  def union(this, that) do
+    Enum.sort(this ++ that)
+    |> compact_ranges
   end
 
   @doc """
@@ -63,8 +64,8 @@ defmodule Unicode.Set.Operation do
   in the two lists.
 
   """
-  def intersection(this, that) do
-    IO.puts "INTERSECTION: #{inspect this}, #{inspect that}"
+  def intersect(this, that) do
+    IO.puts "INTERSECT: #{inspect this}, #{inspect that}"
   end
 
   @doc """
@@ -78,21 +79,8 @@ defmodule Unicode.Set.Operation do
 
   """
   def difference(this, that) do
-    intersection = intersection(this, that)
-    merge(subtract(this, intersection), subtract(that, intersection))
-  end
-
-
-  @doc """
-  Returns a list of 2-tuples representing
-  codepoint ranges that are the full
-  set of Unicode ranges minus the ranges
-  for a given property.
-
-  """
-  def not_in(ranges) do
-    Unicode.ranges
-    |> subtract(ranges)
+    intersection = intersect(this, that)
+    union(subtract(this, intersection), subtract(that, intersection))
   end
 
   @doc """
@@ -107,5 +95,36 @@ defmodule Unicode.Set.Operation do
   """
   def subtract(this, that) do
 
+  end
+
+  @doc """
+  Returns a list of 2-tuples representing
+  codepoint ranges that are the full
+  set of Unicode ranges minus the ranges
+  for a given property.
+
+  """
+  def not_in(ranges) do
+    subtract(Unicode.ranges(), ranges)
+  end
+
+  @doc """
+  Compact overlapping or adjancent ranges
+
+  Assumes that the ranges are sorted and that each
+  range tuple has the smaller codepoint before
+  the larger codepoint
+
+  """
+  def compact_ranges([{a, b}, {c, d} | rest]) when b >= c and b <= d do
+    compact_ranges([{a, d} | rest])
+  end
+
+  def compact_ranges([{a, b}, {_c, d} | rest]) when b >= d do
+    compact_ranges([{a, b} | rest])
+  end
+
+  def compact_ranges([first | rest]) do
+    [first | compact_ranges(rest)]
   end
 end
