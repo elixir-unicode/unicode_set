@@ -49,11 +49,11 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_set_operations([{:in, ranges1}, {:in, ranges2} | rest]) do
-    reduce_set_operations([{:in, ranges1 ++ ranges2} | rest])
+    reduce_set_operations([{:in, Enum.sort(ranges1 ++ ranges2)} | rest])
   end
 
   def reduce_set_operations([:not, {:in, ranges1}, {:in, ranges2} | rest]) do
-    reduce_set_operations([:not, {:in, ranges1 ++ ranges2} | rest])
+    reduce_set_operations([:not, {:in, Enum.sort(ranges1 ++ ranges2)} | rest])
   end
 
   def reduce_set_operations([:not, {:in, ranges} | rest]) do
@@ -127,13 +127,13 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
-  def reduce_property(_rest, [:not, value, :in, property], context, _line, _offset) do
+  def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
     with {:ok, ranges} <- fetch_property(property, value) do
       {[{:not_in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [:not, value, :not_in, property], context, _line, _offset) do
+  def reduce_property(_rest, [value, :not_in, property, :not], context, _line, _offset) do
     with {:ok, ranges} <- fetch_property(property, value) do
       {[{:in, ranges}], context}
     end
@@ -145,7 +145,7 @@ defmodule Unicode.Set.Parser do
     end
   end
 
-  def reduce_property(_rest, [:not, value], context, _line, _offset) do
+  def reduce_property(_rest, [value, :not], context, _line, _offset) do
     with {:ok, ranges} <- fetch_property(:script_or_category, value) do
       {[{:not_in, ranges}], context}
     end
