@@ -2,49 +2,7 @@ defmodule Unicode.Set.Parser do
   @moduledoc false
 
   import NimbleParsec
-
-  # Known script names in Unicode
-  # script_names =
-  #   Unicode.Script.scripts()
-  #   |> Map.keys()
-  #   |> Enum.map(&String.replace(&1, "_", " "))
-  #   |> Enum.map(&String.downcase/1)
-  #   |> Utils.duplicate_and_capitalize()
-  #   |> Enum.sort()
-  #   |> Enum.reverse()
-  #   |> Enum.map(fn script ->
-  #     quote do
-  #       string(unquote(script))
-  #     end
-  #   end)
-  #
-  # # Known block names in Unicode
-  # block_names =
-  #   Unicode.Block.blocks()
-  #   |> Map.keys()
-  #   |> Enum.map(&Atom.to_string/1)
-  #   |> Enum.map(&String.replace(&1, "_", " "))
-  #   |> Enum.map(&String.upcase/1)
-  #   |> Enum.sort()
-  #   |> Enum.reverse()
-  #   |> Enum.map(fn block ->
-  #     quote do
-  #       string(unquote(block))
-  #     end
-  #   end)
-  #
-  # # Known block names in Unicode
-  # category_names =
-  #   Unicode.Category.categories()
-  #   |> Map.keys()
-  #   |> Enum.map(&Atom.to_string/1)
-  #   |> Enum.sort()
-  #   |> Enum.reverse()
-  #   |> Enum.map(fn category ->
-  #     quote do
-  #       string(unquote(category))
-  #     end
-  #   end)
+  import Unicode.Set.Property
 
   def basic_set do
     ignore(ascii_char([?[]))
@@ -105,7 +63,11 @@ defmodule Unicode.Set.Parser do
 
   def range do
     choice([
-      char() |> optional(ignore(ascii_char([?-])) |> concat(char())),
+      char()
+      |> ignore(optional(whitespace()))
+      |> optional(ignore(ascii_char([?-]))
+      |> ignore(optional(whitespace()))
+      |> concat(char())),
       ascii_char([?{])
       |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
       |> ignore(optional(whitespace()))
@@ -124,7 +86,7 @@ defmodule Unicode.Set.Parser do
       perl_property(),
       posix_property()
     ])
-    |> reduce(:reduce_property)
+    |> post_traverse(:reduce_property)
     |> label("property")
   end
 
@@ -154,12 +116,29 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
-  def reduce_property([:not, property, operator, value]),
-    do: {:not, {operator, [property, value]}}
+  def reduce_property(_rest, [:not, value, operator, property], context, _line, _offset) do
+    with {:ok, {property, value}} <- fetch_property(property, value) do
+      {[{:not, {operator, [property, value]}}], context}
+    end
+  end
 
-  def reduce_property([property, operator, value]), do: {operator, [property, value]}
-  def reduce_property([:not, name]), do: {:not, reduce_property([name])}
-  def reduce_property([name]), do: {:equal, [nil, name]}
+  def reduce_property(_rest, [value, operator, property], context, _line, _offset) do
+    with {:ok, {property, value}} <- fetch_property(property, value) do
+      {[{operator, [property, value]}], context}
+    end
+  end
+
+  def reduce_property(_rest, [:not, value], context, _line, _offset) do
+    with {:ok, {property, value}} <- fetch_property(:script_or_category, value) do
+      {[{:not, {:equal, [property, value]}}], context}
+    end
+  end
+
+  def reduce_property(_rest, [value], context, _line, _offset) do
+    with {:ok, {property, value}} <- fetch_property(:script_or_category, value) do
+      {[{:equal, [property, value]}], context}
+    end
+  end
 
   @alphanumeric [?a..?z, ?A..?Z, ?0..?9]
   def property_name do
@@ -174,8 +153,8 @@ defmodule Unicode.Set.Parser do
   def value_1 do
     times(
       choice([
-        ascii_char([{:not, ?}}]),
-        ignore(ascii_char([?\\])) |> concat(quoted())
+        ignore(ascii_char([?\\])) |> concat(quoted()),
+        ascii_char([{:not, ?}}])
       ]),
       min: 1
     )
@@ -185,8 +164,8 @@ defmodule Unicode.Set.Parser do
   def value_2 do
     times(
       choice([
-        ascii_char([{:not, ?:}]),
-        ignore(ascii_char([?\\])) |> concat(quoted())
+        ignore(ascii_char([?\\])) |> concat(quoted()),
+        ascii_char([{:not, ?:}])
       ]),
       min: 1
     )
@@ -196,6 +175,7 @@ defmodule Unicode.Set.Parser do
   def to_lower_string(args) do
     args
     |> List.to_string()
+    |> String.replace(" ", "_")
     |> String.downcase()
   end
 

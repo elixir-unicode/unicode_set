@@ -5,6 +5,12 @@ defmodule Unicode.Set do
   defparsec(
     :parse,
     parsec(:one_set)
+    |> eos()
+  )
+
+  defparsec(
+    :parse_many,
+    parsec(:one_set)
     |> ignore(optional(whitespace()))
     |> repeat(parsec(:one_set))
     |> eos()
