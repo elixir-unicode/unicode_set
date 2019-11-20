@@ -22,14 +22,6 @@ defmodule Unicode.Set.Operation do
     merge(expand(this), expand(that))
   end
 
-  def expand({:not, [this]}) do
-    subtract(Unicode.ranges(), expand(this))
-  end
-
-  def expand({:range, [from, to]}) do
-    range(from, to)
-  end
-
   def expand({:difference, [this, that]}) do
     difference(expand(this), expand(that))
   end
@@ -38,17 +30,14 @@ defmodule Unicode.Set.Operation do
     intersection(expand(this), expand(that))
   end
 
-  def expand({:equal, [property, name]}) do
-    equal(property, name)
+  def expand({:in, ranges}) do
+    ranges
   end
 
-  def expand({:not_equal, [property, name]}) do
-    not_equal(property, name)
+  def expand({:not_in, ranges}) do
+    not_in(ranges)
   end
 
-  def range(from, to) do
-    [{from, to}]
-  end
 
   @doc """
   Merges two lists of 2-tuples representing
@@ -93,27 +82,6 @@ defmodule Unicode.Set.Operation do
     merge(subtract(this, intersection), subtract(that, intersection))
   end
 
-  @doc """
-  Returns a list of 2-tuples representing
-  codepoint ranges for a given Unicode
-  property
-
-  """
-  def equal(:block, name) do
-    Unicode.Block.blocks |> Map.fetch!(name)
-  end
-
-  def equal(:script, name) do
-    Unicode.Script.scripts |> Map.fetch!(name)
-  end
-
-  def equal(:category, name) do
-    Unicode.Category.categories |> Map.fetch!(name)
-  end
-
-  def equal(:ccc, name) do
-    Unicode.CombiningClass.combining_classes |> Map.fetch!(name)
-  end
 
   @doc """
   Returns a list of 2-tuples representing
@@ -122,9 +90,9 @@ defmodule Unicode.Set.Operation do
   for a given property.
 
   """
-  def not_equal(property, name) do
+  def not_in(ranges) do
     Unicode.ranges
-    |> subtract(equal(property, name))
+    |> subtract(ranges)
   end
 
   @doc """

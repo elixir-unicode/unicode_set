@@ -6,7 +6,7 @@ defmodule Unicode.Set.Parser do
 
   def basic_set do
     ignore(ascii_char([?[]))
-    |> optional(ascii_char([?-, ?^]))
+    |> optional(ascii_char([?-, ?^]) |> replace(:not))
     |> ignore(optional(whitespace()))
     |> times(sequence(), min: 1)
     |> ignore(ascii_char([?]]))
@@ -48,6 +48,18 @@ defmodule Unicode.Set.Parser do
     reduce_set_operations([{operator, [set_a, set_b]} | repeated_sets])
   end
 
+  def reduce_set_operations([{:in, ranges1}, {:in, ranges2} | rest]) do
+    reduce_set_operations([{:in, ranges1 ++ ranges2} | rest])
+  end
+
+  def reduce_set_operations([:not, {:in, ranges1}, {:in, ranges2} | rest]) do
+    reduce_set_operations([:not, {:in, ranges1 ++ ranges2} | rest])
+  end
+
+  def reduce_set_operations([:not, {:in, ranges} | rest]) do
+    reduce_set_operations([{:not_in, ranges} | rest])
+  end
+
   def reduce_set_operations([set_a | rest]) do
     {:merge, [set_a, reduce_set_operations(rest)]}
   end
@@ -74,12 +86,11 @@ defmodule Unicode.Set.Parser do
       |> ascii_char([?}])
     ])
     |> reduce(:reduce_range)
-    |> unwrap_and_tag(:range)
     |> label("range")
   end
 
-  def reduce_range([arg]), do: [arg, arg]
-  def reduce_range(arg), do: arg
+  def reduce_range([from]), do: {:in, [{from, from}]}
+  def reduce_range([from, to]), do: {:in, [{from, to}]}
 
   def property do
     choice([
@@ -111,32 +122,38 @@ defmodule Unicode.Set.Parser do
 
   def operator do
     choice([
-      ascii_char([?≠]) |> replace(:not_equal),
-      ascii_char([?=]) |> replace(:equal)
+      ascii_char([?≠]) |> replace(:not_in),
+      ascii_char([?=]) |> replace(:in)
     ])
   end
 
-  def reduce_property(_rest, [:not, value, operator, property], context, _line, _offset) do
-    with {:ok, {property, value}} <- fetch_property(property, value) do
-      {[{:not, {operator, [property, value]}}], context}
+  def reduce_property(_rest, [:not, value, :in, property], context, _line, _offset) do
+    with {:ok, ranges} <- fetch_property(property, value) do
+      {[{:not_in, ranges}], context}
+    end
+  end
+
+  def reduce_property(_rest, [:not, value, :not_in, property], context, _line, _offset) do
+    with {:ok, ranges} <- fetch_property(property, value) do
+      {[{:in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, operator, property], context, _line, _offset) do
-    with {:ok, {property, value}} <- fetch_property(property, value) do
-      {[{operator, [property, value]}], context}
+    with {:ok, ranges} <- fetch_property(property, value) do
+      {[{operator, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [:not, value], context, _line, _offset) do
-    with {:ok, {property, value}} <- fetch_property(:script_or_category, value) do
-      {[{:not, {:equal, [property, value]}}], context}
+    with {:ok, ranges} <- fetch_property(:script_or_category, value) do
+      {[{:not_in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value], context, _line, _offset) do
-    with {:ok, {property, value}} <- fetch_property(:script_or_category, value) do
-      {[{:equal, [property, value]}], context}
+    with {:ok, ranges} <- fetch_property(:script_or_category, value) do
+      {[{:in, ranges}], context}
     end
   end
 
