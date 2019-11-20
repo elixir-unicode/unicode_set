@@ -49,7 +49,7 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_set_operations([set_a | rest]) do
-    {:and, [set_a, reduce_set_operations(rest)]}
+    {:merge, [set_a, reduce_set_operations(rest)]}
   end
 
   def set_operator do
