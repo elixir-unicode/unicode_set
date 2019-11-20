@@ -139,7 +139,8 @@ defmodule Unicode.Set.Parser do
     end
   end
 
-  def reduce_property(_rest, [value, operator, property], context, _line, _offset) do
+  def reduce_property(_rest, [value, operator, property], context, _line, _offset)
+      when operator in [:in, :not_in] do
     with {:ok, ranges} <- fetch_property(property, value) do
       {[{operator, ranges}], context}
     end
