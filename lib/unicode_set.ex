@@ -24,4 +24,9 @@ defmodule Unicode.Set do
       basic_set()
     ])
   )
+
+  defdelegate intersect(list1, list2), to: Unicode.Set.Operation
+  defdelegate intersect(list1, list2, acc), to: Unicode.Set.Operation
+
+  defdelegate union(list1, list2), to: Unicode.Set.Operation
 end
