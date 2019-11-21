@@ -39,7 +39,7 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({:not_in, ranges}) do
-    not_in(ranges)
+    invert(ranges)
   end
 
   @doc """
@@ -299,31 +299,8 @@ defmodule Unicode.Set.Operation do
   for a given property.
 
   """
-  def not_in(ranges) do
+  def invert(ranges) do
     difference(Unicode.ranges(), ranges)
   end
 
-  @doc """
-  Compact overlapping or adjancent ranges
-
-  Assumes that the ranges are sorted and that each
-  range tuple has the smaller codepoint before
-  the larger codepoint
-
-  """
-  def compact_ranges([{as, ae}, {bs, be} | rest]) when ae >= bs - 1 and as <= be do
-    compact_ranges([{as, be} | rest])
-  end
-
-  def compact_ranges([{as, ae}, {_bs, be} | rest]) when ae >= be do
-    compact_ranges([{as, ae} | rest])
-  end
-
-  def compact_ranges([first]) do
-    [first]
-  end
-
-  def compact_ranges([first | rest]) do
-    [first | compact_ranges(rest)]
-  end
 end
