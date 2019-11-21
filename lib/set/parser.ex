@@ -91,6 +91,7 @@ defmodule Unicode.Set.Parser do
     |> label("range")
   end
 
+  def reduce_range([[bracketed]]) when is_list(bracketed), do: {:in, Enum.map(bracketed, &{&1, &1})}
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
 
@@ -236,20 +237,26 @@ defmodule Unicode.Set.Parser do
     |> repeat(ignore(optional(whitespace())) |> concat(hex_codepoint()))
     |> ignore(optional(whitespace()))
     |> ignore(ascii_char([?}]))
+    |> wrap
     |> label("bracketed hex")
   end
 
   def hex_codepoint do
     choice([
       times(hex(), min: 1, max: 5),
-      string("10") |> times(hex(), 4)
+      ascii_char([?1]) |> ascii_char([?0]) |> times(hex(), 4)
     ])
+    |> wrap
     |> label("hex codepoint")
   end
 
   def hex do
     ascii_char([?a..?f, ?A..?F, ?0..?9])
     |> label("hex character")
+  end
+
+  def hex_to_codepoint([arg | _rest] = args) when is_list(arg) do
+    Enum.map(args, &hex_to_codepoint/1)
   end
 
   def hex_to_codepoint(args) do

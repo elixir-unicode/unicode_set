@@ -89,14 +89,18 @@ These quoting conventions for ICU UnicodeSets differ from those of regular expre
 
 ### Backslash Escapes
 
-Outside of single quotes, certain backslashed characters have special meaning:
+Outside of single quotes, certain backslashed characters have special meaning. Note that these are escapes processed by Unicode Set (this library) and therefore require `\\\\` to be entered as a prefix. [Elixir also provides similar escapes](https://elixir-lang.org/getting-started/sigils.html#interpolation-and-escaping-in-sigils) as native part of its string processing and Elixir's escapes are to be preferred where possible.
 
 | Escape         | Description
 | -------------- | -------------------------------------------------
 | \uhhhh	       | Exactly 4 hex digits; h in [0-9A-Fa-f]
 | \Uhhhhhhhh	   | Exactly 8 hex digits
 | \xhh	         | 1-2 hex digits
-| \ooo	         | 1-3 octal digits; o in [0-7]
+
+Certain other escapes are native to Elixir and are applicable in Unicode Sets they are in any Elixir string:
+
+| Escape         | Description
+| -------------- | -------------------------------------------------
 | \a	           | U+0007 (BELL)
 | \b	           | U+0008 (BACKSPACE)
 | \t	           | U+0009 (HORIZONTAL TAB)
@@ -105,6 +109,8 @@ Outside of single quotes, certain backslashed characters have special meaning:
 | \f	           | U+000C (FORM FEED)
 | \r	           | U+000D (CARRIAGE RETURN)
 | \\	           | U+005C (BACKSLASH)
+| \xDD           | represents a single byte in hexadecimal (such as \x13)
+| \uDDDD and \u{D...} |represents a Unicode codepoint in hexadecimal (such as \u{1F600})
 
 Anything else following a backslash is mapped to itself, except in an environment where it is defined to have some special meaning. For example, `\p{Lu}` is the set of uppercase letters in a Unicode Set.
 
