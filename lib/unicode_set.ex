@@ -25,6 +25,16 @@ defmodule Unicode.Set do
     ])
   )
 
+  defparsec(
+    :value,
+    value_1()
+  )
+
+  defparsec(
+    :quoted,
+    quoted()
+  )
+
   defdelegate union(list1, list2), to: Unicode.Set.Operation
   defdelegate intersect(list1, list2), to: Unicode.Set.Operation
   defdelegate difference(list1, list2), to: Unicode.Set.Operation

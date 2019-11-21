@@ -13,7 +13,9 @@ defmodule Unicode.Set.Property do
          {:ok, range_list} <- module.fetch(value) do
       {:ok, range_list}
     else
-      :error -> {:error, "the unicode property #{inspect property} with value #{inspect value} is not known"}
+      :error ->
+        {:error,
+         "the unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end
   end
 
@@ -25,7 +27,7 @@ defmodule Unicode.Set.Property do
     with {:ok, range_list} <- fun.(value) do
       {:ok, range_list}
     else
-      _ -> {:error, "the unicode script or category #{inspect value} is not known"}
+      _ -> {:error, "the unicode script or category #{inspect(value)} is not known"}
     end
   end
 end

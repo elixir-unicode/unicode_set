@@ -77,9 +77,11 @@ defmodule Unicode.Set.Parser do
     choice([
       char()
       |> ignore(optional(whitespace()))
-      |> optional(ignore(ascii_char([?-]))
-      |> ignore(optional(whitespace()))
-      |> concat(char())),
+      |> optional(
+        ignore(ascii_char([?-]))
+        |> ignore(optional(whitespace()))
+        |> concat(char())
+      ),
       ascii_char([?{])
       |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
       |> ignore(optional(whitespace()))
@@ -205,28 +207,35 @@ defmodule Unicode.Set.Parser do
   @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}] ++ @whitespace_chars
   @not_syntax_chars Enum.map(@syntax_chars, fn c -> {:not, c} end)
   def char do
-    utf8_char(@not_syntax_chars)
+    choice([
+      ignore(ascii_char([?\\])) |> concat(quoted()),
+      utf8_char(@not_syntax_chars)
+    ])
   end
 
   def quoted do
     choice([
-      ascii_char([?u]) |> choice([times(hex(), 4), bracketed_hex()]),
-      ascii_char([?x]) |> choice([times(hex(), 2), bracketed_hex()]),
-      string("U00")
-      |> choice([ascii_char([?0]) |> times(hex(), 5), string("10") |> times(hex(), 4)]),
+      ignore(ascii_char([?x]))
+      |> choice([
+        ascii_char([?0]) |> times(hex(), 5),
+        ascii_char([?1]) |> ascii_char([?0]) |> times(hex(), 4)
+      ]),
       string("N{") |> concat(property_name()) |> ascii_char([?}]),
+      ignore(ascii_char([?u])) |> choice([times(hex(), 4), bracketed_hex()]),
+      ignore(ascii_char([?x])) |> choice([times(hex(), 2), bracketed_hex()]),
       utf8_char([0x0..0x10FFFF])
     ])
+    |> reduce(:hex_to_codepoint)
     |> label("quoted character")
   end
 
   def bracketed_hex do
-    ascii_char([?{])
+    ignore(ascii_char([?{]))
     |> ignore(optional(whitespace()))
     |> concat(hex_codepoint())
     |> repeat(ignore(optional(whitespace())) |> concat(hex_codepoint()))
     |> ignore(optional(whitespace()))
-    |> ascii_char([?}])
+    |> ignore(ascii_char([?}]))
     |> label("bracketed hex")
   end
 
@@ -241,5 +250,11 @@ defmodule Unicode.Set.Parser do
   def hex do
     ascii_char([?a..?f, ?A..?F, ?0..?9])
     |> label("hex character")
+  end
+
+  def hex_to_codepoint(args) do
+    args
+    |> List.to_string()
+    |> String.to_integer(16)
   end
 end

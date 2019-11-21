@@ -38,7 +38,6 @@ defmodule Unicode.Set.Operation do
     not_in(ranges)
   end
 
-
   @doc """
   Merges two lists of 2-tuples representing
   ranges of codepoints.  The result is a
@@ -138,7 +137,7 @@ defmodule Unicode.Set.Operation do
   # List 1:  <----------------->
   # List 2:               <---------------->
 
-  def intersect([{as, ae} | a_rest], [{bs, be} | b_rest])  do
+  def intersect([{as, ae} | a_rest], [{bs, be} | b_rest]) do
     intersection = {max(as, bs), min(ae, be)}
     [intersection | intersect([intersection | a_rest], b_rest)]
   end
@@ -146,14 +145,13 @@ defmodule Unicode.Set.Operation do
   # And of course if either list is empty there is no
   # intersection
 
-  def intersect(_rest, [])  do
+  def intersect(_rest, []) do
     []
   end
 
-  def intersect([], _rest)  do
+  def intersect([], _rest) do
     []
   end
-
 
   @doc """
   Removes one list of 2-tuples
