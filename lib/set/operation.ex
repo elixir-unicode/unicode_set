@@ -1,10 +1,10 @@
 defmodule Unicode.Set.Operation do
   @moduledoc """
-  A set of functions to expand Unicode sets:
+  Functions to operate on Unicode sets:
 
   * Intersection
   * Difference
-  * Ranges
+  * Union
 
   """
 
@@ -53,28 +53,44 @@ defmodule Unicode.Set.Operation do
 
   # If two heads are the same then keep one and
   # advance the other list
+
   def union([a_head | a_rest], [a_head | b_rest]) do
     union([a_head | a_rest], b_rest)
+  end
+
+  # When the heads of the two lists are adjacent then
+  # we insert one new range that is the consolidation
+  # of them both
+
+  def union([{as, ae} | a_rest], [{bs, be} | _b_rest] = b) when ae + 1 == bs do
+    [{as, be} | union(a_rest, b)]
+  end
+
+  # We've advanced the second list beyond the start of the
+  # first list so copy the head of the first list over
+  # and advance the second list
+
+  def union([a_head | a_rest], [b_head | _b_rest] = b) when a_head < b_head do
+    [a_head | union(a_rest, b)]
   end
 
   # We've advanced the first list beyond the start of the
   # second list so copy the head of the second list over
   # and advance the second list
-  def union([a_head | a_rest], [b_head | _b_rest] = b) when a_head < b_head do
-    [a_head | union(a_rest, b)]
-  end
-
 
   def union([a_head | _a_rest] = a, [b_head | b_rest]) when a_head > b_head do
     [b_head | union(a, b_rest)]
   end
 
-  def union([], other) do
-    other
+  # And of course if either list is empty there is now
+  # just one of the lists
+
+  def union([], b_list) do
+    b_list
   end
 
-  def union(list, []) do
-    list
+  def union(a_list, []) do
+    a_list
   end
 
   @doc """
@@ -86,43 +102,61 @@ defmodule Unicode.Set.Operation do
   in the two lists.
 
   """
-  def intersect(a, b, acc \\ [])
-
-  # After we intersect its possible that the list has lost its
-  # order to check for that and do a bubble sort
-  def intersect([head, second | rest], other, acc) when head > second do
-    intersect([second, head | rest], other, acc)
-  end
 
   # The head of the first list is after the end of the second
-  # list so we need to advance the second list
-  def intersect([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest], acc) when as > be do
-    intersect(a, b_rest, acc)
+  # list so we need to advance the second list.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:                      <----------------->
+  # List 2:  <---------------->
+
+  def intersect([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest]) when as > be do
+    intersect(a, b_rest)
   end
 
-  # THe head of the second list starts after the end of the first
-  # list so we advance the first list
-  def intersect([{_as, ae} | a_rest], [{bs, _be} | _b_rest] = b, acc) when bs > ae do
-    intersect(a_rest, b, acc)
+  # The head of the second list starts after the end of the first
+  # list so we advance the first list.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:                       <---------------->
+
+  def intersect([{_as, ae} | a_rest], [{bs, _be} | _b_rest] = b) when bs > ae do
+    intersect(a_rest, b)
   end
 
   # An intersection which consumes the head of the second
-  # parameter so we advance
-  def intersect([{as, ae} | a_rest], [{bs, be} | b_rest], acc)  do
+  # list so we advance that list.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:               <---------------->
+
+  def intersect([{as, ae} | a_rest], [{bs, be} | b_rest])  do
     intersection = {max(as, bs), min(ae, be)}
-    intersect([intersection | a_rest], b_rest, [intersection | acc])
+    [intersection | intersect([intersection | a_rest], b_rest)]
   end
 
-  def intersect(_, [], acc)  do
-    :lists.reverse(acc)
+  # And of course if either list is empty there is no
+  # intersection
+
+  def intersect(_rest, [])  do
+    []
   end
 
-  def intersect([], _, acc)  do
-    :lists.reverse(acc)
+  def intersect([], _rest)  do
+    []
   end
+
 
   @doc """
-  Removes from one list of 2-tuples
+  Removes one list of 2-tuples
   representing Unicode codepoints from
   another.
 
@@ -131,8 +165,56 @@ defmodule Unicode.Set.Operation do
   list.
 
   """
-  def difference(this, that) do
 
+  # There are several cases that need to be considered:
+  #
+  # 1. list-B head is the same as list-A head
+  # 2. list-B head is completely after list-A head
+  # 3. list-B head is contained wholly within list-A head
+  # 4. list-B head is at the start of list-A head and is shorter than list-A head
+  # 5. list-B head is at the end of list-A head and is shorter than list-A head
+  # 6. list-B head encloses list-A head
+  # 7. list-A is empty
+  # 8. list-B is empty
+
+  # 1. list-B head is the same as list-A head
+  def difference([a_head | a_rest], [a_head | b_rest]) do
+    difference(a_rest, b_rest)
+  end
+
+  # 2. list-B head is completely after list-A head
+  def difference([{as, ae} | a_rest], [{bs, _be} | _b_rest] = b) when bs > ae do
+    [{as, ae} | difference(a_rest, b)]
+  end
+
+  # 3. list-B head is contained wholly within list-A head
+  def difference([{as, ae} | a_rest], [{bs, be} | b_rest]) when bs > as and be < ae do
+    [{as, bs - 1}, {be + 1, ae} | difference(a_rest, b_rest)]
+  end
+
+  # 4. list-B head is at the start of list-A head and is shorter than list-A head
+  def difference([{as, ae} | a_rest], [{as, be} | b_rest]) when be < ae do
+    [{be + 1, ae} | difference(a_rest, b_rest)]
+  end
+
+  # 5. list-B head is at the end of list-A head and is shorter than list-A head
+  def difference([{as, ae} | a_rest], [{bs, ae} | b_rest]) when bs > as do
+    [{as, bs - 1} | difference(a_rest, b_rest)]
+  end
+
+  # 6. list-B head encloses list-A head
+  def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be > ae do
+    difference(a_rest, [{ae + 1, be} | b_rest])
+  end
+
+  # 7. list-A is empty
+  def difference([], _b_list) do
+    []
+  end
+
+  # 8. list-B is empty
+  def difference(a_list, []) do
+    a_list
   end
 
   @doc """
