@@ -170,12 +170,13 @@ defmodule Unicode.Set.Operation do
   #
   # 1. list-B head is the same as list-A head
   # 2. list-B head is completely after list-A head
-  # 3. list-B head is contained wholly within list-A head
-  # 4. list-B head is at the start of list-A head and is shorter than list-A head
-  # 5. list-B head is at the end of list-A head and is shorter than list-A head
-  # 6. list-B head encloses list-A head
-  # 7. list-A is empty
-  # 8. list-B is empty
+  # 3. list-B head is completely before list-A head
+  # 4. list-B head is contained wholly within list-A head
+  # 5. list-B head is at the start of list-A head and is shorter than list-A head
+  # 6. list-B head is at the end of list-A head and is shorter than list-A head
+  # 7. list-B head encloses list-A head
+  # 8. list-A is empty
+  # 9. list-B is empty
 
   # 1. list-B head is the same as list-A head
   def difference([a_head | a_rest], [a_head | b_rest]) do
@@ -187,32 +188,37 @@ defmodule Unicode.Set.Operation do
     [{as, ae} | difference(a_rest, b)]
   end
 
-  # 3. list-B head is contained wholly within list-A head
+  # 3. list-B head is completely before list-A head
+  def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest]) when be < as do
+    difference(a, b_rest)
+  end
+
+  # 4. list-B head is contained wholly within list-A head
   def difference([{as, ae} | a_rest], [{bs, be} | b_rest]) when bs > as and be < ae do
     [{as, bs - 1}, {be + 1, ae} | difference(a_rest, b_rest)]
   end
 
-  # 4. list-B head is at the start of list-A head and is shorter than list-A head
+  # 5. list-B head is at the start of list-A head and is shorter than list-A head
   def difference([{as, ae} | a_rest], [{as, be} | b_rest]) when be < ae do
     [{be + 1, ae} | difference(a_rest, b_rest)]
   end
 
-  # 5. list-B head is at the end of list-A head and is shorter than list-A head
+  # 6. list-B head is at the end of list-A head and is shorter than list-A head
   def difference([{as, ae} | a_rest], [{bs, ae} | b_rest]) when bs > as do
     [{as, bs - 1} | difference(a_rest, b_rest)]
   end
 
-  # 6. list-B head encloses list-A head
+  # 7. list-B head encloses list-A head
   def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be > ae do
     difference(a_rest, [{ae + 1, be} | b_rest])
   end
 
-  # 7. list-A is empty
+  # 8. list-A is empty
   def difference([], _b_list) do
     []
   end
 
-  # 8. list-B is empty
+  # 9. list-B is empty
   def difference(a_list, []) do
     a_list
   end
