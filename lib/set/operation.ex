@@ -14,8 +14,12 @@ defmodule Unicode.Set.Operation do
 
   """
 
-  def expand([operation]) do
-    expand(operation)
+  def expand([ast]) do
+    if has_difference_or_intersection?(ast) do
+      expand(ast)
+    else
+      combine(ast)
+    end
   end
 
   def expand({:union, [this, that]}) do
@@ -36,6 +40,54 @@ defmodule Unicode.Set.Operation do
 
   def expand({:not_in, ranges}) do
     not_in(ranges)
+  end
+
+  @doc """
+  Combines all the ranges into a single list
+
+  This function is called iff the Unicode
+  Sets are formed by unions only. If
+  the set operations of intersection or
+  difference are present then the ranges
+  will need to be expanded via `expand/1`.
+
+  """
+  def combine({:union, [this, that]}) do
+    [combine(this), combine(that)]
+    |> List.flatten
+  end
+
+  def combine(other) do
+    other
+  end
+
+  @doc """
+  Returns a boolean indicating whether the given
+  AST includes set operations intersection or
+  difference.
+
+  When these operations exist then all ranges - including
+  `^` ranges needs to be expanded.  If there are no
+  intersections or differences then the `^` ranges can
+  be directly translated to guard clauses or a list of
+  elixir ranges.
+
+  """
+  def has_difference_or_intersection?([ast]) do
+    has_difference_or_intersection?(ast)
+  end
+
+  def has_difference_or_intersection?({operation, [_this, _that]})
+      when operation in [:intersection, :difference] do
+    true
+  end
+
+  def has_difference_or_intersection?({_operation, [this, that]}) do
+    has_difference_or_intersection?(this) || has_difference_or_intersection?(that)
+  end
+
+  def has_difference_or_intersection?(_other) do
+    false
   end
 
   @doc """
