@@ -52,6 +52,10 @@ defmodule Unicode.Set.Operation do
   will need to be expanded via `expand/1`.
 
   """
+  def combine([ast]) do
+    combine(ast)
+  end
+
   def combine({:union, [this, that]}) do
     [combine(this), combine(that)]
     |> List.flatten
@@ -307,7 +311,7 @@ defmodule Unicode.Set.Operation do
   the larger codepoint
 
   """
-  def compact_ranges([{as, ae}, {bs, be} | rest]) when ae >= bs and as <= be do
+  def compact_ranges([{as, ae}, {bs, be} | rest]) when ae >= bs - 1 and as <= be do
     compact_ranges([{as, be} | rest])
   end
 
@@ -316,7 +320,7 @@ defmodule Unicode.Set.Operation do
   end
 
   def compact_ranges([first]) do
-    first
+    [first]
   end
 
   def compact_ranges([first | rest]) do
