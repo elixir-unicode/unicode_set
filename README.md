@@ -1,40 +1,42 @@
 # Unicode Set
 
-A UnicodeSet is an object that represents a set of Unicode characters or character strings. The contents of that object can be specified either by patterns or by building them programmatically.
+A Unicode Set is a representation of a set of Unicode characters or character strings. The contents of that set can be specified either by patterns or by building them programmatically.
 
 Here are a few examples of sets:
 
-Pattern	Description
-[a-z]	The lower case letters a through z
-[abc123]	The six characters a,b,c,1,2 and 3
-[\p{Letter}]	All characters with the Unicode General Category of Letter.
-String Values   In addition to being a set of characters (of Unicode code points), a UnicodeSet may also contain string values. Conceptually, the UnicodeSet is always a set of strings, not a set of characters, although in many common use cases the strings are all of length one, which reduces to being a set of characters.
+| Pattern	              | Description
+| --------------------- | -----------------------------------------
+| `[a-z]`               | The lower case letters a through z
+| `[abc123]`            | The six characters a,b,c,1,2 and 3
+| `[\p{Letter}]`        | All characters with the Unicode General Category of Letter
+
+### String Values
+
+In addition to being a set of characters (of Unicode code points), a UnicodeSet may also contain string values. Conceptually, the UnicodeSet is always a set of strings, not a set of characters, although in many common use cases the strings are all of length one, which reduces to being a set of characters.
 
 This concept can be confusing when first encountered, probably because similar set constructs from other environments (regular expressions) can only contain characters.
 
-## UnicodeSet Patterns
+## Unicode Set Patterns
 
-Patterns are a series of characters bounded by square brackets that contain lists of characters and Unicode property sets. Lists are a sequence of characters that may have ranges indicated by a '-' between two characters, as in "a-z". The sequence specifies the range of all characters from the left to the right, in Unicode order. For example, [a c d-f m] is equivalent to [a c d e f m]. Whitespace can be freely used for clarity as [a c d-f m] means the same as [acd-fm].
+Patterns are a series of characters bounded by square brackets that contain lists of characters and Unicode property sets. Lists are a sequence of characters that may have ranges indicated by a '-' between two characters, as in "a-z". The sequence specifies the range of all characters from the left to the right, in Unicode order. For example, `[a c d-f m]` is equivalent to `[a c d e f m]`. Whitespace can be freely used for clarity as `[a c d-f m]` means the same as `[acd-fm]`.
 
 Unicode property sets are specified by a Unicode property, such as [:Letter:]. For a list of supported properties, see the Properties chapter. For details on the use of short vs. long property and property value names, see the end of this section. The syntax for specifying the property names is an extension of either POSIX or Perl syntax with the addition of `=value`. For example, you can match letters by using the POSIX syntax `[:Letter:]`, or by using the Perl-style syntax `\p{Letter}`. The type can be omitted for the `Category` and `Script` properties, but is required for other properties.
 
 The table below shows the two kinds of syntax: POSIX and Perl style. Also, the table shows the "Negative", which is a property that excludes all characters of a given kind. For example, `[:^Letter:]` matches all characters that are not `[:Letter:]`.
 
+| Style              | Positive	        | Negative
+| ------------------ | ---------------- | -------------------------
+| POSIX-style Syntax | [:type=value:]   |	[:^type=value:]
+| Perl-style Syntax  |	\p{type=value}	| \P{type=value}
 
-
-Positive	Negative
-POSIX-style Syntax	[:type=value:]	[:^type=value:]
-Perl-style Syntax	\p{type=value}	\P{type=value}
 These following low-level lists or properties then can be freely combined with the normal set operations (union, inverse, difference, and intersection):
 
-
-Example	Corresponding Method	Meaning
-A B	[[:letter:] [:number:]]	A.addAll(B)	To union two sets A and B, simply concatenate them
-A & B	[[:letter:] & [a-z]]
-A.retainAll(B)	To intersect two sets A and B, use the '&' operator.
-A - B	[[:letter:] - [a-z]]	A.removeAll(B)	To take the set-difference of two sets  A and B, use the '-' operator.
-[^A]	[^a-z]	A.complement(B)	To invert a set A, place a '^' immediately after the opening '['.
-Note that the complement only affects code points, not string values. In any other location, the '^' does not have a special meaning.
+| Example	                       | Meaning
+| ------------------------------ | ----------------------------------------------------------------
+| `A B	[[:letter:] [:number:]]` | To union two sets A and B, simply concatenate them
+| `A & B	[[:letter:] & [a-z]]`  | To intersect two sets A and B, use the '&' operator.
+| `A - B	[[:letter:] - [a-z]]`	 | To take the set-difference of two sets A and B, use the '-' operator.
+| `[^A]	[^a-z]`	              | To invert a set A, place a '^' immediately after the opening '['. Note that the complement only affects code points, not string values. In any other location, the '^' does not have a special meaning.
 
 ## Precedence
 
@@ -67,17 +69,17 @@ Another caveat with the `&` and `-` operators is that they operate between sets.
 
 ## String Values in Sets
 
-String values are enclosed in {curly brackets}.
+String values are enclosed in `{`curly brackets`}`.
 
-Set expression	Description
-
-`[abc{def}]`	A set containing four members, the single characters a, b and c, and the string “def”
-`[{abc}{def}]`	A set containing two members, the string “abc” and the string “def”.
-`[{a}{b}{c}][abc]`	These two sets are equivalent. Each contains three items, the three individual characters `a`, `b` and `c`. A `{string}` containing a single character is equivalent to that same character specified in any other way.
+| Set expression	    | Description
+| ------------------- | --------------------------------------
+| `[abc{def}]`	      | A set containing four members, the single characters a, b and c, and the string “def”
+| `[{abc}{def}]`      |	A set containing two members, the string “abc” and the string “def”.
+| `[{a}{b}{c}][abc]`	| These two sets are equivalent. Each contains three items, the three individual characters `a`, `b` and `c`. A `{string}` containing a single character is equivalent to that same character specified in any other way.
 
 ## Character Quoting and Escaping in Unicode Set Patterns
 
-### SINGLE QUOTE
+### Single Quote
 
 Two single quotes represents a single quote, either inside or outside single quotes.
 
@@ -85,58 +87,53 @@ Text within single quotes is not interpreted in any way (except for two adjacent
 
 These quoting conventions for ICU UnicodeSets differ from those of regular expression character set expressions. In regular expressions, single quotes have no special meaning and are treated like any other literal character.
 
-### BACKSLASH ESCAPES
+### Backslash Escapes
 
 Outside of single quotes, certain backslashed characters have special meaning:
 
+| Escape         | Description
+| -------------- | -------------------------------------------------
+| \uhhhh	       | Exactly 4 hex digits; h in [0-9A-Fa-f]
+| \Uhhhhhhhh	   | Exactly 8 hex digits
+| \xhh	         | 1-2 hex digits
+| \ooo	         | 1-3 octal digits; o in [0-7]
+| \a	           | U+0007 (BELL)
+| \b	           | U+0008 (BACKSPACE)
+| \t	           | U+0009 (HORIZONTAL TAB)
+| \n	           | U+000A (LINE FEED)
+| \v	           | U+000B (VERTICAL TAB)
+| \f	           | U+000C (FORM FEED)
+| \r	           | U+000D (CARRIAGE RETURN)
+| \\	           | U+005C (BACKSLASH)
 
-\uhhhh	Exactly 4 hex digits; h in [0-9A-Fa-f]
-\Uhhhhhhhh	Exactly 8 hex digits
-\xhh	1-2 hex digits
-\ooo	1-3 octal digits; o in [0-7]
-\a	U+0007 (BELL)
-\b	U+0008 (BACKSPACE)
-\t	U+0009 (HORIZONTAL TAB)
-\n	U+000A (LINE FEED)
-\v	U+000B (VERTICAL TAB)
-\f	U+000C (FORM FEED)
-\r	U+000D (CARRIAGE RETURN)
-\\	U+005C (BACKSLASH)
-Anything else following a backslash is mapped to itself, except in an environment where it is defined to have some special meaning. For example, \p{Lu} is the set of uppercase letters in UnicodeSet.
+Anything else following a backslash is mapped to itself, except in an environment where it is defined to have some special meaning. For example, `\p{Lu}` is the set of uppercase letters in a Unicode Set.
 
-Any character formed as the result of a backslash escape loses any special meaning and is treated as a literal. In particular, note that \u and \U escapes create literal characters. (In contrast, the Java compiler treats Unicode escapes as just a way to represent arbitrary characters in an ASCII source file, and any resulting characters are not tagged as literals.)
+Any character formed as the result of a backslash escape loses any special meaning and is treated as a literal. In particular, note that `\u` and `\U` escapes create literal characters.
 
-### WHITESPACE
+### Whitespace
 
-Whitespace (as defined by our API) is ignored unless it is quoted or backslashed.
-
-Note	The rules for quoting and white space handling are common to most ICU APIs that process rule or expression strings, including UnicodeSet, Transliteration and Break Iterators.
-
-Note	ICU Regular Expression set expressions have a different (but similar) syntax, and a different set of recognized backslash escapes. [Sets] in ICU Regular Expressions follow the conventions from Perl and Java regular expressions rather than the pattern syntax from ICU UnicodeSet.
+Whitespace (as defined by the specification) is ignored unless it is quoted or backslashed.
 
 ## Using a UnicodeSet
 
-For best performance, once the set contents is complete, freeze() the set to make it immutable and to speed up contains() and span() operations (for which it builds a small additional data structure).
 
-The most basic operation is contains(code point) or, if relevant, contains(string).
-
-For splitting and partitioning strings, it is simpler and faster to use span() and spanBack() rather than iterate over code points and calling contains(). In Java, there is also a class UnicodeSetSpanner for somewhat higher-level operations. See also the “Lookup” section of the Properties chapter.
 
 ## Property Values
 
 The following property value variants are recognized:
 
- Format	 Description	 Example
-short	omits the type (used to prevent ambiguity and only allowed with the Category and Script properties)	 Lu
-medium	uses an abbreviated type and value	 gc=Lu
-long	uses a full type and value	 General_Category=Uppercase_Letter
+| Format	  | Example                           | Description
+| --------- | --------------------------------- | ----------------------------------------------
+| short	    | Lu                                | omits the type (used to prevent ambiguity and only allowed with the Category and Script properties)
+| medium	  | gc=Lu                             | uses an abbreviated type and value
+| long	    | General_Category=Uppercase_Letter | uses a full type and value
+
 If the type or value is omitted, then the equals sign is also omitted. The short style is only
 used for Category and Script properties because these properties are very common and their omission is unambiguous.
 
-In actual practice, you can mix type names and values that are omitted, abbreviated, or full. For example, if Category=Unassigned you could use what is in the table explicitly, \p{gc=Unassigned}, \p{Category=Cn}, or \p{Unassigned}.
+In actual practice, you can mix type names and values that are omitted, abbreviated, or full. For example, if Category=Unassigned you could use what is in the table explicitly, `\p{gc=Unassigned}`, `\p{Category=Cn}`, or `\p{Unassigned}`.
 
-When these are processed, case and whitespace are ignored so you may use them for clarity, if desired. For example, \p{Category = Uppercase Letter} or \p{Category = uppercase letter}.
-
+When these are processed, case and whitespace are ignored so you may use them for clarity, if desired. For example, `\p{Category = Uppercase Letter}` or `\p{Category = uppercase letter}`.
 
 ## Installation
 
