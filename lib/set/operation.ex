@@ -251,12 +251,12 @@ defmodule Unicode.Set.Operation do
   the larger codepoint
 
   """
-  def compact_ranges([{a, b}, {c, d} | rest]) when b >= c and b <= d do
-    compact_ranges([{a, d} | rest])
+  def compact_ranges([{as, ae}, {bs, be} | rest]) when ae >= bs and as <= be do
+    compact_ranges([{as, be} | rest])
   end
 
-  def compact_ranges([{a, b}, {_c, d} | rest]) when b >= d do
-    compact_ranges([{a, b} | rest])
+  def compact_ranges([{as, ae}, {_bs, be} | rest]) when ae >= be do
+    compact_ranges([{as, ae} | rest])
   end
 
   def compact_ranges([first]) do
