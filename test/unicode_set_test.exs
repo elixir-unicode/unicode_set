@@ -38,7 +38,7 @@ defmodule UnicodeSetTest do
       require Unicode.Set
 
       # Define a guard that checks if a codepoint is a unicode digit
-      defguard digit?(x) when Unicode.Set.matches?(x, "[[:Nd:]]")
+      defguard digit?(x) when Unicode.Set.match?(x, "[[:Nd:]]")
     end
 
     defmodule MyModule do
@@ -52,7 +52,7 @@ defmodule UnicodeSetTest do
 
       # Define a guard directly on the function
       def my_other_function(<< x :: utf8, _rest :: binary>>)
-          when Unicode.Set.matches?(x, "[[:Nd:]]") do
+          when Unicode.Set.match?(x, "[[:Nd:]]") do
         :digit
       end
     end
