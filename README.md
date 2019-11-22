@@ -1,10 +1,42 @@
 # Unicode Set
 
+A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This is all consoldited into a single primary macro, `Unicode.Set.match?/2`.
+
+The implementation conforms closely to the [Unicode Set specification](http://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
+
 <!-- MDOC -->
 
-A Unicode Set is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically.
+## Usage
 
-Here are a few examples of sets:
+The primary api is the macro `Unicode.Set.match?/2` that returns a boolean based upon whether a given codepoint matches a unicode set.
+
+This is helpful in defining [function guards](https://hexdocs.pm/elixir/guards.html). For example:
+```elixir
+defmodule Guards do
+  require Unicode.Set
+
+  # Define a guard that checks if a codepoint is a unicode digit
+  defguard digit?(x) when Unicode.Set.match?(x, "[[:Nd:]]")
+end
+
+defmodule MyModule do
+  require Guards
+
+  # Define a function using the previously defined guard
+  def my_function(<< x :: utf8, _rest :: binary>>) when Guards.digit?(x) do
+    IO.puts "Its a digit!"
+  end
+
+  # Define a guard directly on the function
+  def my_other_function_(<< x :: utf8, _rest :: binary>>) when Unicode.Set.match?(x, "[[:Nd:]]") do
+    IO.puts "Its also a digit!"
+  end
+end
+```
+
+## Introduction to Unicode Sets
+
+Here are a few examples of sets. Although elements of the syntax appear similar to regular expressions, unicode sets only expresses one or more ranges of unicode codepoints.
 
 Pattern	              | Description
 --------------------- | -----------------------------------------------------------
@@ -121,10 +153,6 @@ Any character formed as the result of a backslash escape loses any special meani
 ### Whitespace
 
 Whitespace (as defined by the specification) is ignored unless it is quoted or backslashed.
-
-## Using a UnicodeSet
-
-
 
 ## Property Values
 
