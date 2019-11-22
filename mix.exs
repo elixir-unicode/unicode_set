@@ -35,7 +35,6 @@ defmodule UnicodeSet.MixProject do
       links: links(),
       files: [
         "lib",
-        "config",
         "logo.png",
         "mix.exs",
         "README*",
