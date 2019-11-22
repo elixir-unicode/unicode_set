@@ -22,7 +22,8 @@ defmodule UnicodeSet.MixProject do
   defp deps do
     [
       {:ex_unicode, path: "../unicode"},
-      {:nimble_parsec, "~> 0.5", runtime: false}
+      {:nimble_parsec, "~> 0.5", runtime: false},
+      {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false}
     ]
   end
 end

@@ -91,7 +91,9 @@ defmodule Unicode.Set.Parser do
     |> label("range")
   end
 
-  def reduce_range([[bracketed]]) when is_list(bracketed), do: {:in, Enum.map(bracketed, &{&1, &1})}
+  def reduce_range([[bracketed]]) when is_list(bracketed),
+    do: {:in, Enum.map(bracketed, &{&1, &1})}
+
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
 

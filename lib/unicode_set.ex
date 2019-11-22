@@ -1,6 +1,11 @@
 defmodule Unicode.Set do
+  @moduledoc File.read!("README.md")
+  |> String.split("<!-- MDOC -->")
+  |> Enum.at(1)
+
   import NimbleParsec
   import Unicode.Set.Parser
+  alias Unicode.Set.{Operation, Transform}
 
   defparsec(
     :parse,
@@ -16,7 +21,7 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsec(
+  defparsecp(
     :one_set,
     choice([
       property(),
@@ -25,17 +30,27 @@ defmodule Unicode.Set do
     ])
   )
 
-  defparsec(
-    :value,
-    value_1()
-  )
+  defmacro matches?(var, unicode_set) do
+    unless is_binary(unicode_set) do
+      raise ArgumentError,
+        "unicode set must be a compile-time binary. Found #{inspect unicode_set}"
+    end
 
-  defparsec(
-    :quoted,
-    quoted()
-  )
+    parsed =
+      case parse(unicode_set) do
+        {:ok, result, "", _, _, _} ->
+          result
+        {:error, message} ->
+          raise ArgumentError, "Could not parse #{inspect unicode_set}. #{message}"
+      end
 
-  defdelegate union(list1, list2), to: Unicode.Set.Operation
-  defdelegate intersect(list1, list2), to: Unicode.Set.Operation
-  defdelegate difference(list1, list2), to: Unicode.Set.Operation
+    guard_clause =
+      parsed
+      |> Operation.expand()
+      |> Transform.ranges_to_guard_clause(var)
+
+    quote do
+      unquote(guard_clause)
+    end
+  end
 end

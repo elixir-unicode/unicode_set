@@ -1,14 +1,16 @@
 # Unicode Set
 
-A Unicode Set is a representation of a set of Unicode characters or character strings. The contents of that set can be specified either by patterns or by building them programmatically.
+<!-- MDOC -->
+
+A Unicode Set is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically.
 
 Here are a few examples of sets:
 
-| Pattern	              | Description
-| --------------------- | -----------------------------------------
-| `[a-z]`               | The lower case letters a through z
-| `[abc123]`            | The six characters a,b,c,1,2 and 3
-| `[\p{Letter}]`        | All characters with the Unicode General Category of Letter
+Pattern	              | Description
+--------------------- | -----------------------------------------------------------
+`[a-z]`               | The lower case letters `a` through `z`
+`[abc123]`            | The six characters `a,b,c,1,2` and `3`
+`[\p{Letter}]`        | All characters with the Unicode General Category of Letter
 
 ### String Values
 
@@ -24,19 +26,19 @@ Unicode property sets are specified by a Unicode property, such as [:Letter:]. F
 
 The table below shows the two kinds of syntax: POSIX and Perl style. Also, the table shows the "Negative", which is a property that excludes all characters of a given kind. For example, `[:^Letter:]` matches all characters that are not `[:Letter:]`.
 
-| Style              | Positive	        | Negative
-| ------------------ | ---------------- | -------------------------
-| POSIX-style Syntax | [:type=value:]   |	[:^type=value:]
-| Perl-style Syntax  |	\p{type=value}	| \P{type=value}
+Style              | Positive	        | Negative
+------------------ | ---------------- | ----------------
+POSIX-style Syntax | [:type=value:]   |	[:^type=value:]
+Perl-style Syntax  |	\p{type=value}	| \P{type=value}
 
 These following low-level lists or properties then can be freely combined with the normal set operations (union, inverse, difference, and intersection):
 
-| Example	                       | Meaning
-| ------------------------------ | ----------------------------------------------------------------
-| `A B	[[:letter:] [:number:]]` | To union two sets A and B, simply concatenate them
-| `A & B	[[:letter:] & [a-z]]`  | To intersect two sets A and B, use the '&' operator.
-| `A - B	[[:letter:] - [a-z]]`	 | To take the set-difference of two sets A and B, use the '-' operator.
-| `[^A]	[^a-z]`	              | To invert a set A, place a '^' immediately after the opening '['. Note that the complement only affects code points, not string values. In any other location, the '^' does not have a special meaning.
+Example	                       | Meaning
+------------------------------ | -----------------------------------------------------------
+`A B	[[:letter:] [:number:]]` | To union two sets A and B, simply concatenate them
+`A & B	[[:letter:] & [a-z]]`  | To intersect two sets A and B, use the '&' operator.
+`A - B	[[:letter:] - [a-z]]`	 | To take the set-difference of two sets A and B, use the '-' operator.
+`[^A]	[^a-z]`	                 | To invert a set A, place a `^``` immediately after the opening `[`. Note that the complement only affects code points, not string values. In any other location, the `^` does not have a special meaning.
 
 ## Precedence
 
@@ -64,18 +66,18 @@ Another caveat with the `&` and `-` operators is that they operate between sets.
 * `[[pat1][pat2]]`	The union of sets specified by pat1 and pat2
 * `[[pat1]&[pat2]]`	The intersection of sets specified by pat1 and pat2
 * `[[pat1]-[pat2]]`	The asymmetric difference of sets specified by pat1 and pat2
-* `[:Lu:]`	The set of characters belonging to the given Unicode category, as defined by Character.getType(); in this case, Unicode uppercase letters. The long form for this is `[:UppercaseLetter:]`.
+* `[:Lu:]`	The set of characters belonging to the given Unicode category; in this case, Unicode uppercase letters. The long form for this is `[:UppercaseLetter:]`.
 * `[:L:]`	The set of characters belonging to all Unicode categories starting with 'L', that is, `[[:Lu:][:Ll:][:Lt:][:Lm:][:Lo:]]`. The long form for this is `[:Letter:]`.
 
 ## String Values in Sets
 
 String values are enclosed in `{`curly brackets`}`.
 
-| Set expression	    | Description
-| ------------------- | --------------------------------------
-| `[abc{def}]`	      | A set containing four members, the single characters a, b and c, and the string “def”
-| `[{abc}{def}]`      |	A set containing two members, the string “abc” and the string “def”.
-| `[{a}{b}{c}][abc]`	| These two sets are equivalent. Each contains three items, the three individual characters `a`, `b` and `c`. A `{string}` containing a single character is equivalent to that same character specified in any other way.
+Set expression	    | Description
+------------------- | --------------------------------------
+`[abc{def}]`	      | A set containing four members, the single characters a, b and c, and the string “def”
+`[{abc}{def}]`      |	A set containing two members, the string “abc” and the string “def”.
+`[{a}{b}{c}][abc]`	| These two sets are equivalent. Each contains three items, the three individual characters `a`, `b` and `c`. A `{string}` containing a single character is equivalent to that same character specified in any other way.
 
 ## Character Quoting and Escaping in Unicode Set Patterns
 
@@ -91,26 +93,26 @@ These quoting conventions for ICU UnicodeSets differ from those of regular expre
 
 Outside of single quotes, certain backslashed characters have special meaning. Note that these are escapes processed by Unicode Set (this library) and therefore require `\\\\` to be entered as a prefix. [Elixir also provides similar escapes](https://elixir-lang.org/getting-started/sigils.html#interpolation-and-escaping-in-sigils) as native part of its string processing and Elixir's escapes are to be preferred where possible.
 
-| Escape         | Description
-| -------------- | -------------------------------------------------
-| \uhhhh	       | Exactly 4 hex digits; h in [0-9A-Fa-f]
-| \Uhhhhhhhh	   | Exactly 8 hex digits
-| \xhh	         | 1-2 hex digits
+Escape         | Description
+-------------- | -------------------------------------------------
+\uhhhh	       | Exactly 4 hex digits; h in [0-9A-Fa-f]
+\Uhhhhhhhh	   | Exactly 8 hex digits
+\xhh	         | 1-2 hex digits
 
 Certain other escapes are native to Elixir and are applicable in Unicode Sets they are in any Elixir string:
 
-| Escape         | Description
-| -------------- | -------------------------------------------------
-| \a	           | U+0007 (BELL)
-| \b	           | U+0008 (BACKSPACE)
-| \t	           | U+0009 (HORIZONTAL TAB)
-| \n	           | U+000A (LINE FEED)
-| \v	           | U+000B (VERTICAL TAB)
-| \f	           | U+000C (FORM FEED)
-| \r	           | U+000D (CARRIAGE RETURN)
-| \\	           | U+005C (BACKSLASH)
-| \xDD           | represents a single byte in hexadecimal (such as \x13)
-| \uDDDD and \u{D...} |represents a Unicode codepoint in hexadecimal (such as \u{1F600})
+Escape         | Description
+-------------- | -------------------------------------------------
+\a	           | U+0007 (BELL)
+\b	           | U+0008 (BACKSPACE)
+\t	           | U+0009 (HORIZONTAL TAB)
+\n	           | U+000A (LINE FEED)
+\v	           | U+000B (VERTICAL TAB)
+\f	           | U+000C (FORM FEED)
+\r	           | U+000D (CARRIAGE RETURN)
+\\	           | U+005C (BACKSLASH)
+\xDD           | represents a single byte in hexadecimal (such as `\x13`)
+\uDDDD and \u{D...} | represents a Unicode codepoint in hexadecimal (such as `\u{1F600}`)
 
 Anything else following a backslash is mapped to itself, except in an environment where it is defined to have some special meaning. For example, `\p{Lu}` is the set of uppercase letters in a Unicode Set.
 
@@ -128,11 +130,11 @@ Whitespace (as defined by the specification) is ignored unless it is quoted or b
 
 The following property value variants are recognized:
 
-| Format	  | Example                           | Description
-| --------- | --------------------------------- | ----------------------------------------------
-| short	    | Lu                                | omits the type (used to prevent ambiguity and only allowed with the Category and Script properties)
-| medium	  | gc=Lu                             | uses an abbreviated type and value
-| long	    | General_Category=Uppercase_Letter | uses a full type and value
+Format	  | Example                           | Description
+--------- | --------------------------------- | ----------------------------------------------
+short	    | Lu                                | omits the type (used to prevent ambiguity and only allowed with the Category and Script properties)
+medium	  | gc=Lu                             | uses an abbreviated type and value
+long	    | General_Category=Uppercase_Letter | uses a full type and value
 
 If the type or value is omitted, then the equals sign is also omitted. The short style is only
 used for Category and Script properties because these properties are very common and their omission is unambiguous.
@@ -140,6 +142,8 @@ used for Category and Script properties because these properties are very common
 In actual practice, you can mix type names and values that are omitted, abbreviated, or full. For example, if Category=Unassigned you could use what is in the table explicitly, `\p{gc=Unassigned}`, `\p{Category=Cn}`, or `\p{Unassigned}`.
 
 When these are processed, case and whitespace are ignored so you may use them for clarity, if desired. For example, `\p{Category = Uppercase Letter}` or `\p{Category = uppercase letter}`.
+
+<!-- MDOC -->
 
 ## Installation
 

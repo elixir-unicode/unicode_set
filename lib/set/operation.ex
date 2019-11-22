@@ -58,7 +58,7 @@ defmodule Unicode.Set.Operation do
 
   def combine({:union, [this, that]}) do
     [combine(this), combine(that)]
-    |> List.flatten
+    |> List.flatten()
   end
 
   def combine(other) do
@@ -253,7 +253,7 @@ defmodule Unicode.Set.Operation do
   end
 
   # 5. list-B head is at the start of list-A head and is shorter than list-A head
-  def difference([{as, ae} | a_rest], [{as, be} | b_rest]) when be < ae do
+  def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be < ae do
     [{be + 1, ae} | difference(a_rest, b_rest)]
   end
 
@@ -288,8 +288,7 @@ defmodule Unicode.Set.Operation do
 
   """
   def symmetric_difference(this, that) do
-    intersection = intersect(this, that)
-    union(difference(this, intersection), difference(that, intersection))
+    difference(union(this, that), intersect(this, that))
   end
 
   @doc """
@@ -302,5 +301,4 @@ defmodule Unicode.Set.Operation do
   def invert(ranges) do
     difference(Unicode.ranges(), ranges)
   end
-
 end
