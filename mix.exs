@@ -45,7 +45,6 @@ defmodule UnicodeSet.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger]
@@ -55,7 +54,7 @@ defmodule UnicodeSet.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_unicode, path: "../unicode"},
+      {:ex_unicode, "~> 1.1"},
       {:nimble_parsec, "~> 0.5", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false}

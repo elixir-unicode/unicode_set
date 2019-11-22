@@ -60,4 +60,11 @@ defmodule UnicodeSetTest do
     assert MyModule.my_function("3") == :digit
     assert MyModule.my_other_function("3") == :digit
   end
+
+  test "set intersection matching" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?๓, "[[:digit:]-[:thai:]]") == false
+    assert Unicode.Set.match?(?๓, "[[:digit:]]") == true
+  end
 end

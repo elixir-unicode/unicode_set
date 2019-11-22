@@ -10,6 +10,8 @@ The implementation conforms closely to the [Unicode Set specification](http://un
 
 The primary api is the macro `Unicode.Set.match?/2` that returns a boolean based upon whether a given codepoint matches a unicode set.
 
+### Function guards
+
 This is helpful in defining [function guards](https://hexdocs.pm/elixir/guards.html). For example:
 ```elixir
 defmodule Guards do
@@ -33,6 +35,25 @@ defmodule MyModule do
   end
 end
 ```
+
+### Other Examples
+
+These examples show how to combine sets (union, difference and intersection) to deliver a flexible targeting of the required match.
+
+```elixir
+# The character "๓" is the thai digit `1`
+iex> Unicode.Set.match? ?๓, "[[:digit:]]"
+true
+
+# Set operations allow union, insersection and difference
+# This example matches on digits, but not the Thai script
+iex> Unicode.Set.match? ?๓, "[[:digit:]-[:thai:]]"
+false
+```
+
+### Compile time parsing
+
+As much work as possible is done at compile time in order to deliver good performance. The macro `Unicode.Set.match?/2` parses the unicode set, expands the require codepoints and generates guard clauses at compile time. The resulting code is a simple set of boolean operators that executes quickly at runtime.
 
 ## Introduction to Unicode Sets
 
