@@ -109,7 +109,7 @@ defmodule Unicode.Set do
   end
 
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
-    with pattern when is_binary(pattern) <- pattern(unicode_set) do
+    with pattern when is_list(pattern) <- pattern(unicode_set) do
       :binary.compile_pattern(pattern)
     end
   end
