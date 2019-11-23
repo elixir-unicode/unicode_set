@@ -1,50 +1,74 @@
 defmodule Unicode.Set.Transform do
   @moduledoc false
 
-  @doc false
-  def ranges_to_guard_clause([{first, first}], var) when is_integer(first) do
+  @doc """
+  Converts an expanded AST into a format that
+  can be used as a guard clause.
+
+  """
+  def guard_clause({first, first}, ranges, var) do
     quote do
-      unquote(var) == unquote(first)
+      unquote(var) == unquote(first) or unquote(ranges)
     end
   end
 
-  def ranges_to_guard_clause([{first, last}], var) when is_integer(first) do
+  def guard_clause({first, last}, ranges, var) do
     quote do
-      unquote(var) in unquote(first)..unquote(last)
+      unquote(var) in unquote(first)..unquote(last) or unquote(ranges)
     end
   end
 
-  def ranges_to_guard_clause([{first, first} | rest], var) when is_integer(first) do
+  def guard_clause(:not_in, ranges, _var) do
     quote do
-      unquote(var) == unquote(first) or unquote(ranges_to_guard_clause(rest, var))
+      not unquote(ranges)
     end
   end
 
-  def ranges_to_guard_clause([{first, last} | rest], var) when is_integer(first) do
+  def guard_clause([], [], _var) do
     quote do
-      unquote(var) in unquote(first)..unquote(last) or unquote(ranges_to_guard_clause(rest, var))
+      false
     end
   end
 
-  def ranges_to_guard_clause({:not_in, ranges}, var) do
-    quote do
-      not unquote(ranges_to_guard_clause(ranges, var))
-    end
+  @doc """
+  Converts an expanded AST into a format that
+  can be fed to `:binary.compile_pattern/1`.
+
+  """
+  def pattern({first, first}, range, _var) do
+    [List.to_string([first]) | range]
   end
 
-  def ranges_to_guard_clause({:in, ranges}, var) do
-    quote do
-      unquote(ranges_to_guard_clause(ranges, var))
-    end
+  def pattern({first, last}, range, _var) do
+    Enum.map(first..last, fn c -> List.to_string([c]) end) ++ range
   end
 
-  def ranges_to_guard_clause([range], var) do
-    ranges_to_guard_clause(range, var)
+  def pattern(:not_in, _ranges, _var) do
+    raise ArgumentError, "[^...] unicode sets are not supported for compiled patterns"
   end
 
-  def ranges_to_guard_clause([range | rest], var) do
-    quote do
-      unquote(ranges_to_guard_clause(range, var)) or unquote(ranges_to_guard_clause(rest, var))
-    end
+  def pattern(range1, range2, _var) do
+    range1 ++ range2
+  end
+
+  @doc """
+  Converts an expanded AST into a format that
+  can be fed to `NimbleParsec.utf8_char`.
+
+  """
+  def utf8_char({first, first}, range, _var) do
+    [first | range]
+  end
+
+  def utf8_char({first, last}, range, _var) do
+   [first..last, range]
+  end
+
+  def utf8_char(:not_in, range, _var) do
+    Enum.map(range, &{:not, &1})
+  end
+
+  def utf8_char(range_1, range_2, _var) do
+    range_1 ++ range_2
   end
 end

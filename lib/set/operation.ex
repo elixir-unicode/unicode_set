@@ -301,4 +301,38 @@ defmodule Unicode.Set.Operation do
   def invert(ranges) do
     difference(Unicode.ranges(), ranges)
   end
+
+  @doc """
+  Prewalks the expanded AST from a parsed
+  Unicode Set invoking a function on each
+  codepoint range in the set.
+
+  """
+  def prewalk(ranges, fun) when is_function(fun) do
+    prewalk(ranges, nil, fun)
+  end
+
+  def prewalk([{first, _last} = range | rest], var, fun) when is_integer(first) do
+    fun.(range, prewalk(rest, var, fun), var)
+  end
+
+  def prewalk({:not_in, ranges}, var, fun) do
+    fun.(:not_in, prewalk(ranges, var, fun), var)
+  end
+
+  def prewalk({:in, ranges}, var, fun) do
+    prewalk(ranges, var, fun)
+  end
+
+  def prewalk([range], var, fun) do
+    prewalk(range, var, fun)
+  end
+
+  def prewalk([range | rest], var, fun) do
+    fun.(prewalk(range, var, fun), prewalk(rest, var, fun), var)
+  end
+
+  def prewalk([] = range, var, fun) do
+    fun.(range, range, var)
+  end
 end

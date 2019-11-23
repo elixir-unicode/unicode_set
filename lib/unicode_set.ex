@@ -52,6 +52,15 @@ defmodule Unicode.Set do
     ])
   )
 
+  def parse!(unicode_set) do
+    case parse(unicode_set) do
+      {:ok, result, "", _, _, _} ->
+        result
+      {:error, message} ->
+        raise ArgumentError, "Could not parse #{inspect unicode_set}. #{message}"
+    end
+  end
+
   @doc """
   Returns a boolean based upon whether `var`
   matches the provided `unicode_set`.
@@ -74,35 +83,50 @@ defmodule Unicode.Set do
   * `Unicode.match?/2` can be used in as `defguard` argument.
     For example:
 
-    #==> defguard is_lower(codepoint) when Unicode.Set.match?("[[:Lu:]]")
+    #=> defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
 
   * Or as a guard clause itself:
 
-    #==> def my_function(<< codepoint :: utf8, _rest :: binary>>) when Unicode.Set.match?("[[:Lu:]]")
+    #=> def my_function(<< codepoint :: utf8, _rest :: binary>>)
+          when Unicode.Set.match?(codepoint, "[[:Lu:]]")
 
   """
 
   defmacro match?(var, unicode_set) do
+    assert_binary_parameter!(unicode_set)
+
+    parse!(unicode_set)
+    |> Operation.expand()
+    |> Operation.prewalk(var, &Transform.guard_clause/3)
+  end
+
+  def pattern(unicode_set) when is_binary(unicode_set) do
+    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+      parsed
+      |> Operation.expand()
+      |> Operation.prewalk(&Transform.pattern/3)
+    end
+  end
+
+  def compile_pattern(unicode_set) when is_binary(unicode_set) do
+    with pattern when is_binary(pattern) <- pattern(unicode_set) do
+      :binary.compile_pattern(pattern)
+    end
+  end
+
+  def utf8_char(unicode_set) when is_binary(unicode_set) do
+    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+      parsed
+      |> Operation.expand()
+      |> Operation.prewalk(&Transform.utf8_char/3)
+    end
+  end
+
+  defp assert_binary_parameter!(unicode_set) do
     unless is_binary(unicode_set) do
       raise ArgumentError,
         "unicode_set must be a compile-time binary. Found #{inspect unicode_set}"
     end
-
-    parsed =
-      case parse(unicode_set) do
-        {:ok, result, "", _, _, _} ->
-          result
-        {:error, message} ->
-          raise ArgumentError, "Could not parse #{inspect unicode_set}. #{message}"
-      end
-
-    guard_clause =
-      parsed
-      |> Operation.expand()
-      |> Transform.ranges_to_guard_clause(var)
-
-    quote do
-      unquote(guard_clause)
-    end
   end
+
 end
