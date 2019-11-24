@@ -64,6 +64,19 @@ defmodule Unicode.Set.Operation do
 
     for(x <- a, y <- b, do: [x, y])
     |> Enum.map(&List.to_string/1)
+
+    # From elixirforum
+
+    # defp combinations(dice) do
+    #     combinations(dice - 1, (for x <- 1..6, do: [x]))
+    #   end
+    #
+    # defp combinations(0, acc), do: acc
+    #
+    # defp combinations(remaining_dice, acc) do
+    #   combinations(remaining_dice - 1, (for x <- 1..6, y <- acc, do: [x | y]))
+    # end
+
   end
 
   @doc """
