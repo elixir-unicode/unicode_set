@@ -18,6 +18,10 @@ defmodule Unicode.Set.Transform do
     end
   end
 
+  def guard_clause(:string, _ranges, _var) do
+    raise ArgumentError, "[{...}] string ranges are not supported for guards"
+  end
+
   def guard_clause(:not_in, ranges, _var) do
     quote do
       not unquote(ranges)
@@ -43,6 +47,10 @@ defmodule Unicode.Set.Transform do
     Enum.map(first..last, fn c -> List.to_string([c]) end) ++ range
   end
 
+  def pattern(:string, charlist, _var) do
+    [List.to_string(charlist)]
+  end
+
   def pattern(:not_in, _ranges, _var) do
     raise ArgumentError, "[^...] unicode sets are not supported for compiled patterns"
   end
@@ -62,6 +70,10 @@ defmodule Unicode.Set.Transform do
 
   def utf8_char({first, last}, range, _var) do
    [first..last, range]
+  end
+
+  def utf8_char(:string, _ranges, _var) do
+    raise ArgumentError, "[{...}] string ranges are not supported for utf8 ranges"
   end
 
   def utf8_char(:not_in, range, _var) do

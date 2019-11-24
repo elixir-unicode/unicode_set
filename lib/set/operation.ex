@@ -42,6 +42,10 @@ defmodule Unicode.Set.Operation do
     invert(ranges)
   end
 
+  def expand({:string, _charlist} = string) do
+    string
+  end
+
   @doc """
   Combines all the ranges into a single list
 
@@ -314,6 +318,10 @@ defmodule Unicode.Set.Operation do
 
   def prewalk([{first, _last} = range | rest], var, fun) when is_integer(first) do
     fun.(range, prewalk(rest, var, fun), var)
+  end
+
+  def prewalk({:string, charlist}, var, fun) do
+    fun.(:string, charlist, var)
   end
 
   def prewalk({:not_in, ranges}, var, fun) do

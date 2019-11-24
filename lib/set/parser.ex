@@ -75,20 +75,32 @@ defmodule Unicode.Set.Parser do
 
   def range do
     choice([
-      char()
-      |> ignore(optional(whitespace()))
-      |> optional(
-        ignore(ascii_char([?-]))
-        |> ignore(optional(whitespace()))
-        |> concat(char())
-      ),
-      ascii_char([?{])
-      |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
-      |> ignore(optional(whitespace()))
-      |> ascii_char([?}])
+      character_range(),
+      string_range()
     ])
     |> reduce(:reduce_range)
     |> label("range")
+  end
+
+  def character_range do
+    char()
+    |> ignore(optional(whitespace()))
+    |> optional(
+      ignore(ascii_char([?-]))
+      |> ignore(optional(whitespace()))
+      |> concat(char())
+    )
+  end
+
+  def string_range do
+    string()
+    |> tag(:string)
+    |> ignore(optional(whitespace()))
+    |> optional(
+      ignore(ascii_char([?-]))
+      |> ignore(optional(whitespace()))
+      |> concat(string() |> tag(:string))
+    )
   end
 
   def reduce_range([[bracketed]]) when is_list(bracketed),
@@ -96,6 +108,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
+  def reduce_range(charlist) when is_list(charlist), do: {:string, charlist}
 
   def property do
     choice([
@@ -207,6 +220,13 @@ defmodule Unicode.Set.Parser do
     times(ascii_char(@whitespace_chars), min: 1)
   end
 
+  def string do
+    ignore(ascii_char([?{]))
+    |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
+    |> ignore(optional(whitespace()))
+    |> ignore(ascii_char([?}]))
+  end
+
   @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}] ++ @whitespace_chars
   @not_syntax_chars Enum.map(@syntax_chars, fn c -> {:not, c} end)
   def char do
@@ -215,6 +235,7 @@ defmodule Unicode.Set.Parser do
       utf8_char(@not_syntax_chars)
     ])
   end
+
 
   def quoted do
     choice([
