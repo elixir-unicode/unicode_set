@@ -5,6 +5,7 @@ defmodule Unicode.Set.Operation do
   * Intersection
   * Difference
   * Union
+  * Inversion
 
   """
 
@@ -13,7 +14,6 @@ defmodule Unicode.Set.Operation do
   of 2-tuples expressing a range of codepoints
 
   """
-
   def expand([ast]) do
     if has_difference_or_intersection?(ast) do
       expand(ast)
@@ -42,8 +42,28 @@ defmodule Unicode.Set.Operation do
     invert(ranges)
   end
 
+  def expand({{:string, charlist_1}, {:string, charlist_2}}) do
+    expand_string_range(charlist_1, charlist_2)
+  end
+
   def expand({:string, _charlist} = string) do
     string
+  end
+
+  @doc """
+  Expand string ranges like `{ab}-{cd}`
+
+  """
+  def expand_string_range(charlist_1, charlist_2)
+      when is_list(charlist_1) and is_list(charlist_2) do
+    # Extract prefix so charlists are the same length
+
+    [a, b] =
+      Enum.zip(charlist_1, charlist_2)
+      |> Enum.map(fn {x, y} -> x..y end)
+
+    for(x <- a, y <- b, do: [x, y])
+    |> Enum.map(&List.to_string/1)
   end
 
   @doc """

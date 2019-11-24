@@ -6,19 +6,19 @@ defmodule Unicode.Set.Transform do
   can be used as a guard clause.
 
   """
-  def guard_clause({first, first}, ranges, var) do
+  def guard_clause({first, first}, ranges, var) when is_integer(first) do
     quote do
       unquote(var) == unquote(first) or unquote(ranges)
     end
   end
 
-  def guard_clause({first, last}, ranges, var) do
+  def guard_clause({first, last}, ranges, var) when is_integer(first) and is_integer(last) do
     quote do
       unquote(var) in unquote(first)..unquote(last) or unquote(ranges)
     end
   end
 
-  def guard_clause(:string, _ranges, _var) do
+  def guard_clause({:string, _strings}, _ranges, _var) do
     raise ArgumentError, "[{...}] string ranges are not supported for guards"
   end
 
@@ -39,16 +39,16 @@ defmodule Unicode.Set.Transform do
   can be fed to `:binary.compile_pattern/1`.
 
   """
-  def pattern({first, first}, range, _var) do
+  def pattern({first, first}, range, _var) when is_integer(first) do
     [List.to_string([first]) | range]
   end
 
-  def pattern({first, last}, range, _var) do
+  def pattern({first, last}, range, _var) when is_integer(first) and is_integer(last) do
     Enum.map(first..last, fn c -> List.to_string([c]) end) ++ range
   end
 
-  def pattern(:string, charlist, _var) do
-    [List.to_string(charlist)]
+  def pattern({:string, strings}, range, _var) do
+    strings ++ range
   end
 
   def pattern(:not_in, _ranges, _var) do
@@ -64,15 +64,15 @@ defmodule Unicode.Set.Transform do
   can be fed to `NimbleParsec.utf8_char`.
 
   """
-  def utf8_char({first, first}, range, _var) do
+  def utf8_char({first, first}, range, _var) when is_integer(first) do
     [first | range]
   end
 
-  def utf8_char({first, last}, range, _var) do
+  def utf8_char({first, last}, range, _var) when is_integer(first) and is_integer(last) do
    [first..last, range]
   end
 
-  def utf8_char(:string, _ranges, _var) do
+  def utf8_char({:string, _strings}, _ranges, _var) do
     raise ArgumentError, "[{...}] string ranges are not supported for utf8 ranges"
   end
 
