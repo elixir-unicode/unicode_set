@@ -43,7 +43,7 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({{:string, charlist_1}, {:string, charlist_2}}) do
-    expand_string_range(charlist_1, charlist_2)
+    {:string, expand_string_range(charlist_1, charlist_2)}
   end
 
   def expand({:string, _charlist} = string) do
@@ -56,27 +56,26 @@ defmodule Unicode.Set.Operation do
   """
   def expand_string_range(charlist_1, charlist_2)
       when is_list(charlist_1) and is_list(charlist_2) do
-    # Extract prefix so charlists are the same length
 
-    [a, b] =
-      Enum.zip(charlist_1, charlist_2)
-      |> Enum.map(fn {x, y} -> x..y end)
+    prefix_length = length(charlist_1) - length(charlist_2)
+    {prefix, charlist_1} = Enum.split(charlist_1, prefix_length)
 
-    for(x <- a, y <- b, do: [x, y])
-    |> Enum.map(&List.to_string/1)
+    charlist_1
+    |> Enum.zip(charlist_2)
+    |> expand_string_range
+    |> Enum.map(&(prefix ++ &1))
+  end
 
-    # From elixirforum
+  def expand_string_range([{a, b}]) do
+    a..b
+  end
 
-    # defp combinations(dice) do
-    #     combinations(dice - 1, (for x <- 1..6, do: [x]))
-    #   end
-    #
-    # defp combinations(0, acc), do: acc
-    #
-    # defp combinations(remaining_dice, acc) do
-    #   combinations(remaining_dice - 1, (for x <- 1..6, y <- acc, do: [x | y]))
-    # end
+  def expand_string_range([{a, b}, {c, d}]) do
+    for x <- a..b, y <- c..d, do: [x, y]
+  end
 
+  def expand_string_range([{a, b} | rest]) do
+    for x <- a..b, y <- expand_string_range(rest), do: [x | y]
   end
 
   @doc """
