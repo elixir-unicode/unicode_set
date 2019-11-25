@@ -1,6 +1,8 @@
 defmodule Unicode.Set.Transform do
   @moduledoc false
 
+  alias Unicode.Set.Operation
+
   @doc """
   Converts an expanded AST into a format that
   can be used as a guard clause.
@@ -18,7 +20,7 @@ defmodule Unicode.Set.Transform do
     end
   end
 
-  def guard_clause({:string, _strings}, _ranges, _var) do
+  def guard_clause(:string, _range, _var) do
     raise ArgumentError, "[{...}] string ranges are not supported for guards"
   end
 
@@ -47,8 +49,10 @@ defmodule Unicode.Set.Transform do
     Enum.map(first..last, fn c -> List.to_string([c]) end) ++ range
   end
 
-  def pattern({:string, strings}, range, _var) do
-    strings ++ range
+  def pattern(:string, {first, last}, _var) when is_list(first) and is_list(last) do
+    first
+    |> Operation.expand_string_range(last)
+    |> Enum.map(&List.to_string/1)
   end
 
   def pattern(:not_in, _ranges, _var) do
@@ -72,7 +76,7 @@ defmodule Unicode.Set.Transform do
    [first..last, range]
   end
 
-  def utf8_char({:string, _strings}, _ranges, _var) do
+  def utf8_char(:string, _range, _var) do
     raise ArgumentError, "[{...}] string ranges are not supported for utf8 ranges"
   end
 

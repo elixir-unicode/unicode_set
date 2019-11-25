@@ -43,14 +43,7 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsecp(
-    :one_set,
-    choice([
-      property(),
-      empty_set(),
-      basic_set()
-    ])
-  )
+  defparsecp(:one_set, unicode_set())
 
   def parse!(unicode_set) do
     case parse(unicode_set) do

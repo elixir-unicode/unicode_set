@@ -4,6 +4,14 @@ defmodule Unicode.Set.Parser do
   import NimbleParsec
   import Unicode.Set.Property
 
+  def unicode_set do
+    choice([
+      property(),
+      empty_set(),
+      basic_set()
+    ])
+  end
+
   def basic_set do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?-, ?^]) |> replace(:not))
@@ -79,6 +87,7 @@ defmodule Unicode.Set.Parser do
       string_range()
     ])
     |> reduce(:reduce_range)
+    |> post_traverse(:check_valid_range)
     |> label("range")
   end
 
@@ -93,22 +102,36 @@ defmodule Unicode.Set.Parser do
   end
 
   def string_range do
-    string()
-    |> tag(:string)
+    string() |> wrap
     |> ignore(optional(whitespace()))
     |> optional(
       ignore(ascii_char([?-]))
       |> ignore(optional(whitespace()))
-      |> concat(string() |> tag(:string))
+      |> concat(string() |> wrap)
     )
   end
 
   def reduce_range([[bracketed]]) when is_list(bracketed),
     do: {:in, Enum.map(bracketed, &{&1, &1})}
 
+  def reduce_range([[from]]) when is_integer(from), do: {:in, [{from, from}]}
+  def reduce_range([[from], [to]]) when is_integer(from) and is_integer(to), do: {:in, [{from, to}]}
+
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
-  def reduce_range(charlist) when is_list(charlist), do: {:string, charlist}
+
+  def check_valid_range(_rest, [in: [{from, from}]] = args, context, _, _) do
+    {args, context}
+  end
+
+  def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _) do
+    if length(from) == 1 or length(to) == 1 do
+      {:error, "String ranges must be longer than one character. Found " <>
+      format_string_range(from, to)}
+    else
+      {args, context}
+    end
+  end
 
   def property do
     choice([
@@ -236,7 +259,6 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
-
   def quoted do
     choice([
       ignore(ascii_char([?x]))
@@ -286,5 +308,12 @@ defmodule Unicode.Set.Parser do
     args
     |> List.to_string()
     |> String.to_integer(16)
+  end
+
+  #  Helpers
+  #  -------
+
+  defp format_string_range(from, to) do
+    "{#{List.to_string(from)}}-{#{List.to_string(to)}}"
   end
 end

@@ -46,10 +46,6 @@ defmodule Unicode.Set.Operation do
     {:string, expand_string_range(charlist_1, charlist_2)}
   end
 
-  def expand({:string, _charlist} = string) do
-    string
-  end
-
   @doc """
   Expand string ranges like `{ab}-{cd}`
 
@@ -64,6 +60,10 @@ defmodule Unicode.Set.Operation do
     |> Enum.zip(charlist_2)
     |> expand_string_range
     |> Enum.map(&(prefix ++ &1))
+  end
+
+  def expand_string_range([{a, a}]) do
+    a
   end
 
   def expand_string_range([{a, b}]) do
@@ -352,8 +352,8 @@ defmodule Unicode.Set.Operation do
     fun.(range, prewalk(rest, var, fun), var)
   end
 
-  def prewalk({:string, charlist}, var, fun) do
-    fun.(:string, charlist, var)
+  def prewalk({first, last}, var, fun) when is_list(first) and is_list(last) do
+    fun.(:string, {first, last}, var)
   end
 
   def prewalk({:not_in, ranges}, var, fun) do
