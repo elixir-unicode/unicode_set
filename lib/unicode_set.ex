@@ -90,14 +90,14 @@ defmodule Unicode.Set do
 
     parse!(unicode_set)
     |> Operation.expand()
-    |> Operation.prewalk(var, &Transform.guard_clause/3)
+    |> Operation.traverse(var, &Transform.guard_clause/3)
   end
 
   def pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
-      |> Operation.prewalk(&Transform.pattern/3)
+      |> Operation.traverse(&Transform.pattern/3)
     end
   end
 
@@ -111,7 +111,7 @@ defmodule Unicode.Set do
     with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
-      |> Operation.prewalk(&Transform.utf8_char/3)
+      |> Operation.traverse(&Transform.utf8_char/3)
     end
   end
 

@@ -120,6 +120,12 @@ defmodule Unicode.Set.Parser do
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
 
+
+  def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _)
+      when is_integer(from) and is_integer(to) do
+    {args, context}
+  end
+
   def check_valid_range(_rest, [in: [{from, from}]] = args, context, _, _) do
     {args, context}
   end

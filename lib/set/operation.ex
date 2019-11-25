@@ -35,40 +35,45 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({:in, ranges}) do
-    ranges
+    expand_string_ranges(ranges)
   end
 
   def expand({:not_in, ranges}) do
-    invert(ranges)
-  end
-
-  def expand({{:string, charlist_1}, {:string, charlist_2}}) do
-    {:string, expand_string_range(charlist_1, charlist_2)}
+    ranges
+    |> expand_string_ranges
+    |> invert
   end
 
   @doc """
   Expand string ranges like `{ab}-{cd}`
 
   """
-  def expand_string_range(charlist_1, charlist_2)
-      when is_list(charlist_1) and is_list(charlist_2) do
+  def expand_string_ranges(ranges) do
+    Enum.map(ranges, &expand_string_range/1)
+  end
 
-    prefix_length = length(charlist_1) - length(charlist_2)
-    {prefix, charlist_1} = Enum.split(charlist_1, prefix_length)
+  def expand_string_range({from, to}) when is_integer(from) and is_integer(to) do
+    {from, to}
+  end
 
-    charlist_1
-    |> Enum.zip(charlist_2)
+  def expand_string_range({from, to}) when is_list(from) and is_list(to) do
+    prefix_length = length(from) - length(to)
+    {prefix, from} = Enum.split(from, prefix_length)
+
+    from
+    |> Enum.zip(to)
     |> expand_string_range
     |> Enum.map(&(prefix ++ &1))
+    |> Enum.map(&{&1, &1})
   end
 
-  def expand_string_range([{a, a}]) do
-    a
-  end
-
-  def expand_string_range([{a, b}]) do
-    a..b
-  end
+  # def expand_string_range([{a, a}]) do
+  #   a
+  # end
+  #
+  # def expand_string_range([{a, b}]) do
+  #   a..b
+  # end
 
   def expand_string_range([{a, b}, {c, d}]) do
     for x <- a..b, y <- c..d, do: [x, y]
@@ -344,35 +349,36 @@ defmodule Unicode.Set.Operation do
   codepoint range in the set.
 
   """
-  def prewalk(ranges, fun) when is_function(fun) do
-    prewalk(ranges, nil, fun)
+  def traverse(ranges, fun) when is_function(fun) do
+    traverse(ranges, nil, fun)
   end
 
-  def prewalk([{first, _last} = range | rest], var, fun) when is_integer(first) do
-    fun.(range, prewalk(rest, var, fun), var)
+  def traverse({:not_in, ranges}, var, fun) do
+    fun.(:not_in, traverse(ranges, var, fun), var)
   end
 
-  def prewalk({first, last}, var, fun) when is_list(first) and is_list(last) do
-    fun.(:string, {first, last}, var)
+  def traverse({:in, ranges}, var, fun) do
+    traverse(ranges, var, fun)
   end
 
-  def prewalk({:not_in, ranges}, var, fun) do
-    fun.(:not_in, prewalk(ranges, var, fun), var)
+  def traverse({from, to} = range, var, fun) when is_list(from) and is_list(to) do
+    fun.(range, [], var)
   end
 
-  def prewalk({:in, ranges}, var, fun) do
-    prewalk(ranges, var, fun)
+  def traverse([{first, last} = range | rest], var, fun)
+      when is_integer(first) and is_integer(last) do
+    fun.(range, traverse(rest, var, fun), var)
   end
 
-  def prewalk([range], var, fun) do
-    prewalk(range, var, fun)
+  def traverse([range], var, fun) do
+    traverse(range, var, fun)
   end
 
-  def prewalk([range | rest], var, fun) do
-    fun.(prewalk(range, var, fun), prewalk(rest, var, fun), var)
+  def traverse([range | rest], var, fun) do
+    fun.(traverse(range, var, fun), traverse(rest, var, fun), var)
   end
 
-  def prewalk([] = range, var, fun) do
+  def traverse([] = range, var, fun) do
     fun.(range, range, var)
   end
 end
