@@ -85,6 +85,17 @@ false
 
 As much work as possible is done at compile time in order to deliver good performance. The macro `Unicode.Set.match?/2` parses the unicode set, expands the require codepoints and generates guard clauses at compile time. The resulting code is a simple set of boolean operators that executes quickly at runtime.
 
+## Supported Unicode properties
+
+This version of `Unicode Set` supports the following unicode properties in unicode sets:
+
+* `script`
+* `block`
+* `general category`
+* `combining class`
+
+Other properties will be added prior to the `1.0` release.
+
 ## Introduction to Unicode Sets
 
 Here are a few examples of sets. Although elements of the syntax appear similar to regular expressions, unicode sets only expresses one or more ranges of unicode codepoints.
