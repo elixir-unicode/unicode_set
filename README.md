@@ -57,10 +57,9 @@ This can be used as shown in the following example:
 defmodule MyCombinators do
   import NimbleParsec
 
+  @digit_list = Unicode.Set.utf8_char("[[:digit:]]")
   def unicode_digit do
-    digit_list = Unicode.Set.utf8_char("[[:digit:]]")
-
-    utf8_char(digit_list)
+    utf8_char(@digit_list)
     |> label("a digit in any Unicode script")
   end
 end
