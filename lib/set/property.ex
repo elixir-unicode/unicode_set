@@ -2,9 +2,15 @@ defmodule Unicode.Set.Property do
   @moduledoc false
 
   def fetch_property(:script_or_category, value) do
-    with return <- Unicode.Script.fetch(value),
-         {:ok, range_list} <- maybe(return, value, &Unicode.Category.fetch/1) do
+    range_list =
+      Unicode.Script.get(value) ||
+      Unicode.Category.get(value) ||
+      Unicode.Property.get(value)
+
+    if range_list do
       {:ok, range_list}
+    else
+      {:error, "the unicode script, category or property #{inspect(value)} is not known"}
     end
   end
 
@@ -16,18 +22,6 @@ defmodule Unicode.Set.Property do
       :error ->
         {:error,
          "the unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
-    end
-  end
-
-  defp maybe({:ok, range_list}, _value, _fun) do
-    {:ok, range_list}
-  end
-
-  defp maybe(:error, value, fun) do
-    with {:ok, range_list} <- fun.(value) do
-      {:ok, range_list}
-    else
-      _ -> {:error, "the unicode script or category #{inspect(value)} is not known"}
     end
   end
 end

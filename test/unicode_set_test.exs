@@ -104,5 +104,9 @@ defmodule UnicodeSetTest do
   test "nested sets" do
     assert Unicode.Set.pattern("[[[ab]-[b]][def]]") ==
       ["a", "d", "e", "f"]
+
+    assert Unicode.Set.pattern("[{👦🏻}-{👦🏿}]") ==
+      ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
+
   end
 end
