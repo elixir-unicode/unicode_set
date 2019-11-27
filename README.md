@@ -87,14 +87,31 @@ As much work as possible is done at compile time in order to deliver good perfor
 
 ## Supported Unicode properties
 
-This version of `Unicode Set` supports the following unicode properties in unicode sets:
+This version of `Unicode Set` supports the following eumerable unicode properties in unicode sets:
 
-* `script`
-* `block`
-* `general category`
-* `combining class`
+* `script` such as `[:script=arabic:]`, `\p{script=arabic}` or `[:arabic:]`
+* `block` such as `[:block=sudanese:]`, `\p{block=sudanese}` or `[:sudanese:]`
+* `general category` such as `[:Lu:]`, `\p{Lu}`, `[:gc=Lu:]` or `[:general category=Lu:]`
+* `combining class` such as `[:ccc=230:]`
 
-Other properties will be added prior to the `1.0` release.
+In addition, the following boolean properties are supported. These are expressed as `[:white space:]` or `\p{White Space}`.
+```
+:alphabetic, :ascii_hex_digit, :bidi_control, :case_ignorable, :cased,
+:changes_when_casefolded, :changes_when_casemapped, :changes_when_lowercased,
+:changes_when_titlecased, :changes_when_uppercased, :dash,
+:default_ignorable_code_point, :deprecated, :diacritic, :extender,
+:grapheme_base, :grapheme_extend, :grapheme_link, :hex_digit, :hyphen,
+:id_continue, :id_start, :ideographic, :ids_binary_operator,
+:ids_trinary_operator, :join_control, :logical_order_exception, :lowercase,
+:math, :noncharacter_code_point, :other_alphabetic,
+:other_default_ignorable_code_point, :other_grapheme_extend,
+:other_id_continue, :other_id_start, :other_lowercase, :other_math,
+:other_uppercase, :pattern_syntax, :pattern_white_space,
+:prepended_concatenation_mark, :quotation_mark, :radical, :regional_indicator,
+:sentence_terminal, :soft_dotted, :terminal_punctuation, :unified_ideograph,
+:uppercase, :variation_selector, :white_space, :xid_continue, :xid_start
+```
+In all cases, property names and property values may include whitespace and mixed case notation.
 
 ## Introduction to Unicode Sets
 
