@@ -16,7 +16,11 @@ defmodule UnicodeSet.MixProject do
       source_url: "https://github.com/elixir-unicode/unicode_set",
       description: description(),
       package: package(),
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      dialyzer: [
+        plt_add_apps: ~w(mix inets nimble_parsec)a,
+        ignore_warnings: ".dialyzer_ignore_warnings"
+      ]
     ]
   end
 
@@ -56,7 +60,8 @@ defmodule UnicodeSet.MixProject do
       {:ex_unicode, "~> 1.2"},
       {:nimble_parsec, "~> 0.5", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
-      {:ex_doc, "~> 0.19", only: [:dev, :test, :release], runtime: false}
+      {:ex_doc, "~> 0.19", only: [:dev, :test, :release], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc", only: [:dev], runtime: false, optional: true}
     ]
   end
 

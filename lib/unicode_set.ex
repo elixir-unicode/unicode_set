@@ -43,13 +43,14 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsecp(:one_set, unicode_set())
+  @doc false
+  defparsec(:one_set, unicode_set())
 
   def parse!(unicode_set) do
     case parse(unicode_set) do
       {:ok, result, "", _, _, _} ->
         result
-      {:error, message} ->
+      {:error, message, _, _, _, _} ->
         raise ArgumentError, "Could not parse #{inspect unicode_set}. #{message}"
     end
   end
