@@ -4,8 +4,8 @@ defmodule UnicodeSetTest do
   doctest Operation
 
   test "set intersection when one list is a true subset of another" do
-    l = Unicode.Category.get(:L)
-    ll = Unicode.Category.get(:Ll)
+    l = Unicode.GeneralCategory.get(:L)
+    ll = Unicode.GeneralCategory.get(:Ll)
     assert Operation.intersect(l, ll) == ll
   end
 
