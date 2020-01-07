@@ -12,7 +12,7 @@ This is the changelog for Unicode Set v0.4.0 released on November 27th, 2019.  F
 
 ## Enhancements
 
-* Bump to [ex_unicode](https://hex.pm/packages/ex_unicode) to version 1.3.0 to support an expanded set of properties resovled by `unicode_set`.
+* Bump to [ex_unicode](https://hex.pm/packages/ex_unicode) to version 1.3.0 to support an expanded set of properties resolved by `unicode_set`.
 
 # Changelog for Unicode Set v0.3.0
 
