@@ -33,6 +33,13 @@ defmodule UnicodeSetTest do
            ]
   end
 
+  test "Difference when one set is wholly within another" do
+    s1 = [{1, 10}]
+    s2 = [{2, 3}, {7, 9}]
+
+    assert Operation.difference(s1, s2) == [{1, 1}, {4, 6}, {10, 10}]
+  end
+
   test "a guard module with match?/2" do
     defmodule Guards do
       require Unicode.Set
@@ -46,12 +53,12 @@ defmodule UnicodeSetTest do
       require Guards
 
       # Define a function using the previously defined guard
-      def my_function(<< x :: utf8, _rest :: binary>>) when Guards.digit?(x) do
+      def my_function(<<x::utf8, _rest::binary>>) when Guards.digit?(x) do
         :digit
       end
 
       # Define a guard directly on the function
-      def my_other_function(<< x :: utf8, _rest :: binary>>)
+      def my_other_function(<<x::utf8, _rest::binary>>)
           when Unicode.Set.match?(x, "[[:Nd:]]") do
         :digit
       end
@@ -74,7 +81,7 @@ defmodule UnicodeSetTest do
 
     result =
       parsed
-      |> Unicode.Set.Operation.expand
+      |> Unicode.Set.Operation.expand()
       |> Unicode.Set.Operation.traverse(fun)
 
     assert result == {{97, 97}, {{98, 98}, {{99, 99}, {[], [], nil}, nil}, nil}, nil}
@@ -83,30 +90,29 @@ defmodule UnicodeSetTest do
   test "compile_pattern/1" do
     require Unicode.Set
 
-    pattern = Unicode.Set.compile_pattern "[[:digit:]]"
+    pattern = Unicode.Set.compile_pattern("[[:digit:]]")
     list = String.split("abc1def2ghi3jkl", pattern)
     assert list == ["abc", "def", "ghi", "jkl"]
   end
 
   test "utf8_char/1" do
     assert Unicode.Set.utf8_char("[[^abcd][mnb]]") ==
-      [{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
+             [{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
   end
 
   test "string ranges" do
-    assert Unicode.Set.pattern("[{ab}-{cd}]")  ==
-      ["ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
+    assert Unicode.Set.pattern("[{ab}-{cd}]") ==
+             ["ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
 
-    assert Unicode.Set.pattern("[{ab}-{cd}abc]")  ==
-      ["a", "b", "c", "ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
+    assert Unicode.Set.pattern("[{ab}-{cd}abc]") ==
+             ["a", "b", "c", "ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
   end
 
   test "nested sets" do
     assert Unicode.Set.pattern("[[[ab]-[b]][def]]") ==
-      ["a", "d", "e", "f"]
+             ["a", "d", "e", "f"]
 
     assert Unicode.Set.pattern("[{👦🏻}-{👦🏿}]") ==
-      ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
-
+             ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
   end
 end

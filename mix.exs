@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "0.5.0"
+  @version "0.4.1"
 
   def project do
     [
@@ -69,7 +69,8 @@ defmodule UnicodeSet.MixProject do
     %{
       "GitHub" => "https://github.com/elixir-unicode/unicode_set",
       "Readme" => "https://github.com/elixir-unicode/unicode_set/blob/v#{@version}/README.md",
-      "Changelog" => "https://github.com/elixir-unicode/unicode_set/blob/v#{@version}/CHANGELOG.md"
+      "Changelog" =>
+        "https://github.com/elixir-unicode/unicode_set/blob/v#{@version}/CHANGELOG.md"
     }
   end
 

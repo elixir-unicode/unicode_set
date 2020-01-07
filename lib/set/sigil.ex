@@ -12,5 +12,4 @@ defmodule Unicode.Set.Sigil do
   defmacro sigil_z(unicode_set, []) do
     "[" <> unicode_set <> "]"
   end
-
 end

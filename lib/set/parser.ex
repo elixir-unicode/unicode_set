@@ -102,7 +102,8 @@ defmodule Unicode.Set.Parser do
   end
 
   def string_range do
-    string() |> wrap
+    string()
+    |> wrap
     |> ignore(optional(whitespace()))
     |> optional(
       ignore(ascii_char([?-]))
@@ -115,11 +116,12 @@ defmodule Unicode.Set.Parser do
     do: {:in, Enum.map(bracketed, &{&1, &1})}
 
   def reduce_range([[from]]) when is_integer(from), do: {:in, [{from, from}]}
-  def reduce_range([[from], [to]]) when is_integer(from) and is_integer(to), do: {:in, [{from, to}]}
+
+  def reduce_range([[from], [to]]) when is_integer(from) and is_integer(to),
+    do: {:in, [{from, to}]}
 
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
-
 
   def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _)
       when is_integer(from) and is_integer(to) do
@@ -132,8 +134,9 @@ defmodule Unicode.Set.Parser do
 
   def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _) do
     if length(from) == 1 or length(to) == 1 do
-      {:error, "String ranges must be longer than one character. Found " <>
-      format_string_range(from, to)}
+      {:error,
+       "String ranges must be longer than one character. Found " <>
+         format_string_range(from, to)}
     else
       {args, context}
     end

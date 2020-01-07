@@ -1,3 +1,11 @@
+# Changelog for Unicode Set v0.4.1
+
+This is the changelog for Unicode Set v0.4.1 released on January 8th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Fix `Unicode.Set.Operation.difference/2` when one list is wholly contained within another
+
 # Changelog for Unicode Set v0.4.0
 
 This is the changelog for Unicode Set v0.4.0 released on November 27th, 2019.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

@@ -1,7 +1,7 @@
 defmodule Unicode.Set do
   @moduledoc File.read!("README.md")
-  |> String.split("<!-- MDOC -->")
-  |> Enum.at(1)
+             |> String.split("<!-- MDOC -->")
+             |> Enum.at(1)
 
   import NimbleParsec
   import Unicode.Set.Parser
@@ -50,8 +50,9 @@ defmodule Unicode.Set do
     case parse(unicode_set) do
       {:ok, result, "", _, _, _} ->
         result
+
       {:error, message, _, _, _, _} ->
-        raise ArgumentError, "Could not parse #{inspect unicode_set}. #{message}"
+        raise ArgumentError, "Could not parse #{inspect(unicode_set)}. #{message}"
     end
   end
 
@@ -119,8 +120,7 @@ defmodule Unicode.Set do
   defp assert_binary_parameter!(unicode_set) do
     unless is_binary(unicode_set) do
       raise ArgumentError,
-        "unicode_set must be a compile-time binary. Found #{inspect unicode_set}"
+            "unicode_set must be a compile-time binary. Found #{inspect(unicode_set)}"
     end
   end
-
 end

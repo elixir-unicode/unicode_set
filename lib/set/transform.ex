@@ -42,7 +42,6 @@ defmodule Unicode.Set.Transform do
     end
   end
 
-
   @doc """
   Converts an expanded AST into a format that
   can be fed to `:binary.compile_pattern/1`.
@@ -84,7 +83,7 @@ defmodule Unicode.Set.Transform do
   end
 
   def utf8_char({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
-   [first..last, ranges]
+    [first..last, ranges]
   end
 
   def utf8_char({first, last}, _ranges, _var) when is_list(first) and is_list(last) do

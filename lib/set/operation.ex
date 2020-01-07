@@ -261,18 +261,6 @@ defmodule Unicode.Set.Operation do
 
   """
 
-  # There are several cases that need to be considered:
-  #
-  # 1. list-B head is the same as list-A head
-  # 2. list-B head is completely after list-A head
-  # 3. list-B head is completely before list-A head
-  # 4. list-B head is contained wholly within list-A head
-  # 5. list-B head is at the start of list-A head and is shorter than list-A head
-  # 6. list-B head is at the end of list-A head and is shorter than list-A head
-  # 7. list-B head encloses list-A head
-  # 8. list-A is empty
-  # 9. list-B is empty
-
   # 1. list-B head is the same as list-A head
   def difference([a_head | a_rest], [a_head | b_rest]) do
     difference(a_rest, b_rest)
@@ -290,7 +278,7 @@ defmodule Unicode.Set.Operation do
 
   # 4. list-B head is contained wholly within list-A head
   def difference([{as, ae} | a_rest], [{bs, be} | b_rest]) when bs > as and be < ae do
-    [{as, bs - 1}, {be + 1, ae} | difference(a_rest, b_rest)]
+    [{as, bs - 1} | difference([{be + 1, ae} | a_rest], b_rest)]
   end
 
   # 5. list-B head is at the start of list-A head and is shorter than list-A head

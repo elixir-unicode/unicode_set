@@ -4,8 +4,8 @@ defmodule Unicode.Set.Property do
   def fetch_property(:script_or_category, value) do
     range_list =
       Unicode.Script.get(value) ||
-      Unicode.GeneralCategory.get(value) ||
-      Unicode.Property.get(value)
+        Unicode.GeneralCategory.get(value) ||
+        Unicode.Property.get(value)
 
     if range_list do
       {:ok, range_list}
