@@ -1,3 +1,11 @@
+# Changelog for Unicode Set v0.4.2
+
+This is the changelog for Unicode Set v0.4.2 released on February 25th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Allow `\n`, `\t` and `\r`, `\s` as part of character classes
+
 # Changelog for Unicode Set v0.4.1
 
 This is the changelog for Unicode Set v0.4.1 released on January 8th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

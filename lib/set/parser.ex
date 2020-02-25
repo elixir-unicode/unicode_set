@@ -15,7 +15,7 @@ defmodule Unicode.Set.Parser do
   def basic_set do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?-, ?^]) |> replace(:not))
-    |> ignore(optional(whitespace()))
+    # |> ignore(optional(whitespace()))
     |> times(sequence(), min: 1)
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)
@@ -32,7 +32,7 @@ defmodule Unicode.Set.Parser do
       maybe_repeated_set(),
       range()
     ])
-    |> ignore(optional(whitespace()))
+    # |> ignore(optional(whitespace()))
     |> label("sequence")
   end
 
@@ -93,14 +93,15 @@ defmodule Unicode.Set.Parser do
 
   def character_range do
     char()
-    |> ignore(optional(whitespace()))
+    #|> ignore(optional(whitespace()))
     |> optional(
       ignore(ascii_char([?-]))
-      |> ignore(optional(whitespace()))
+      #|> ignore(optional(whitespace()))
       |> concat(char())
     )
   end
 
+  # Of the forrm {abc} or {abc-def}
   def string_range do
     string()
     |> wrap
@@ -259,7 +260,7 @@ defmodule Unicode.Set.Parser do
     |> ignore(ascii_char([?}]))
   end
 
-  @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}] ++ @whitespace_chars
+  @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}] # ++ @whitespace_chars
   @not_syntax_chars Enum.map(@syntax_chars, fn c -> {:not, c} end)
   def char do
     choice([

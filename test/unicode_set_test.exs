@@ -115,4 +115,23 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.pattern("[{👦🏻}-{👦🏿}]") ==
              ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
   end
+
+  test "Sets of whitespace" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?\n, "[\n]") == true
+    assert Unicode.Set.match?(?\t, "[\t]") == true
+    assert Unicode.Set.match?(?\r, "[\r]") == true
+    assert Unicode.Set.match?(?\n, "[\r\t\n]") == true
+  end
+
+  test "is_whitespace matching with regex plus unicode separators" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?\n, "[[\u0009-\u000d][:Zs:]]") == true
+    assert Unicode.Set.match?(?\t, "[[\u0009-\u000d][:Zs:]]") == true
+    assert Unicode.Set.match?(?\r, "[[\u0009-\u000d][:Zs:]]") == true
+    assert Unicode.Set.match?(?\s, "[[\u0009-\u000d][:Zs:]]") == true
+    assert Unicode.Set.match?(?a, "[[\u0009-\u000d][:Zs:]]") == false
+  end
 end
