@@ -1,6 +1,7 @@
 defmodule Unicode.Set.Property do
   @moduledoc false
 
+  @doc false
   def fetch_property(:script_or_category, value) do
     range_list =
       Unicode.Script.get(value) ||
@@ -14,6 +15,7 @@ defmodule Unicode.Set.Property do
     end
   end
 
+  @doc false
   def fetch_property(property, value) do
     with {:ok, module} <- Unicode.fetch_property(property),
          {:ok, range_list} <- module.fetch(value) do

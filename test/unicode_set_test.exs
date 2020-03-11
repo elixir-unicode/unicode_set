@@ -134,4 +134,13 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.match?(?\s, "[[\u0009-\u000d][:Zs:]]") == true
     assert Unicode.Set.match?(?a, "[[\u0009-\u000d][:Zs:]]") == false
   end
+
+  test "quote marks category" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?', "[[:QuoteMark:]]") == true
+    assert Unicode.Set.match?(?', "[[:quote_mark:]]") == true
+    assert Unicode.Set.match?(?', "[[:quote_mark_left:]]") == false
+    assert Unicode.Set.match?(?', "[[:quote_mark_ambidextrous:]]") == true
+  end
 end

@@ -1,3 +1,11 @@
+# Changelog for Unicode Set v0.5.0
+
+This is the changelog for Unicode Set v0.5.0 released on March 11th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Enhancements
+
+* Updates `ex_unicode` to version `1.4.0` which includes support for [Unicode version 13.0](http://blog.unicode.org/2020/03/announcing-unicode-standard-version-130.html) as well as support for several derived categories related to quote marks.
+
 # Changelog for Unicode Set v0.4.2
 
 This is the changelog for Unicode Set v0.4.2 released on February 25th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
