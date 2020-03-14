@@ -143,4 +143,11 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.match?(?', "[[:quote_mark_left:]]") == false
     assert Unicode.Set.match?(?', "[[:quote_mark_ambidextrous:]]") == true
   end
+
+  test "printable category" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?', "[[:printable:]]") == true
+    assert Unicode.Set.match?(0, "[[:printable:]]") == false
+  end
 end

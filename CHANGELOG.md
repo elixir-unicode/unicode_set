@@ -4,7 +4,7 @@ This is the changelog for Unicode Set v0.5.1 released on March 14th, 2020.  For 
 
 ## Bug Fixes
 
-* Compacts tuple-ranges in order to minimize the number of generated clauses in guards
+* Compacts tuple-ranges in order to minimize the number of generated clauses in guards. Requires at least `ex_unicode` version 1.5.0.
 
 # Changelog for Unicode Set v0.5.0
 
