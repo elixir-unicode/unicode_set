@@ -84,7 +84,7 @@ defmodule UnicodeSetTest do
       |> Unicode.Set.Operation.expand()
       |> Unicode.Set.Operation.traverse(fun)
 
-    assert result == {{97, 97}, {{98, 98}, {{99, 99}, {[], [], nil}, nil}, nil}, nil}
+    assert result == {{97, 99}, {[], [], nil}, nil}
   end
 
   test "compile_pattern/1" do

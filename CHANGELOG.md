@@ -1,3 +1,11 @@
+# Changelog for Unicode Set v0.5.1
+
+This is the changelog for Unicode Set v0.5.1 released on March 14th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Compacts tuple-ranges in order to minimize the number of generated clauses in guards
+
 # Changelog for Unicode Set v0.5.0
 
 This is the changelog for Unicode Set v0.5.0 released on March 11th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

@@ -13,6 +13,15 @@ defmodule Unicode.Set.Operation do
   Expands all sets, properties and ranges to a list
   of 2-tuples expressing a range of codepoints
 
+  It can return one of three forms
+
+  `[tuple_list]` which is the result of expansiion
+  of difference or intersection
+
+  `[{:in, [tuple_list]}]` for an inclusion list
+
+  `[{:not_in, [tuple_list]}]` for an exclusion list
+
   """
   def expand([ast]) do
     if has_difference_or_intersection?(ast) do
@@ -20,6 +29,7 @@ defmodule Unicode.Set.Operation do
     else
       combine(ast)
     end
+    |> compact_ranges
   end
 
   def expand({:union, [this, that]}) do
@@ -104,6 +114,18 @@ defmodule Unicode.Set.Operation do
 
   def combine(other) do
     other
+  end
+
+  def compact_ranges({:in, ranges}) do
+    {:in, Unicode.Utils.compact_ranges(ranges)}
+  end
+
+  def compact_ranges({:not_in, ranges}) do
+    {:not_in, Unicode.Utils.compact_ranges(ranges)}
+  end
+
+  def compact_ranges(ranges) when is_list(ranges) do
+   Unicode.Utils.compact_ranges(ranges)
   end
 
   @doc """
