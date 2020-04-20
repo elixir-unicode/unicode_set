@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "0.5.1"
+  @version "0.6.0"
 
   def project do
     [
@@ -61,7 +61,7 @@ defmodule UnicodeSet.MixProject do
       {:nimble_parsec, "~> 0.5", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.19", only: [:dev, :test, :release], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc", only: [:dev], runtime: false, optional: true}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false, optional: true}
     ]
   end
 

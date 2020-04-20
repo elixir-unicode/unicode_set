@@ -57,6 +57,18 @@ defmodule Unicode.Set do
   end
 
   @doc """
+  Parses a unicode set and expands the
+  set expressions then compacts the
+  character ranges.
+
+  """
+  def parse_and_expand(unicode_set) do
+    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+      {:ok, Operation.expand(parsed)}
+    end
+  end
+
+  @doc """
   Returns a boolean based upon whether `var`
   matches the provided `unicode_set`.
 
