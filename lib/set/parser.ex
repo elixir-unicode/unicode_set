@@ -15,7 +15,6 @@ defmodule Unicode.Set.Parser do
   def basic_set do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?-, ?^]) |> replace(:not))
-    # |> ignore(optional(whitespace()))
     |> times(sequence(), min: 1)
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)
@@ -32,7 +31,7 @@ defmodule Unicode.Set.Parser do
       maybe_repeated_set(),
       range()
     ])
-    # |> ignore(optional(whitespace()))
+    |> ignore(optional(whitespace()))
     |> label("sequence")
   end
 
@@ -93,10 +92,10 @@ defmodule Unicode.Set.Parser do
 
   def character_range do
     char()
-    #|> ignore(optional(whitespace()))
+    |> ignore(optional(whitespace()))
     |> optional(
       ignore(ascii_char([?-]))
-      #|> ignore(optional(whitespace()))
+      |> ignore(optional(whitespace()))
       |> concat(char())
     )
   end
@@ -249,8 +248,12 @@ defmodule Unicode.Set.Parser do
   end
 
   @whitespace_chars [0x20, 0x9..0xD, 0x85, 0x200E, 0x200F, 0x2028, 0x2029]
+  def whitespace_char do
+    ascii_char(@whitespace_chars)
+  end
+
   def whitespace do
-    times(ascii_char(@whitespace_chars), min: 1)
+    times(whitespace_char(), min: 1)
   end
 
   def string do
@@ -310,6 +313,12 @@ defmodule Unicode.Set.Parser do
     |> label("hex character")
   end
 
+  # Its just an escaped char
+  def hex_to_codepoint([?t]), do: ?\t
+  def hex_to_codepoint([?n]), do: ?\n
+  def hex_to_codepoint([?r]), do: ?\r
+
+  # Actual hex-encoded codepoints
   def hex_to_codepoint([arg | _rest] = args) when is_list(arg) do
     Enum.map(args, &hex_to_codepoint/1)
   end
