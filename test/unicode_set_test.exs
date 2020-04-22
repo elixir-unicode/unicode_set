@@ -150,4 +150,25 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.match?(?', "[[:printable:]]") == true
     assert Unicode.Set.match?(0, "[[:printable:]]") == false
   end
+
+  # From TR35
+  # The binary operators '&', '-', and the implicit union have equal
+  # precedence and bind left-to-right. Thus [[:letter:]-[a-z]-[\u0100-\u01FF]]
+  # is equal to [[[:letter:]-[a-z]]-[\u0100-\u01FF]].
+  test "set oeprations associativity" do
+    {:ok, result1, rest1, _, _, _} = Unicode.Set.parse("[[:letter:]-[a-z]-[\u0100-\u01FF]]")
+    {:ok, result2, rest2, _, _, _} = Unicode.Set.parse("[[[:letter:]-[a-z]]-[\u0100-\u01FF]]")
+    assert {result1, rest1} == {result2, rest2}
+  end
+
+  # Another example is the set [[ace][bdf] - [abc][def]], which is not the
+  # empty set, but instead equal to [[[[ace] [bdf]] - [abc]] [def]],
+  # which equals [[[abcdef] - [abc]] [def]], which equals [[def] [def]],
+  # which equals [def].
+  test "set oeprations associativity too" do
+    {:ok, result1, rest1, _, _, _} = Unicode.Set.parse("[[ace][bdf] - [abc][def]]")
+    {:ok, result2, rest2, _, _, _} = Unicode.Set.parse("[def]")
+    assert {result1, rest1} == {result2, rest2}
+  end
+
 end
