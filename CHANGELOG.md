@@ -1,3 +1,13 @@
+# Changelog for Unicode Set v0.6.0
+
+This is the changelog for Unicode Set v0.5.2 released on _____, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Fixes parsing sets to ignore non-encoded whitespace
+
+* Fixes intersection and difference set operations for sets that include string ranges like `{abc}`
+
 # Changelog for Unicode Set v0.5.1
 
 This is the changelog for Unicode Set v0.5.1 released on March 14th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
