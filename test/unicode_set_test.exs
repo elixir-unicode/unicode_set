@@ -166,8 +166,8 @@ defmodule UnicodeSetTest do
   # which equals [[[abcdef] - [abc]] [def]], which equals [[def] [def]],
   # which equals [def].
   test "set oeprations associativity too" do
-    {:ok, result1, rest1, _, _, _} = Unicode.Set.parse("[[ace][bdf] - [abc][def]]")
-    {:ok, result2, rest2, _, _, _} = Unicode.Set.parse("[def]")
+    result1 = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
+    result2 = Unicode.Set.parse_and_expand("[def]")
     assert {result1, rest1} == {result2, rest2}
   end
 
