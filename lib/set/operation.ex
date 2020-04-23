@@ -13,10 +13,7 @@ defmodule Unicode.Set.Operation do
   Expands all sets, properties and ranges to a list
   of 2-tuples expressing a range of codepoints
 
-  It can return one of three forms
-
-  `[tuple_list]` which is the result of expansiion
-  of difference or intersection
+  It can return one of two forms
 
   `[{:in, [tuple_list]}]` for an inclusion list
 
@@ -25,7 +22,7 @@ defmodule Unicode.Set.Operation do
   """
   def expand([ast]) do
     if has_difference_or_intersection?(ast) do
-      expand(ast)
+      {:in, expand(ast)}
     else
       combine(ast)
     end
@@ -58,7 +55,11 @@ defmodule Unicode.Set.Operation do
   Expand string ranges like `{ab}-{cd}`
 
   """
-  def expand_string_ranges(ranges) do
+  def expand_string_ranges([range]) do
+    expand_string_range(range)
+  end
+
+  def expand_string_ranges(ranges) when is_list(ranges) do
     Enum.map(ranges, &expand_string_range/1)
   end
 
@@ -116,6 +117,9 @@ defmodule Unicode.Set.Operation do
     other
   end
 
+  @doc """
+  Compact overlapping and adjacent ranges
+  """
   def compact_ranges({:in, ranges}) do
     {:in, Unicode.Utils.compact_ranges(ranges)}
   end
@@ -126,6 +130,10 @@ defmodule Unicode.Set.Operation do
 
   def compact_ranges(ranges) when is_list(ranges) do
    Unicode.Utils.compact_ranges(ranges)
+  end
+
+  def compact_ranges({_charlist_1, _charlist_2} = range) do
+    range
   end
 
   @doc """
@@ -261,6 +269,24 @@ defmodule Unicode.Set.Operation do
     [intersection | intersect([intersection | a_rest], b_rest)]
   end
 
+  # To process character strings
+  # like {abc}
+  def intersect([head | []], [head | _other]) do
+    head
+  end
+
+  def intersect([head | _rest], head) do
+    head
+  end
+
+  def intersect([head | rest], [head | other]) do
+    [head, intersect(rest, other)]
+  end
+
+  def intersect([_head | rest], other) do
+    intersect(rest, other)
+  end
+
   # And of course if either list is empty there is no
   # intersection
 
@@ -286,6 +312,10 @@ defmodule Unicode.Set.Operation do
   # 1. list-B head is the same as list-A head
   def difference([a_head | a_rest], [a_head | b_rest]) do
     difference(a_rest, b_rest)
+  end
+
+  def difference([a_head | a_rest], a_head) do
+    a_rest
   end
 
   # 2. list-B head is completely after list-A head
@@ -326,6 +356,10 @@ defmodule Unicode.Set.Operation do
   # 9. list-B is empty
   def difference(a_list, []) do
     a_list
+  end
+
+  def difference(a_list, b_tuple) when is_tuple(b_tuple) do
+    difference(a_list, [b_tuple])
   end
 
   @doc """

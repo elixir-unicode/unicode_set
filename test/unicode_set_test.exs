@@ -155,7 +155,7 @@ defmodule UnicodeSetTest do
   # The binary operators '&', '-', and the implicit union have equal
   # precedence and bind left-to-right. Thus [[:letter:]-[a-z]-[\u0100-\u01FF]]
   # is equal to [[[:letter:]-[a-z]]-[\u0100-\u01FF]].
-  test "set oeprations associativity" do
+  test "set oparations associativity" do
     {:ok, result1, rest1, _, _, _} = Unicode.Set.parse("[[:letter:]-[a-z]-[\u0100-\u01FF]]")
     {:ok, result2, rest2, _, _, _} = Unicode.Set.parse("[[[:letter:]-[a-z]]-[\u0100-\u01FF]]")
     assert {result1, rest1} == {result2, rest2}
@@ -166,9 +166,18 @@ defmodule UnicodeSetTest do
   # which equals [[[abcdef] - [abc]] [def]], which equals [[def] [def]],
   # which equals [def].
   test "set oeprations associativity too" do
-    result1 = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
-    result2 = Unicode.Set.parse_and_expand("[def]")
-    assert {result1, rest1} == {result2, rest2}
+    {:ok, result1} = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
+    {:ok, result2} = Unicode.Set.parse_and_expand("[[def]]")
+    assert result1 == result2
   end
 
+  test "set difference operations with string ranges" do
+    assert {:ok, {:in, [{100, 102}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}g]]")
+    assert {:ok, {:in, [{100, 103}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}]]")
+  end
+
+  test "set intersection operations with string ranges" do
+    assert {:ok, {:in, [{103, 103}, {'ef', 'ef'}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}g]]")
+    assert {:ok, {:in, [{'ef', 'ef'}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}]]")
+  end
 end

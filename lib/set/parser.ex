@@ -38,7 +38,6 @@ defmodule Unicode.Set.Parser do
   def maybe_repeated_set do
     parsec(:one_set)
     |> repeat(set_operator() |> parsec(:one_set))
-    |> reduce(:reduce_set_operations)
   end
 
   def reduce_set_operations([set_a]) do
