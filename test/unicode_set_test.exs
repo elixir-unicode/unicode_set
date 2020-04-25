@@ -1,7 +1,11 @@
 defmodule UnicodeSetTest do
   use ExUnit.Case
-  alias Unicode.Set.Operation
+  alias Unicode.Set.{Operation, Transform, Property, Parser, Sigil}
   doctest Operation
+  doctest Transform
+  doctest Property
+  doctest Parser
+  doctest Sigil
 
   test "set intersection when one list is a true subset of another" do
     l = Unicode.GeneralCategory.get(:L)
@@ -76,7 +80,7 @@ defmodule UnicodeSetTest do
   end
 
   test "traverse/3" do
-    {:ok, parsed, "", _, _, _} = Unicode.Set.parse("[abc]")
+    {:ok, parsed} = Unicode.Set.parse("[abc]")
     fun = fn a, b, c -> {a, b, c} end
 
     result =
@@ -156,9 +160,9 @@ defmodule UnicodeSetTest do
   # precedence and bind left-to-right. Thus [[:letter:]-[a-z]-[\u0100-\u01FF]]
   # is equal to [[[:letter:]-[a-z]]-[\u0100-\u01FF]].
   test "set oparations associativity" do
-    {:ok, result1, rest1, _, _, _} = Unicode.Set.parse("[[:letter:]-[a-z]-[\u0100-\u01FF]]")
-    {:ok, result2, rest2, _, _, _} = Unicode.Set.parse("[[[:letter:]-[a-z]]-[\u0100-\u01FF]]")
-    assert {result1, rest1} == {result2, rest2}
+    {:ok, result1} = Unicode.Set.parse("[[:letter:]-[a-z]-[\u0100-\u01FF]]")
+    {:ok, result2} = Unicode.Set.parse("[[[:letter:]-[a-z]]-[\u0100-\u01FF]]")
+    assert result1.parsed == result2.parsed
   end
 
   # Another example is the set [[ace][bdf] - [abc][def]], which is not the
@@ -168,16 +172,22 @@ defmodule UnicodeSetTest do
   test "set oeprations associativity too" do
     {:ok, result1} = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
     {:ok, result2} = Unicode.Set.parse_and_expand("[[def]]")
-    assert result1 == result2
+    assert result1.parsed == result2.parsed
   end
 
   test "set difference operations with string ranges" do
-    assert {:ok, {:in, [{100, 102}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}g]]")
-    assert {:ok, {:in, [{100, 103}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}]]")
+    {:ok, parsed1} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}g]]")
+    {:ok, parsed2} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}]]")
+
+    assert {:in, [{100, 102}]} = parsed1.parsed
+    assert {:in, [{100, 103}]} = parsed2.parsed
   end
 
   test "set intersection operations with string ranges" do
-    assert {:ok, {:in, [{103, 103}, {'ef', 'ef'}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}g]]")
-    assert {:ok, {:in, [{'ef', 'ef'}]}} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}]]")
+    {:ok, parsed1} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}g]]")
+    {:ok, parsed2} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}]]")
+
+    assert {:in, [{103, 103}, {'ef', 'ef'}]} = parsed1.parsed
+    assert {:in, [{'ef', 'ef'}]} = parsed2.parsed
   end
 end

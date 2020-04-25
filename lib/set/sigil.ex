@@ -3,13 +3,16 @@ defmodule Unicode.Set.Sigil do
 
   @doc """
   A convenience function to allow expressing
-  unicode sets. For example
+  unicode sets. For example:
 
-  iex> require Unicode.Set.Sigil
-  iex> ~z[[:Lu]&[:thai:]]
+     require Unicode.Set.Sigil
+     ~u"[[:Lu:]&[:thai:]]"
+     => ~u"[[:Lu:]&[:thai:]]"
 
   """
-  defmacro sigil_z(unicode_set, []) do
-    "[" <> unicode_set <> "]"
+  defmacro sigil_u({:<<>>, _meta, [string]}, []) when is_binary(string) do
+    string
+    |> Unicode.Set.parse!
+    |> Macro.escape
   end
 end

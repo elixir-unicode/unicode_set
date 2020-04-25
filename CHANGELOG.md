@@ -1,6 +1,14 @@
 # Changelog for Unicode Set v0.6.0
 
-This is the changelog for Unicode Set v0.5.2 released on _____, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set v0.6.0 released on _____, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Enhancements
+
+* Unicode sets are now a `%Unicode.Set{}` struct
+
+* Add `Unicode.Set.Sigil` implementing `sigil_u`
+
+* Add support for `String.Chars` and `Inspect` protocols
 
 ## Bug Fixes
 

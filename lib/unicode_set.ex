@@ -7,6 +7,8 @@ defmodule Unicode.Set do
   import Unicode.Set.Parser
   alias Unicode.Set.{Operation, Transform}
 
+  defstruct [:set, :parsed]
+
   @doc """
   Parses a Unicode Set binary into an internal
   AST-like representation
@@ -14,22 +16,26 @@ defmodule Unicode.Set do
   ## Example
 
       iex> Unicode.Set.parse("[[:Zs:]]")
-      {:ok,
-       [
-         in: [
-           {32, 32},
-           {160, 160},
-           {5760, 5760},
-           {8192, 8202},
-           {8239, 8239},
-           {8287, 8287},
-           {12288, 12288}
-         ]
-       ], "", %{}, {1, 0}, 8}
+      {:ok, %#{inspect __MODULE__}{
+        set:
+          "[[:Zs:]]",
+        parsed:
+         [
+           in: [
+             {32, 32},
+             {160, 160},
+             {5760, 5760},
+             {8192, 8202},
+             {8239, 8239},
+             {8287, 8287},
+             {12288, 12288}
+           ]
+        ]
+      }}
 
   """
   defparsec(
-    :parse,
+    :parse_one,
     parsec(:one_set)
     |> eos()
   )
@@ -46,13 +52,23 @@ defmodule Unicode.Set do
   @doc false
   defparsec(:one_set, unicode_set())
 
+  def parse(unicode_set) do
+    case parse_one(unicode_set) do
+      {:ok, parsed, "", _, _, _} ->
+        {:ok, struct(__MODULE__, [set: unicode_set, parsed: parsed])}
+
+      {:error, message, rest, _, _, _} ->
+        {:error, parse_error(unicode_set, message, rest)}
+    end
+  end
+
   def parse!(unicode_set) do
     case parse(unicode_set) do
-      {:ok, result, "", _, _, _} ->
+      {:ok, result} ->
         result
 
-      {:error, message, _, _, _, _} ->
-        raise ArgumentError, "Could not parse #{inspect(unicode_set)}. #{message}"
+      {:error, {exception, reason}} ->
+        raise exception, reason
     end
   end
 
@@ -63,7 +79,7 @@ defmodule Unicode.Set do
 
   """
   def parse_and_expand(unicode_set) do
-    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+    with {:ok, parsed} <- parse(unicode_set) do
       {:ok, Operation.expand(parsed)}
     end
   end
@@ -90,12 +106,12 @@ defmodule Unicode.Set do
   * `Unicode.match?/2` can be used in as `defguard` argument.
     For example:
 
-    #=> defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
+      defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
 
   * Or as a guard clause itself:
 
-    #=> def my_function(<< codepoint :: utf8, _rest :: binary>>)
-          when Unicode.Set.match?(codepoint, "[[:Lu:]]")
+      def my_function(<< codepoint :: utf8, _rest :: binary>>)
+      #=>    when Unicode.Set.match?(codepoint, "[[:Lu:]]")
 
   """
 
@@ -108,7 +124,7 @@ defmodule Unicode.Set do
   end
 
   def pattern(unicode_set) when is_binary(unicode_set) do
-    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+    with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
       |> Operation.traverse(&Transform.pattern/3)
@@ -122,7 +138,7 @@ defmodule Unicode.Set do
   end
 
   def utf8_char(unicode_set) when is_binary(unicode_set) do
-    with {:ok, parsed, "", _, _, _} <- parse(unicode_set) do
+    with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
       |> Operation.traverse(&Transform.utf8_char/3)
@@ -134,5 +150,12 @@ defmodule Unicode.Set do
       raise ArgumentError,
             "unicode_set must be a compile-time binary. Found #{inspect(unicode_set)}"
     end
+  end
+
+  defp parse_error(unicode_set, message, rest) do
+    {:error, {Unicode.Set.ParseError,
+      "Unable to parse #{inspect unicode_set}. " <>
+      "Error #{inspect message} detected at #{rest}"
+    }}
   end
 end

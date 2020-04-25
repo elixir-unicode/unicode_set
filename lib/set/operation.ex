@@ -20,13 +20,16 @@ defmodule Unicode.Set.Operation do
   `[{:not_in, [tuple_list]}]` for an exclusion list
 
   """
-  def expand([ast]) do
-    if has_difference_or_intersection?(ast) do
-      {:in, expand(ast)}
-    else
-      combine(ast)
-    end
-    |> compact_ranges
+  def expand(%Unicode.Set{parsed: [ast]} = unicode_set) do
+    expanded =
+      if has_difference_or_intersection?(ast) do
+        {:in, expand(ast)}
+      else
+        combine(ast)
+      end
+      |> compact_ranges
+
+    %{unicode_set | parsed: expanded}
   end
 
   def expand({:union, [this, that]}) do
@@ -393,8 +396,16 @@ defmodule Unicode.Set.Operation do
   codepoint range in the set.
 
   """
+  def traverse(%Unicode.Set{parsed: ranges}, fun) do
+    traverse(ranges, fun)
+  end
+
   def traverse(ranges, fun) when is_function(fun) do
     traverse(ranges, nil, fun)
+  end
+
+  def traverse(%Unicode.Set{parsed: ranges}, var, fun) do
+    traverse(ranges, var, fun)
   end
 
   def traverse({:not_in, ranges}, var, fun) do
