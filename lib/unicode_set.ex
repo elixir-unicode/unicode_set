@@ -50,6 +50,7 @@ defmodule Unicode.Set do
   )
 
   @doc false
+  @dialyzer {:nowarn_function, one_set: 1}
   defparsec(:one_set, unicode_set())
 
   def parse(unicode_set) do

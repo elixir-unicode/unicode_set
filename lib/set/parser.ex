@@ -171,7 +171,7 @@ defmodule Unicode.Set.Parser do
 
   def operator do
     choice([
-      ascii_char([?≠]) |> replace(:not_in),
+      utf8_char([0x2260]) |> replace(:not_in),
       ascii_char([?=]) |> replace(:in)
     ])
   end
