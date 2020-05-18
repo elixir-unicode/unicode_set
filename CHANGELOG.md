@@ -1,3 +1,15 @@
+# Changelog for Unicode Set v0.7.0
+
+This is the changelog for Unicode Set v0.7.0 released on May 18th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Enhancements
+
+* Add `Unicode.Set.character_class/1` which returns a string compatible with `Regex.compile/2`. This supports the idea of expanded Unicode Sets being used in standard Elixir/erlang regular expressions and will underpin implementation of Unicode Transforms in the package `unicode_transform`
+
+## Bug Fixes
+
+* Fixes a bug whereby a Unicode Set intersection would fail with a character class that starts at the same codepoint as the Unicode set.
+
 # Changelog for Unicode Set v0.6.0
 
 This is the changelog for Unicode Set v0.6.0 released on May 13th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

@@ -195,4 +195,9 @@ defmodule UnicodeSetTest do
     {:ok, parsed} = Unicode.Set.parse_and_expand "[[:Lu:]&[ABCD]]"
     assert {:in, [{65, 68}]} = parsed.parsed
   end
+
+  test "creating unicode classes for regex" do
+    assert Unicode.Set.character_class("[{HZ}]") == "{HZ}"
+    assert Unicode.Set.character_class("[[:Lu:]&[AB{HZ}]]") == "A-B"
+  end
 end
