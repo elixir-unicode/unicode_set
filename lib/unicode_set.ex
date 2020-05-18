@@ -146,6 +146,15 @@ defmodule Unicode.Set do
     end
   end
 
+  def character_class(unicode_set) when is_binary(unicode_set) do
+    with {:ok, parsed} <- parse(unicode_set) do
+      parsed
+      |> Operation.expand()
+      |> Operation.traverse(&Transform.character_class/3)
+      |> Enum.join
+    end
+  end
+
   defp assert_binary_parameter!(unicode_set) do
     unless is_binary(unicode_set) do
       raise ArgumentError,

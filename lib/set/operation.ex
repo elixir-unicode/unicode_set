@@ -45,11 +45,14 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({:in, ranges}) do
-    expand_string_ranges(ranges)
+    ranges
+    |> compact_ranges
+    |> expand_string_ranges
   end
 
   def expand({:not_in, ranges}) do
     ranges
+    |> compact_ranges
     |> expand_string_ranges
     |> invert
   end
@@ -60,6 +63,7 @@ defmodule Unicode.Set.Operation do
   """
   def expand_string_ranges([range]) do
     expand_string_range(range)
+    |> maybe_list_wrap
   end
 
   def expand_string_ranges(ranges) when is_list(ranges) do
@@ -231,6 +235,20 @@ defmodule Unicode.Set.Operation do
   in the two lists.
 
   """
+
+  # The head of the first list is the same as the head of the second
+  # list so we need to advance the second list.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:  <------------>
+
+  def intersect([{as, ae} | a_rest], [{as, be} | b_rest]) when ae >= be do
+    new_list_a = [{min(be + 1, ae), ae} | a_rest]
+    [{as, be} | intersect(new_list_a, b_rest)]
+  end
 
   # The head of the first list is after the end of the second
   # list so we need to advance the second list.
@@ -436,4 +454,7 @@ defmodule Unicode.Set.Operation do
   def traverse([] = range, var, fun) do
     fun.(range, range, var)
   end
+
+  defp maybe_list_wrap(term) when is_list(term), do: term
+  defp maybe_list_wrap(term), do: [term]
 end

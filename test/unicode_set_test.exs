@@ -190,4 +190,9 @@ defmodule UnicodeSetTest do
     assert {:in, [{103, 103}, {'ef', 'ef'}]} = parsed1.parsed
     assert {:in, [{'ef', 'ef'}]} = parsed2.parsed
   end
+
+  test "set intersection when set is not a Unicode set and they align" do
+    {:ok, parsed} = Unicode.Set.parse_and_expand "[[:Lu:]&[ABCD]]"
+    assert {:in, [{65, 68}]} = parsed.parsed
+  end
 end
