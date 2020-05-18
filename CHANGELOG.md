@@ -6,6 +6,8 @@ This is the changelog for Unicode Set v0.7.0 released on May 18th, 2020.  For ol
 
 * Add `Unicode.Set.character_class/1` which returns a string compatible with `Regex.compile/2`. This supports the idea of expanded Unicode Sets being used in standard Elixir/erlang regular expressions and will underpin implementation of Unicode Transforms in the package `unicode_transform`
 
+* Add `Unicode.Regex.compile/2` to pre-process a regex to expand Unicode Sets and the compile it with `Regex.compile/2`.  `Unicode.Regex.compile!/2` is also added.
+
 ## Bug Fixes
 
 * Fixes a bug whereby a Unicode Set intersection would fail with a character class that starts at the same codepoint as the Unicode set.

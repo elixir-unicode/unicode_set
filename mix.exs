@@ -26,8 +26,9 @@ defmodule UnicodeSet.MixProject do
 
   defp description do
     """
-    Implementation of Unicode Sets for Elixir. Supports matching
-    unicode sets to codepoints that can be used in function guards.
+    Implementation of Unicode Sets for Elixir that can be used in
+    function guards, compiled patterns, nimble_parsec combinators
+    and regex's.
     """
   end
 

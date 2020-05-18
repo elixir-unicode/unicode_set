@@ -155,6 +155,13 @@ defmodule Unicode.Set do
     end
   end
 
+  def character_class!(unicode_set) when is_binary(unicode_set) do
+    case character_class(unicode_set) do
+      {:error, {exception, reason}} -> raise exception, reason
+      class -> class
+    end
+  end
+
   defp assert_binary_parameter!(unicode_set) do
     unless is_binary(unicode_set) do
       raise ArgumentError,
@@ -162,10 +169,17 @@ defmodule Unicode.Set do
     end
   end
 
-  defp parse_error(unicode_set, message, rest) do
-    {:error, {Unicode.Set.ParseError,
+  defp parse_error(unicode_set, message, "") do
+    {Unicode.Set.ParseError,
       "Unable to parse #{inspect unicode_set}. " <>
-      "Error #{inspect message} detected at #{rest}"
-    }}
+      "#{message}."
+    }
+  end
+
+  defp parse_error(unicode_set, message, rest) do
+    {Unicode.Set.ParseError,
+      "Unable to parse #{inspect unicode_set}. " <>
+      "#{message}. Detected at #{inspect rest}."
+    }
   end
 end

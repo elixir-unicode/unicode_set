@@ -70,6 +70,24 @@ defmodule MyCombinators do
 end
 ```
 
+### Compiling extended regular expressions
+
+The `Regex` module supports a limited set of Unicode Sets. The `Unicode.Regex` module provides `compile/2` and `compile!/2` functions that have the same arguments and compatible functionality with `Regexp.compile/2` other that they pre-process the regular expression, expanding any Unicode Sets. This makes it simple to incorporate Unicode Sets in regular expressions.
+
+All Unicode Sets are expanded, even those that are known to `Regex.compile/2` since the erlang `:re` module upon `Regex` is based does not always keep pace with Unicode releases.
+
+For example:
+
+```elixir
+iex> Unicode.Regex.compile("\\p{Zs}")
+{:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+
+iex> Unicode.Regex.compile("[:visible:]")
+{:ok,
+ ~r/[\x{20}-~\x{A0}-\x{AC}\x{AE}-\x{377}\x{37A}-\x{37F}\x{384}-\x{38A} .../u}
+
+```
+
 ### Other Examples
 
 These examples show how to combine sets (union, difference and intersection) to deliver a flexible targeting of the required match.
@@ -271,13 +289,12 @@ When these are processed, case and whitespace are ignored so you may use them fo
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `unicode_set` to your list of dependencies in `mix.exs`:
+To install, add the package `unicode_set` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:unicode_set, "~> 0.1.0"}
+    {:unicode_set, "~> 0.7.0"}
   ]
 end
 ```

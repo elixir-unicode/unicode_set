@@ -11,7 +11,7 @@ defmodule Unicode.Set.Property do
     if range_list do
       {:ok, range_list}
     else
-      {:error, "the unicode script, category or property #{inspect(value)} is not known"}
+      {:error, "The unicode script, category or property #{inspect(value)} is not known"}
     end
   end
 
@@ -23,7 +23,7 @@ defmodule Unicode.Set.Property do
     else
       :error ->
         {:error,
-         "the unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
+         "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end
   end
 end
