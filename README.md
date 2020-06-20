@@ -5,7 +5,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/dw/unicode_set.svg?)](https://hex.pm/packages/ex_unicode_set)
 [![Hex.pm](https://img.shields.io/hexpm/l/unicode_set.svg)](https://hex.pm/packages/ex_unicode_set)
 
-A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This is all consoldited into a single primary macro, `Unicode.Set.match?/2`.
+A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This is all consolidated into a single primary macro, `Unicode.Set.match?/2`.
 
 The implementation conforms closely to the [Unicode Set specification](http://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
 

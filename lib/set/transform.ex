@@ -100,7 +100,7 @@ defmodule Unicode.Set.Transform do
 
   @doc """
   Converts a expanded AST into a simple
-  regex character class.
+  character class.
 
   This conversion supports converting
   Unicode sets into character classes
@@ -146,5 +146,38 @@ defmodule Unicode.Set.Transform do
 
   defp to_binary(first, last) when is_list(first) and is_list(last) do
     "{" <> List.to_string(first) <> "}" <> "-" <> "{" <> List.to_string(last) <> "}"
+  end
+
+  @doc """
+  Converts a expanded AST into a simple
+  regex.
+
+  PCRE engines, including `:re` do not
+  support compound classes like `{ab}`
+  or compound ranges like `{ab}-{cd}`
+  so these need to be converted to
+  alternatives within a group in order
+  to be a valid regex.
+
+  """
+  def regex({first, first}, ranges, _var) when is_integer(first) do
+    IO.inspect {[], ranges}
+  end
+
+  def regex({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
+    IO.inspect {[], ranges}
+  end
+
+  # Its a compound range
+  def regex({first, last}, ranges, _var) when is_list(first) and is_list(last) do
+    IO.inspect {[], ranges}
+  end
+
+  def regex(:not_in, ranges, _var) do
+    IO.inspect {[], ranges}
+  end
+
+  def regex(range_1, range_2, _var) do
+    IO.inspect {[], {range_1, range_2}}
   end
 end

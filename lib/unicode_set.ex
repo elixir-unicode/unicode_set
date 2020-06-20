@@ -162,6 +162,21 @@ defmodule Unicode.Set do
     end
   end
 
+  def regex(unicode_set) when is_binary(unicode_set) do
+    with {:ok, parsed} <- parse(unicode_set) do
+      parsed
+      |> Operation.expand()
+      |> Operation.traverse(&Transform.regex/3)
+    end
+  end
+
+  def regex!(unicode_set) when is_binary(unicode_set) do
+    case regex(unicode_set) do
+      {:error, {exception, reason}} -> raise exception, reason
+      class -> class
+    end
+  end
+
   defp assert_binary_parameter!(unicode_set) do
     unless is_binary(unicode_set) do
       raise ArgumentError,
