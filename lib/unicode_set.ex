@@ -124,7 +124,7 @@ defmodule Unicode.Set do
     |> Operation.traverse(var, &Transform.guard_clause/3)
   end
 
-  def pattern(unicode_set) when is_binary(unicode_set) do
+  def to_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
@@ -133,12 +133,12 @@ defmodule Unicode.Set do
   end
 
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
-    with pattern when is_list(pattern) <- pattern(unicode_set) do
+    with pattern when is_list(pattern) <- to_pattern(unicode_set) do
       :binary.compile_pattern(pattern)
     end
   end
 
-  def utf8_char(unicode_set) when is_binary(unicode_set) do
+  def to_utf8_char(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
@@ -146,7 +146,7 @@ defmodule Unicode.Set do
     end
   end
 
-  def character_class(unicode_set) when is_binary(unicode_set) do
+  def to_character_class(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
@@ -155,26 +155,67 @@ defmodule Unicode.Set do
     end
   end
 
-  def character_class!(unicode_set) when is_binary(unicode_set) do
-    case character_class(unicode_set) do
+  def to_character_class!(unicode_set) when is_binary(unicode_set) do
+    case to_character_class(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
       class -> class
     end
   end
 
-  def regex(unicode_set) when is_binary(unicode_set) do
+  def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.expand()
       |> Operation.traverse(&Transform.regex/3)
+      |> extract_and_expand_string_ranges
     end
   end
 
-  def regex!(unicode_set) when is_binary(unicode_set) do
-    case regex(unicode_set) do
+  def to_regex_string!(unicode_set) when is_binary(unicode_set) do
+    case to_regex_string(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
       class -> class
     end
+  end
+
+  # Separate the string ranges from the character
+  # classes and then expand the string ranges
+  defp extract_and_expand_string_ranges(elements) do
+    Enum.reduce(elements, {[], []}, fn
+      {first, last}, {strings, classes} -> {strings, [{first, last} | classes]}
+      string, {strings, classes} -> {[string | strings], classes}
+    end)
+    |> expand_string_ranges
+    |> form_regex_string
+  end
+
+  defp expand_string_ranges({strings, character_classes}) do
+    string_alternates =
+      character_classes
+      |> Unicode.Set.Operation.expand_string_ranges
+      |> Enum.map(fn {first, _last} -> List.to_string(first) end)
+
+    {Enum.reverse(strings), string_alternates}
+  end
+
+  def form_regex_string({["^" | strings], []}) do
+    "[^" <> Enum.join(strings) <> "]"
+  end
+
+  def form_regex_string({["^" | strings], string_ranges}) do
+    {:error, "Can't negate string ranges"}
+  end
+
+  def form_regex_string({strings, []}) do
+    "[" <> Enum.join(strings) <> "]"
+  end
+
+  def form_regex_string({[], string_ranges}) do
+    "(" <> Enum.join(string_ranges, "|") <> ")"
+  end
+
+  def form_regex_string({strings, string_ranges}) do
+    "([" <> Enum.join(strings) <> "]|" <> Enum.join(string_ranges, "|") <> ")"
   end
 
   defp assert_binary_parameter!(unicode_set) do

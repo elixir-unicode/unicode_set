@@ -128,20 +128,20 @@ defmodule Unicode.Regex do
   end
 
   def do_expand_sets([@open_posix_set, "^" <> set, @close_posix_set | rest]) do
-    expansion = Unicode.Set.character_class!(@open_posix_set <> set <> @close_posix_set)
+    expansion = Unicode.Set.to_character_class!(@open_posix_set <> set <> @close_posix_set)
     ["^#{expansion}" | expand_sets(rest)]
   end
 
   def do_expand_sets([@open_posix_set, set, @close_posix_set | rest]) do
-    [Unicode.Set.character_class!(@open_posix_set <> set <> @close_posix_set) | expand_sets(rest)]
+    [Unicode.Set.to_character_class!(@open_posix_set <> set <> @close_posix_set) | expand_sets(rest)]
   end
 
   def do_expand_sets([@open_perl_set, set, @close_perl_set | rest]) do
-    [Unicode.Set.character_class!(@open_perl_set <> set <> @close_perl_set) | expand_sets(rest)]
+    [Unicode.Set.to_character_class!(@open_perl_set <> set <> @close_perl_set) | expand_sets(rest)]
   end
 
   def do_expand_sets([@open_perl_not_set, set, @close_perl_set | rest]) do
-    [Unicode.Set.character_class!(@open_perl_not_set <> set <> @close_perl_set) | expand_sets(rest)]
+    [Unicode.Set.to_character_class!(@open_perl_not_set <> set <> @close_perl_set) | expand_sets(rest)]
   end
 
   def do_expand_sets([head | rest]) do
