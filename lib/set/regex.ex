@@ -120,11 +120,11 @@ defmodule Unicode.Regex do
     split_ranges(rest, ["[" | acc])
   end
 
-  in_perl_set = quote do
+  perl_set = quote do
     [<< "\\", var!(c) :: binary-1, var!(head) :: binary >> | var!(others)]
   end
 
-  defp split_ranges(<< "}", rest :: binary >>, unquote(in_perl_set)) when is_perl_set(c) do
+  defp split_ranges(<< "}", rest :: binary >>, unquote(perl_set)) when is_perl_set(c) do
     split_ranges(rest, ["" | ["\\" <> c <> head <> "}" | others]])
   end
 
