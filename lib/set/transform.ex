@@ -160,24 +160,44 @@ defmodule Unicode.Set.Transform do
   to be a valid regex.
 
   """
+  def regex({first, last}, [], _var) when is_integer(first) and is_integer(last) do
+    [to_binary(first, last)]
+  end
+
   def regex({first, first}, ranges, _var) when is_integer(first) do
-    IO.inspect {[], ranges}
+    [to_binary(first) | ranges]
   end
 
   def regex({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
-    IO.inspect {[], ranges}
+    [to_binary(first, last) | ranges]
   end
 
   # Its a compound range
+  def regex({first, last}, [], _var) when is_list(first) and is_list(last) do
+    [{first, last}]
+  end
+
   def regex({first, last}, ranges, _var) when is_list(first) and is_list(last) do
-    IO.inspect {[], ranges}
+    [{first, last} | ranges]
   end
 
   def regex(:not_in, ranges, _var) do
-    IO.inspect {[], ranges}
+    ["^" | ranges]
   end
 
+  def regex([], [], _var) do
+    []
+  end
+
+  # def regex(range_1, [], _var) do
+  #   [range_1]
+  # end
+  #
+  # def regex([], range_2, _var) do
+  #   [range_2]
+  # end
+
   def regex(range_1, range_2, _var) do
-    IO.inspect {[], {range_1, range_2}}
+    [range_1, range_2]
   end
 end
