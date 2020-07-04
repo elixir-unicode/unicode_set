@@ -4,7 +4,7 @@ This is the changelog for Unicode Set v0.8.0 released on _____, 2020.  For older
 
 ## Enhancements
 
-
+* Rewrite `Unicode.Regex` module to better extract character classes, process unicode sets and build Elixir regexs. Now also supports string ranges.
 
 # Changelog for Unicode Set v.07.0
 
