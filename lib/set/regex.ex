@@ -158,7 +158,7 @@ defmodule Unicode.Regex do
     [Unicode.Set.to_regex_string!("[" <> set) | expand_sets(rest)]
   end
 
-  defp expand_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when c in ["p", "P"] do
+  defp expand_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when is_perl_set(c) do
     [Unicode.Set.to_regex_string!("\\" <> c <> set) | expand_sets(rest)]
   end
 
