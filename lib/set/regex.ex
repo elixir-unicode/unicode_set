@@ -142,7 +142,7 @@ defmodule Unicode.Regex do
 
   defp recombine_sets(["[" | rest]) do
     {set, rest} =
-      Cldr.Enum.reduce_peeking(rest, "[", fn
+      reduce_peeking(rest, "[", fn
         "]", tail, acc -> {:halt, {acc <> "]", tail}}
         other, _tail, acc -> {:cont, acc <> other}
       end)
@@ -181,4 +181,21 @@ defmodule Unicode.Regex do
       [:unicode | options]
     end
   end
+
+  # Very simple reduce that passes both the head and the tail
+  # to the reducing function so it has some lookahead
+  defp reduce_peeking(_list, {:halt, acc}, _fun),
+    do: {:halted, acc}
+
+  defp reduce_peeking(list, {:suspend, acc}, fun),
+    do: {:suspended, acc, &reduce_peeking(list, &1, fun)}
+
+  defp reduce_peeking([], {:cont, acc}, _fun),
+    do: {:done, acc}
+
+  defp reduce_peeking([head | tail], {:cont, acc}, fun),
+    do: reduce_peeking(tail, fun.(head, tail, acc), fun)
+
+  defp reduce_peeking(list, acc, fun),
+    do: reduce_peeking(list, {:cont, acc}, fun) |> elem(1)
 end

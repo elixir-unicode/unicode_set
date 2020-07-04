@@ -60,7 +60,6 @@ defmodule UnicodeSet.MixProject do
     [
       # {:ex_unicode, "~> 1.7"},
       {:ex_unicode, path: "../unicode"},
-      {:cldr_utils, "~> 2.0"},
       {:nimble_parsec, "~> 0.5", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.19", only: [:dev, :test, :release], runtime: false},
