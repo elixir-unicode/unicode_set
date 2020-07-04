@@ -160,12 +160,13 @@ defmodule Unicode.Set.Transform do
   to be a valid regex.
 
   """
-  def regex({first, last}, [], _var) when is_integer(first) and is_integer(last) do
-    [to_binary(first, last)]
-  end
 
   def regex({first, first}, ranges, _var) when is_integer(first) do
     [to_binary(first) | ranges]
+  end
+
+  def regex({first, last}, [], _var) when is_integer(first) and is_integer(last) do
+    [to_binary(first, last)]
   end
 
   def regex({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
@@ -188,14 +189,6 @@ defmodule Unicode.Set.Transform do
   def regex([], [], _var) do
     []
   end
-
-  # def regex(range_1, [], _var) do
-  #   [range_1]
-  # end
-  #
-  # def regex([], range_2, _var) do
-  #   [range_2]
-  # end
 
   def regex(range_1, range_2, _var) do
     [range_1, range_2]

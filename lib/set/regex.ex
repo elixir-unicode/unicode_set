@@ -1,26 +1,11 @@
 defmodule Unicode.Regex do
-  @moduledoc """
-  Preprocesses a binary regular expression to expand
-  Unicode Sets which are then interpolated back into
-  the Regular Expression which is then compiled with
-  `Regex.compile/2` or `Regex.compile!/2`.
-
-  """
-
-  @open_posix_set "[:"
-  @close_posix_set ":]"
-
-  @open_perl_set "\\p{"
-  @open_perl_not_set "\\P{"
-  @close_perl_set "}"
-
-  @unicode_sets Regex.compile!("\\[:|:\\]|\\\\p{|\\\\P{|}", [:unicode, :ungreedy])
-
   @default_options "u"
+
+  defguard is_perl_set(c) when c in ["p", "P"]
 
   @doc """
   Compiles a binary regular expression after
-  interpolating any Unicode Sets.
+  expanding any Unicode Sets.
 
   ## Arguments
 
@@ -65,22 +50,18 @@ defmodule Unicode.Regex do
 
   """
   def compile(string, options \\ @default_options) do
-    @unicode_sets
-    |> Regex.split(string, include_captures: true, trim: true)
-    |> expand_sets
-    |> case do
-      {:error, _} = error ->
-        error
-      expansion ->
-        expansion
-        |> Enum.join
-        |> make_character_class
-        |> Regex.compile(options)
-    end
-  end
+    options = force_unicode_option(options)
 
-  defp make_character_class(string) do
-    "[" <> string <> "]"
+    string
+    |> split_ranges
+    |> Enum.reverse
+    |> recombine_sets
+    |> expand_sets
+    |> Enum.join
+    |> Regex.compile(options)
+
+  rescue e in Unicode.Set.ParseError ->
+      {:error, {e.__struct__, e.message}}
   end
 
   @doc """
@@ -117,34 +98,87 @@ defmodule Unicode.Regex do
     end
   end
 
-  def expand_sets(sets) do
-    do_expand_sets(sets)
-  rescue e in Unicode.Set.ParseError ->
-    {:error, {e.__struct__, e.message}}
+  defp split_ranges(string, acc \\ [""])
+
+  defp split_ranges("", acc) do
+    acc
   end
 
-  def do_expand_sets([]) do
-    []
+  defp split_ranges(<< "\\p{", rest :: binary >>, acc) do
+    split_ranges(rest,  ["\\p{" | acc])
   end
 
-  def do_expand_sets([@open_posix_set, "^" <> set, @close_posix_set | rest]) do
-    expansion = Unicode.Set.to_character_class!(@open_posix_set <> set <> @close_posix_set)
-    ["^#{expansion}" | expand_sets(rest)]
+  defp split_ranges(<< "\\P{", rest :: binary >>, acc) do
+    split_ranges(rest, ["\\P{" | acc])
   end
 
-  def do_expand_sets([@open_posix_set, set, @close_posix_set | rest]) do
-    [Unicode.Set.to_character_class!(@open_posix_set <> set <> @close_posix_set) | expand_sets(rest)]
+  defp split_ranges(<< "\\", char :: binary-1, rest :: binary >>, [head | others]) do
+    split_ranges(rest, [head <> "\\" <> char | others])
   end
 
-  def do_expand_sets([@open_perl_set, set, @close_perl_set | rest]) do
-    [Unicode.Set.to_character_class!(@open_perl_set <> set <> @close_perl_set) | expand_sets(rest)]
+  defp split_ranges(<< "[", rest :: binary >>, acc) do
+    split_ranges(rest, ["[" | acc])
   end
 
-  def do_expand_sets([@open_perl_not_set, set, @close_perl_set | rest]) do
-    [Unicode.Set.to_character_class!(@open_perl_not_set <> set <> @close_perl_set) | expand_sets(rest)]
+  in_perl_set = quote do
+    [<< "\\", var!(c) :: binary-1, var!(head) :: binary >> | var!(others)]
   end
 
-  def do_expand_sets([head | rest]) do
-    [head | expand_sets(rest)]
+  defp split_ranges(<< "}", rest :: binary >>, unquote(in_perl_set)) when is_perl_set(c) do
+    split_ranges(rest, ["" | ["\\" <> c <> head <> "}" | others]])
+  end
+
+  defp split_ranges(<< "]", rest :: binary >>, [head | others]) do
+    split_ranges(rest, ["" | [head <> "]" | others]])
+  end
+
+  defp split_ranges(<< char :: binary-1, rest :: binary >>, [head | others]) do
+    split_ranges(rest, [head <> char | others])
+  end
+
+  defp recombine_sets(["" | rest]) do
+    recombine_sets(rest)
+  end
+
+  defp recombine_sets(["[" | rest]) do
+    {set, rest} =
+      Cldr.Enum.reduce_peeking(rest, "[", fn
+        "]", tail, acc -> {:halt, {acc <> "]", tail}}
+        other, _tail, acc -> {:cont, acc <> other}
+      end)
+
+    [set | recombine_sets(rest)]
+  end
+
+  defp recombine_sets(element) do
+    element
+  end
+
+  defp expand_sets([<< "[", set :: binary >>| rest]) do
+    [Unicode.Set.to_regex_string!("[" <> set) | expand_sets(rest)]
+  end
+
+  defp expand_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when c in ["p", "P"] do
+    [Unicode.Set.to_regex_string!("\\" <> c <> set) | expand_sets(rest)]
+  end
+
+  defp expand_sets(element) do
+    element
+  end
+
+  defp force_unicode_option(options) when is_binary(options) do
+    if String.contains?(options, "u") do
+      options
+    else
+      options <> "u"
+    end
+  end
+
+  defp force_unicode_option(options) when is_list(options) do
+    if Enum.find(options, &(&1 == :unicode)) do
+      options
+    else
+      [:unicode | options]
+    end
   end
 end

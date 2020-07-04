@@ -189,32 +189,32 @@ defmodule Unicode.Set do
     |> form_regex_string
   end
 
-  defp expand_string_ranges({strings, character_classes}) do
+  defp expand_string_ranges({strings, string_ranges}) do
     string_alternates =
-      character_classes
+      string_ranges
       |> Unicode.Set.Operation.expand_string_ranges
       |> Enum.map(fn {first, _last} -> List.to_string(first) end)
 
     {Enum.reverse(strings), string_alternates}
   end
 
-  def form_regex_string({["^" | strings], []}) do
+  defp form_regex_string({["^" | strings], []}) do
     "[^" <> Enum.join(strings) <> "]"
   end
 
-  def form_regex_string({["^" | strings], string_ranges}) do
-    {:error, "Can't negate string ranges"}
+  defp form_regex_string({["^" | _strings], _string_ranges}) do
+    {:error, {Unicode.Set.ParseError, "Can't negate string ranges"}}
   end
 
-  def form_regex_string({strings, []}) do
+  defp form_regex_string({strings, []}) do
     "[" <> Enum.join(strings) <> "]"
   end
 
-  def form_regex_string({[], string_ranges}) do
+  defp form_regex_string({[], string_ranges}) do
     "(" <> Enum.join(string_ranges, "|") <> ")"
   end
 
-  def form_regex_string({strings, string_ranges}) do
+  defp form_regex_string({strings, string_ranges}) do
     "([" <> Enum.join(strings) <> "]|" <> Enum.join(string_ranges, "|") <> ")"
   end
 

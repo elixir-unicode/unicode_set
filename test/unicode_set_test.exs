@@ -101,23 +101,23 @@ defmodule UnicodeSetTest do
   end
 
   test "utf8_char/1" do
-    assert Unicode.Set.utf8_char("[[^abcd][mnb]]") ==
+    assert Unicode.Set.to_utf8_char("[[^abcd][mnb]]") ==
              [{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
   end
 
   test "string ranges" do
-    assert Unicode.Set.pattern("[{ab}-{cd}]") ==
+    assert Unicode.Set.to_pattern("[{ab}-{cd}]") ==
              ["ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
 
-    assert Unicode.Set.pattern("[{ab}-{cd}abc]") ==
+    assert Unicode.Set.to_pattern("[{ab}-{cd}abc]") ==
              ["a", "b", "c", "ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
   end
 
   test "nested sets" do
-    assert Unicode.Set.pattern("[[[ab]-[b]][def]]") ==
+    assert Unicode.Set.to_pattern("[[[ab]-[b]][def]]") ==
              ["a", "d", "e", "f"]
 
-    assert Unicode.Set.pattern("[{👦🏻}-{👦🏿}]") ==
+    assert Unicode.Set.to_pattern("[{👦🏻}-{👦🏿}]") ==
              ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
   end
 
@@ -198,12 +198,12 @@ defmodule UnicodeSetTest do
   end
 
   test "creating unicode classes for regex" do
-    assert Unicode.Set.character_class("[{HZ}]") == "{HZ}"
-    assert Unicode.Set.character_class("[[:Lu:]&[AB{HZ}]]") == "A-B"
+    assert Unicode.Set.to_character_class("[{HZ}]") == "{HZ}"
+    assert Unicode.Set.to_character_class("[[:Lu:]&[AB{HZ}]]") == "A-B"
   end
 
   test "parsing invalid unicode classes for regex" do
-    assert Unicode.Set.character_class("[:ZZZ:]") ==
+    assert Unicode.Set.to_character_class("[:ZZZ:]") ==
     {:error,
       {Unicode.Set.ParseError,
         "Unable to parse \"[:ZZZ:]\". The unicode script, category or property \"zzz\" is not known."}}
