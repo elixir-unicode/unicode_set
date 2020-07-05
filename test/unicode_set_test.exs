@@ -36,6 +36,8 @@ defmodule UnicodeSetTest do
              {10, 10},
              {20, 40}
            ]
+
+    assert {:ok, _} = Unicode.Set.parse("[\\p{Grapheme_Cluster_Break=Extend}-\\p{ccc=0}]")
   end
 
   test "Difference when one set is wholly within another" do
@@ -170,7 +172,7 @@ defmodule UnicodeSetTest do
   # empty set, but instead equal to [[[[ace] [bdf]] - [abc]] [def]],
   # which equals [[[abcdef] - [abc]] [def]], which equals [[def] [def]],
   # which equals [def].
-  test "set oeprations associativity too" do
+  test "set operations associativity too" do
     {:ok, result1} = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
     {:ok, result2} = Unicode.Set.parse_and_expand("[[def]]")
     assert result1.parsed == result2.parsed

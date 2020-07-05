@@ -364,17 +364,22 @@ defmodule Unicode.Set.Operation do
     [{as, bs - 1} | difference(a_rest, b_rest)]
   end
 
-  # 7. list-B head encloses list-A head
+  # 7. list-A head is at the end of list-B head and is short than list-B head
+  def difference([{as, ae} | a_rest], [{bs, ae} | b_rest]) when as >= bs do
+    [{bs, as - 1} | difference(a_rest, b_rest)]
+  end
+
+  # 8. list-B head encloses list-A head
   def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be > ae do
     difference(a_rest, [{ae + 1, be} | b_rest])
   end
 
-  # 8. list-A is empty
+  # 9. list-A is empty
   def difference([], _b_list) do
     []
   end
 
-  # 9. list-B is empty
+  # 10. list-B is empty
   def difference(a_list, []) do
     a_list
   end

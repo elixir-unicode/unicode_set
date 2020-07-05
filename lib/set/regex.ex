@@ -28,7 +28,7 @@ defmodule Unicode.Regex do
 
   * `{:ok, regex}` or
 
-  * `{:error, {exception, message}}`
+  * `{:error, {message, index}}`
 
   ## Notes
 
@@ -59,9 +59,9 @@ defmodule Unicode.Regex do
     options = force_unicode_option(options)
 
     string
-    |> split_ranges
+    |> split_character_classes
     |> Enum.reverse
-    |> expand_sets
+    |> expand_unicode_sets
     |> Enum.join
     |> Regex.compile(options)
   end
@@ -95,108 +95,107 @@ defmodule Unicode.Regex do
   def compile!(string, opts \\ @default_options) do
     case compile(string, opts) do
       {:ok, regex} -> regex
-      {:error, {exception, message}} when is_atom(exception) -> raise(exception, message)
       {:error, {message, index}} -> raise(Regex.CompileError, "#{message} at position #{index}")
     end
   end
 
-  defp split_ranges(string, acc \\ [""])
+  defp split_character_classes(string, acc \\ [""])
 
-  defp split_ranges("", acc) do
+  defp split_character_classes("", acc) do
     acc
   end
 
-  defp split_ranges(<< "\\p{", rest :: binary >>, acc) do
-    split_ranges(rest,  ["\\p{" | acc])
+  defp split_character_classes(<< "\\p{", rest :: binary >>, acc) do
+    split_character_classes(rest,  ["\\p{" | acc])
   end
 
-  defp split_ranges(<< "\\P{", rest :: binary >>, acc) do
-    split_ranges(rest, ["\\P{" | acc])
+  defp split_character_classes(<< "\\P{", rest :: binary >>, acc) do
+    split_character_classes(rest, ["\\P{" | acc])
   end
 
-  defp split_ranges(<< "\\", char :: binary-1, rest :: binary >>, [head | others]) do
-    split_ranges(rest, [head <> "\\" <> char | others])
+  defp split_character_classes(<< "\\", char :: binary-1, rest :: binary >>, [head | others]) do
+    split_character_classes(rest, [head <> "\\" <> char | others])
   end
 
-  defp split_ranges(<< "[", _rest :: binary >> = string, acc) do
-    {character_class, rest} = consume_character_class(string)
-    split_ranges(rest, [character_class | acc])
+  defp split_character_classes(<< "[", _rest :: binary >> = string, acc) do
+    {character_class, rest} = extract_character_class(string)
+    split_character_classes(rest, [character_class | acc])
   end
 
   perl_set = quote do
     [<< "\\", var!(c) :: binary-1, var!(head) :: binary >> | var!(others)]
   end
 
-  defp split_ranges(<< "}", rest :: binary >>, unquote(perl_set)) when is_perl_set(c) do
-    split_ranges(rest, ["" | ["\\" <> c <> head <> "}" | others]])
+  defp split_character_classes(<< "}", rest :: binary >>, unquote(perl_set)) when is_perl_set(c) do
+    split_character_classes(rest, ["" | ["\\" <> c <> head <> "}" | others]])
   end
 
-  defp split_ranges(<< "]", rest :: binary >>, [head | others]) do
-    split_ranges(rest, ["" | [head <> "]" | others]])
+  defp split_character_classes(<< "]", rest :: binary >>, [head | others]) do
+    split_character_classes(rest, ["" | [head <> "]" | others]])
   end
 
-  defp split_ranges(<< char :: binary-1, rest :: binary >>, [head | others]) do
-    split_ranges(rest, [head <> char | others])
+  defp split_character_classes(<< char :: binary-1, rest :: binary >>, [head | others]) do
+    split_character_classes(rest, [head <> char | others])
   end
 
-  defp consume_character_class(string, level \\ 0)
+  defp extract_character_class(string, level \\ 0)
 
-  defp consume_character_class("" = string, _level) do
+  defp extract_character_class("" = string, _level) do
     {string, ""}
   end
 
-  defp consume_character_class(<< "\\[", rest :: binary >>, level) do
-    {string, rest} = consume_character_class(rest, level)
+  defp extract_character_class(<< "\\[", rest :: binary >>, level) do
+    {string, rest} = extract_character_class(rest, level)
     {"\\[" <> string, rest}
   end
 
-  defp consume_character_class(<< "\\]", rest :: binary >>, level) do
-    {string, rest} = consume_character_class(rest, level)
+  defp extract_character_class(<< "\\]", rest :: binary >>, level) do
+    {string, rest} = extract_character_class(rest, level)
     {"\\]" <> string , rest}
   end
 
-  defp consume_character_class(<< "[", rest :: binary >>, level) do
-    {string, rest} = consume_character_class(rest, level + 1)
+  defp extract_character_class(<< "[", rest :: binary >>, level) do
+    {string, rest} = extract_character_class(rest, level + 1)
     {"[" <> string, rest}
   end
 
-  defp consume_character_class(<< "]", rest :: binary >>, 1) do
+  defp extract_character_class(<< "]", rest :: binary >>, 1) do
     {"]", rest}
   end
 
-  defp consume_character_class(<< "]", rest :: binary >>, level) do
-    {string, rest} = consume_character_class(rest, level - 1)
+  defp extract_character_class(<< "]", rest :: binary >>, level) do
+    {string, rest} = extract_character_class(rest, level - 1)
     {"]" <> string, rest}
   end
 
-  defp consume_character_class(<< char :: binary-1, rest :: binary >>, level) do
-    {string, rest} = consume_character_class(rest, level)
+  defp extract_character_class(<< char :: binary-1, rest :: binary >>, level) do
+    {string, rest} = extract_character_class(rest, level)
     {char <> string, rest}
   end
 
-  defp expand_sets([<< "[", set :: binary >> | rest]) do
+  defp expand_unicode_sets([<< "[", set :: binary >> | rest]) do
     regex = "[" <> set
 
     case Unicode.Set.to_regex_string(regex) do
-      {:ok, string} -> [string | expand_sets(rest)]
-      {:error, _} -> [regex | expand_sets(rest)]
+      {:ok, string} -> [string | expand_unicode_sets(rest)]
+      {:error, _} -> [regex | expand_unicode_sets(rest)]
     end
   end
 
-  defp expand_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when is_perl_set(c) do
+  defp expand_unicode_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when is_perl_set(c) do
     regex = "\\" <> c <> set
 
     case Unicode.Set.to_regex_string(regex) do
-      {:ok, string} -> [string | expand_sets(rest)]
-      {:error, _} -> [regex | expand_sets(rest)]
+      {:ok, string} -> [string | expand_unicode_sets(rest)]
+      {:error, _} -> [regex | expand_unicode_sets(rest)]
     end
   end
 
-  defp expand_sets(["" | rest]) do
-    expand_sets(rest)
+  defp expand_unicode_sets(["" | rest]) do
+    expand_unicode_sets(rest)
   end
 
-  defp expand_sets(element) do
+  defp expand_unicode_sets(element) do
     element
   end
 
