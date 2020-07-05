@@ -1,4 +1,11 @@
 defmodule Unicode.Regex do
+  @moduledoc """
+  Implements [Unicode regular expressions](http://unicode.org/reports/tr18/)
+  by transforming them into regular expressions supported by
+  the Elixir Regex module.
+
+  """
+
   @default_options "u"
 
   defguard is_perl_set(c) when c in ["p", "P"]
@@ -45,8 +52,7 @@ defmodule Unicode.Regex do
       {:ok, ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u}
 
       iex> Unicode.Regex.compile("[:ZZZZ:]")
-      {:error, {Unicode.Set.ParseError,
-        "Unable to parse \\"[:ZZZZ:]\\". The unicode script, category or property \\"zzzz\\" is not known."}}
+      {:error, {'POSIX named classes are supported only within a class', 0}}
 
   """
   def compile(string, options \\ @default_options) do
@@ -55,13 +61,9 @@ defmodule Unicode.Regex do
     string
     |> split_ranges
     |> Enum.reverse
-    |> recombine_sets
     |> expand_sets
     |> Enum.join
     |> Regex.compile(options)
-
-  rescue e in Unicode.Set.ParseError ->
-      {:error, {e.__struct__, e.message}}
   end
 
   @doc """
@@ -116,8 +118,9 @@ defmodule Unicode.Regex do
     split_ranges(rest, [head <> "\\" <> char | others])
   end
 
-  defp split_ranges(<< "[", rest :: binary >>, acc) do
-    split_ranges(rest, ["[" | acc])
+  defp split_ranges(<< "[", _rest :: binary >> = string, acc) do
+    {character_class, rest} = consume_character_class(string)
+    split_ranges(rest, [character_class | acc])
   end
 
   perl_set = quote do
@@ -136,30 +139,61 @@ defmodule Unicode.Regex do
     split_ranges(rest, [head <> char | others])
   end
 
-  defp recombine_sets(["" | rest]) do
-    recombine_sets(rest)
+  defp consume_character_class(string, level \\ 0)
+
+  defp consume_character_class("" = string, _level) do
+    {string, ""}
   end
 
-  defp recombine_sets(["[" | rest]) do
-    {set, rest} =
-      reduce_peeking(rest, "[", fn
-        "]", tail, acc -> {:halt, {acc <> "]", tail}}
-        other, _tail, acc -> {:cont, acc <> other}
-      end)
-
-    [set | recombine_sets(rest)]
+  defp consume_character_class(<< "\\[", rest :: binary >>, level) do
+    {string, rest} = consume_character_class(rest, level)
+    {"\\[" <> string, rest}
   end
 
-  defp recombine_sets(element) do
-    element
+  defp consume_character_class(<< "\\]", rest :: binary >>, level) do
+    {string, rest} = consume_character_class(rest, level)
+    {"\\]" <> string , rest}
   end
 
-  defp expand_sets([<< "[", set :: binary >>| rest]) do
-    [Unicode.Set.to_regex_string!("[" <> set) | expand_sets(rest)]
+  defp consume_character_class(<< "[", rest :: binary >>, level) do
+    {string, rest} = consume_character_class(rest, level + 1)
+    {"[" <> string, rest}
+  end
+
+  defp consume_character_class(<< "]", rest :: binary >>, 1) do
+    {"]", rest}
+  end
+
+  defp consume_character_class(<< "]", rest :: binary >>, level) do
+    {string, rest} = consume_character_class(rest, level - 1)
+    {"]" <> string, rest}
+  end
+
+  defp consume_character_class(<< char :: binary-1, rest :: binary >>, level) do
+    {string, rest} = consume_character_class(rest, level)
+    {char <> string, rest}
+  end
+
+  defp expand_sets([<< "[", set :: binary >> | rest]) do
+    regex = "[" <> set
+
+    case Unicode.Set.to_regex_string(regex) do
+      {:ok, string} -> [string | expand_sets(rest)]
+      {:error, _} -> [regex | expand_sets(rest)]
+    end
   end
 
   defp expand_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when is_perl_set(c) do
-    [Unicode.Set.to_regex_string!("\\" <> c <> set) | expand_sets(rest)]
+    regex = "\\" <> c <> set
+
+    case Unicode.Set.to_regex_string(regex) do
+      {:ok, string} -> [string | expand_sets(rest)]
+      {:error, _} -> [regex | expand_sets(rest)]
+    end
+  end
+
+  defp expand_sets(["" | rest]) do
+    expand_sets(rest)
   end
 
   defp expand_sets(element) do
@@ -182,20 +216,4 @@ defmodule Unicode.Regex do
     end
   end
 
-  # Very simple reduce that passes both the head and the tail
-  # to the reducing function so it has some lookahead
-  defp reduce_peeking(_list, {:halt, acc}, _fun),
-    do: {:halted, acc}
-
-  defp reduce_peeking(list, {:suspend, acc}, fun),
-    do: {:suspended, acc, &reduce_peeking(list, &1, fun)}
-
-  defp reduce_peeking([], {:cont, acc}, _fun),
-    do: {:done, acc}
-
-  defp reduce_peeking([head | tail], {:cont, acc}, fun),
-    do: reduce_peeking(tail, fun.(head, tail, acc), fun)
-
-  defp reduce_peeking(list, acc, fun),
-    do: reduce_peeking(list, {:cont, acc}, fun) |> elem(1)
 end

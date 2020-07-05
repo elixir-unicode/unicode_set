@@ -168,13 +168,14 @@ defmodule Unicode.Set do
       |> Operation.expand()
       |> Operation.traverse(&Transform.regex/3)
       |> extract_and_expand_string_ranges
+      |> return(:ok)
     end
   end
 
   def to_regex_string!(unicode_set) when is_binary(unicode_set) do
     case to_regex_string(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
-      class -> class
+      {:ok, class} -> class
     end
   end
 
@@ -237,5 +238,9 @@ defmodule Unicode.Set do
       "Unable to parse #{inspect unicode_set}. " <>
       "#{message}. Detected at #{inspect rest}."
     }
+  end
+
+  defp return(term, atom) do
+    {atom, term}
   end
 end
