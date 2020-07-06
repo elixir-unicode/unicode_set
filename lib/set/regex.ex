@@ -60,7 +60,6 @@ defmodule Unicode.Regex do
 
     string
     |> split_character_classes
-    |> Enum.reverse
     |> expand_unicode_sets
     |> Enum.join
     |> Regex.compile(options)
@@ -99,7 +98,31 @@ defmodule Unicode.Regex do
     end
   end
 
-  defp split_character_classes(string, acc \\ [""])
+  @doc """
+  Split a regex into character classes
+  so that these can then be later compiled.
+
+  ## Arguments
+
+  * `string` is a regular expression in
+    string form.
+
+  ## Returns
+
+  * A list of string split at the
+    boundaries of unicode sets
+
+  ## Example
+
+      iex> Unicode.Regex.split_character_classes("This is [:Zs:] and more")
+      ["This is ", "[:Zs:]", " and more"]
+
+  """
+  def split_character_classes(string) do
+    string
+    |> split_character_classes([""])
+    |> Enum.reverse
+  end
 
   defp split_character_classes("", acc) do
     acc
@@ -119,7 +142,7 @@ defmodule Unicode.Regex do
 
   defp split_character_classes(<< "[", _rest :: binary >> = string, acc) do
     {character_class, rest} = extract_character_class(string)
-    split_character_classes(rest, [character_class | acc])
+    split_character_classes(rest, ["" | [character_class | acc]])
   end
 
   perl_set = quote do
@@ -137,6 +160,9 @@ defmodule Unicode.Regex do
   defp split_character_classes(<< char :: binary-1, rest :: binary >>, [head | others]) do
     split_character_classes(rest, [head <> char | others])
   end
+
+  # Extract a character class which may be
+  # arbitrarily nested
 
   defp extract_character_class(string, level \\ 0)
 
@@ -173,6 +199,8 @@ defmodule Unicode.Regex do
     {char <> string, rest}
   end
 
+  # Expand unicode sets to their codepoints
+
   defp expand_unicode_sets([<< "[", set :: binary >> | rest]) do
     regex = "[" <> set
 
@@ -195,9 +223,15 @@ defmodule Unicode.Regex do
     expand_unicode_sets(rest)
   end
 
-  defp expand_unicode_sets(element) do
-    element
+  defp expand_unicode_sets([head | rest]) do
+    [head | expand_unicode_sets(rest)]
   end
+
+  defp expand_unicode_sets([]) do
+    []
+  end
+
+  # Always use the unicode option on the regex
 
   defp force_unicode_option(options) when is_binary(options) do
     if String.contains?(options, "u") do

@@ -127,8 +127,11 @@ defmodule Unicode.Set.Transform do
     range_1 ++ range_2
   end
 
-  @escapes [?\s, ?\n, ?\t, ?\b, ?\r, ?\e, ?\f]
-  defp to_binary(integer) when is_integer(integer) and integer > 127 or integer in @escapes do
+  defp to_binary(integer) when is_integer(integer) and integer >= 0xd800 do
+    raise ArgumentError, "Invalid unicode codepoint found: #{inspect integer}"
+  end
+
+  defp to_binary(integer) when is_integer(integer) and integer > 127 or integer < 32 do
     "\\x{" <> Integer.to_string(integer, 16) <> "}"
   end
 
