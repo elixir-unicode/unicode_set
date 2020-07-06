@@ -127,8 +127,13 @@ defmodule Unicode.Set.Transform do
     range_1 ++ range_2
   end
 
-  defp to_binary(integer) when is_integer(integer) and integer >= 0xd800 do
-    raise ArgumentError, "Invalid unicode codepoint found: #{inspect integer}"
+  # Regex doesn't all codepoints in this range so we just
+  # omit them for now
+  # D800..DB7F;SG     # Cs   [896] <surrogate-D800>..<surrogate-DB7F>
+  # DB80..DBFF;SG     # Cs   [128] <surrogate-DB80>..<surrogate-DBFF>
+  # DC00..DFFF;SG     # Cs  [1024] <surrogate-DC00>..<surrogate-DFFF>
+  defp to_binary(integer) when is_integer(integer) and integer in 0xd800..0xdfff do
+    ""
   end
 
   defp to_binary(integer) when is_integer(integer) and integer > 127 or integer < 32 do
