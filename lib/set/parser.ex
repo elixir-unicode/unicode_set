@@ -4,6 +4,8 @@ defmodule Unicode.Set.Parser do
   import NimbleParsec
   import Unicode.Set.Property
 
+  defguard is_hex_digit(c) when c in ?0..?9 or c in ?a..?z or c in ?A..?Z
+
   def unicode_set do
     choice([
       property(),
@@ -316,6 +318,7 @@ defmodule Unicode.Set.Parser do
   def hex_to_codepoint([?t]), do: ?\t
   def hex_to_codepoint([?n]), do: ?\n
   def hex_to_codepoint([?r]), do: ?\r
+  def hex_to_codepoint([c]) when not is_hex_digit(c), do: c
 
   # Actual hex-encoded codepoints
   def hex_to_codepoint([arg | _rest] = args) when is_list(arg) do
