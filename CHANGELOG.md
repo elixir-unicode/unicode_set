@@ -1,12 +1,12 @@
 # Changelog for Unicode Set v0.8.0
 
-This is the changelog for Unicode Set v0.8.0 released on _____, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set v0.8.0 released on July 12th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ## Enhancements
 
 * Rewrite `Unicode.Regex` module to better extract character classes, process unicode sets and build Elixir regexs. Now also supports string ranges.
 
-* Supports the property `East Asian Width` (short name `ea`) which is required for implementing the Unicode segmentation algorithms.  Also bumps the minimum requirement for [ex_unicode versio 1.8](https://hex.pm/packages/ex_unicode/1.8.0).
+* Supports the property `East Asian Width` (short name `ea`) which is required for implementing the Unicode segmentation algorithms.  Also bumps the minimum requirement for [ex_unicode version 1.8](https://hex.pm/packages/ex_unicode/1.8.0).
 
 # Changelog for Unicode Set v.07.0
 
