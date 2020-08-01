@@ -331,6 +331,39 @@ defmodule Unicode.Set.Parser do
     |> String.to_integer(16)
   end
 
+
+  # Applied to a regex
+  def repetition do
+    ignore(optional(whitespace()))
+    |> choice([
+      ascii_char([?*]) |> replace({:repeat, min: 0, max: -1}),
+      ascii_char([?+]) |> replace({:repeat, min: 1, max: -1}),
+      iterations()
+    ])
+  end
+
+  def iterations do
+    ignore(ascii_char([?{]))
+    |> ignore(optional(whitespace()))
+    |> integer(min: 1)
+    |> ignore(optional(whitespace()))
+    |> ignore(ascii_char([?,]))
+    |> ignore(optional(whitespace()))
+    |> integer(min: 1)
+    |> ignore(optional(whitespace()))
+    |> ignore(ascii_char([?}]))
+    |> reduce(:iteration)
+  end
+
+  def iteration([from, to]) do
+    {:repeat, min: from, max: to}
+  end
+
+  def anchor do
+    ignore(optional(whitespace()))
+    |> ascii_char([?$]) |> replace(:end)
+  end
+
   #  Helpers
   #  -------
 

@@ -35,6 +35,17 @@ defmodule Unicode.Set do
     |> eos()
   )
 
+  defparsec(
+    :parse_regex,
+    repeat(
+      parsec(:one_set)
+      |> optional(repetition())
+      |> ignore(optional(whitespace()))
+    )
+    |> optional(anchor())
+    |> eos()
+  )
+
   @doc false
   @dialyzer {:nowarn_function, one_set: 1}
   defparsec(:one_set, unicode_set())
