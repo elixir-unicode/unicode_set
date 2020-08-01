@@ -20,6 +20,10 @@ defmodule Unicode.Set.Operation do
   `[{:not_in, [tuple_list]}]` for an exclusion list
 
   """
+  def expand(%Unicode.Set{state: :expanded} = unicode_set) do
+    unicode_set
+  end
+
   def expand(%Unicode.Set{parsed: [ast]} = unicode_set) do
     expanded =
       if has_difference_or_intersection?(ast) do
@@ -29,7 +33,7 @@ defmodule Unicode.Set.Operation do
       end
       |> compact_ranges
 
-    %{unicode_set | parsed: expanded}
+    %{unicode_set | parsed: expanded, state: :expanded}
   end
 
   def expand({:union, [this, that]}) do

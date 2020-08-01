@@ -5,9 +5,9 @@ defmodule Unicode.Set do
 
   import NimbleParsec
   import Unicode.Set.Parser
-  alias Unicode.Set.{Operation, Transform}
+  alias Unicode.Set.{Operation, Transform, SearchTree}
 
-  defstruct [:set, :parsed]
+  defstruct [:set, :parsed, :state]
 
   @doc """
   Parses a Unicode Set binary into an internal
@@ -56,7 +56,8 @@ defmodule Unicode.Set do
   def parse(unicode_set) do
     case parse_one(unicode_set) do
       {:ok, parsed, "", _, _, _} ->
-        {:ok, struct(__MODULE__, [set: unicode_set, parsed: parsed])}
+        set = [set: unicode_set, parsed: parsed, state: :parsed]
+        {:ok, struct(__MODULE__, set)}
 
       {:error, message, rest, _, _, _} ->
         {:error, parse_error(unicode_set, message, rest)}
@@ -104,7 +105,7 @@ defmodule Unicode.Set do
 
   ## Examples
 
-  * `Unicode.match?/2` can be used in as `defguard` argument.
+  * `Unicode.Set.match?/2` can be used in as `defguard` argument.
     For example:
 
       defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
@@ -119,9 +120,22 @@ defmodule Unicode.Set do
   defmacro match?(var, unicode_set) do
     assert_binary_parameter!(unicode_set)
 
-    parse!(unicode_set)
-    |> Operation.expand()
-    |> Operation.traverse(var, &Transform.guard_clause/3)
+    if __CALLER__.context == :guard do
+      parse!(unicode_set)
+      |> Operation.expand()
+      |> Operation.traverse(var, &Transform.guard_clause/3)
+    else
+      search_tree =
+        unicode_set
+        |> Unicode.Set.parse!
+        |> Operation.expand()
+        |> SearchTree.build_search_tree()
+        |> Macro.escape
+
+      quote do
+        Unicode.Set.SearchTree.member?(unquote(var), unquote(search_tree))
+      end
+    end
   end
 
   def to_pattern(unicode_set) when is_binary(unicode_set) do

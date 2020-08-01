@@ -26,9 +26,9 @@ defmodule UnicodeSet.MixProject do
 
   defp description do
     """
-    Implementation of Unicode Sets for Elixir that can be used in
+    Implementation of Unicode Sets and Regexes for Elixir that can be used in
     function guards, compiled patterns, nimble_parsec combinators
-    and regex's.
+    and regexes.
     """
   end
 
@@ -85,7 +85,7 @@ defmodule UnicodeSet.MixProject do
         "LICENSE.md",
         "CHANGELOG.md"
       ],
-      skip_undefined_reference_warnings_on: ["changelog"]
+      skip_undefined_reference_warnings_on: ["changelog", "CHANGELOG.md"]
     ]
   end
 
