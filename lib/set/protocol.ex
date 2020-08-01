@@ -4,8 +4,8 @@ defimpl String.Chars, for: Unicode.Set do
   end
 end
 
-# defimpl Inspect, for: Unicode.Set do
-#   def inspect(%Unicode.Set{set: set}, _) do
-#     "#Unicode.Set<" <> set <> ">"
-#   end
-# end
+defimpl Inspect, for: Unicode.Set do
+  def inspect(%Unicode.Set{set: set}, _) do
+    "#Unicode.Set<" <> set <> ">"
+  end
+end

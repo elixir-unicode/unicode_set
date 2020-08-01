@@ -5,7 +5,8 @@ defmodule Unicode.Set do
 
   import NimbleParsec
   import Unicode.Set.Parser
-  alias Unicode.Set.{Operation, Transform, SearchTree}
+
+  alias Unicode.Set.{Operation, Transform, Search}
 
   defstruct [:set, :parsed, :state]
 
@@ -15,23 +16,8 @@ defmodule Unicode.Set do
 
   ## Example
 
-      iex> Unicode.Set.parse("[[:Zs:]]")
-      {:ok, %#{inspect __MODULE__}{
-        set:
-          "[[:Zs:]]",
-        parsed:
-         [
-           in: [
-             {32, 32},
-             {160, 160},
-             {5760, 5760},
-             {8192, 8202},
-             {8239, 8239},
-             {8287, 8287},
-             {12288, 12288}
-           ]
-        ]
-      }}
+      Unicode.Set.parse("[[:Zs:]]")
+      #=> {:ok, #Unicode.Set<[[:Zs:]]>}
 
   """
   defparsec(
@@ -129,11 +115,11 @@ defmodule Unicode.Set do
         unicode_set
         |> Unicode.Set.parse!
         |> Operation.expand()
-        |> SearchTree.build_search_tree()
+        |> Search.build_search_tree()
         |> Macro.escape
 
       quote do
-        Unicode.Set.SearchTree.member?(unquote(var), unquote(search_tree))
+        Unicode.Set.Search.member?(unquote(var), unquote(search_tree))
       end
     end
   end
@@ -182,6 +168,7 @@ defmodule Unicode.Set do
       |> Operation.expand()
       |> Operation.traverse(&Transform.regex/3)
       |> extract_and_expand_string_ranges
+      |> form_regex_string
       |> return(:ok)
     end
   end
@@ -194,23 +181,32 @@ defmodule Unicode.Set do
   end
 
   # Separate the string ranges from the character
-  # classes and then expand the string ranges
+  # ranges and then expand the string ranges
   defp extract_and_expand_string_ranges(elements) do
     Enum.reduce(elements, {[], []}, fn
       {first, last}, {strings, classes} -> {strings, [{first, last} | classes]}
       string, {strings, classes} -> {[string | strings], classes}
     end)
     |> expand_string_ranges
-    |> form_regex_string
   end
 
-  defp expand_string_ranges({strings, string_ranges}) do
+  @doc false
+  def expand_string_ranges({strings, string_ranges}) do
     string_alternates =
       string_ranges
       |> Unicode.Set.Operation.expand_string_ranges
-      |> Enum.map(fn {first, _last} -> List.to_string(first) end)
+      |> maybe_wrap_list()
+      |> Enum.map(&expand_string_range/1)
 
     {Enum.reverse(strings), string_alternates}
+  end
+
+  defp maybe_wrap_list([]), do: []
+  defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
+  defp maybe_wrap_list(range), do: [range]
+
+  def expand_string_range(string_range) when is_list(string_range) do
+    Enum.map(string_range, fn {first, first} -> List.to_string(first) end)
   end
 
   defp form_regex_string({["^" | strings], []}) do
