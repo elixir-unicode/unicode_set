@@ -59,7 +59,7 @@ defmodule UnicodeSet.MixProject do
   defp deps do
     [
       {:ex_unicode, "~> 1.8"},
-      {:nimble_parsec, "~> 0.5", runtime: false},
+      {:nimble_parsec, "~> 0.5 or ~> 1.0", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.19", only: [:dev, :test, :release], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false, optional: true}
