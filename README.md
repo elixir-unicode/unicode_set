@@ -184,7 +184,7 @@ Example	                       | Meaning
 `A B	[[:letter:] [:number:]]` | To union two sets A and B, simply concatenate them
 `A & B	[[:letter:] & [a-z]]`  | To intersect two sets A and B, use the '&' operator.
 `A - B	[[:letter:] - [a-z]]`	 | To take the set-difference of two sets A and B, use the '-' operator.
-`[^A]	[^a-z]`	                 | To invert a set A, place a `^``` immediately after the opening `[`. Note that the complement only affects code points, not string values. In any other location, the `^` does not have a special meaning.
+`[^A]	[^a-z]`	                 | To invert a set A, place a `^` immediately after the opening `[`. Note that the complement only affects code points, not string values. In any other location, the `^` does not have a special meaning.
 
 ## Precedence
 
@@ -294,7 +294,7 @@ To install, add the package `unicode_set` to your list of dependencies in `mix.e
 ```elixir
 def deps do
   [
-    {:unicode_set, "~> 0.7.0"}
+    {:unicode_set, "~> 0.9.0"}
   ]
 end
 ```
