@@ -336,8 +336,9 @@ defmodule Unicode.Set.Parser do
   def repetition do
     ignore(optional(whitespace()))
     |> choice([
-      ascii_char([?*]) |> replace({:repeat, min: 0, max: -1}),
-      ascii_char([?+]) |> replace({:repeat, min: 1, max: -1}),
+      ascii_char([?*]) |> replace({:repeat, min: 0, max: :infinity}),
+      ascii_char([?+]) |> replace({:repeat, min: 1, max: :infinity}),
+      ascii_char([??]) |> replace({:repeat, min: 0, max: 1}),
       iterations()
     ])
   end
