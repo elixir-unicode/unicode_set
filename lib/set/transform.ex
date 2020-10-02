@@ -83,7 +83,7 @@ defmodule Unicode.Set.Transform do
   end
 
   def utf8_char({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
-    [first..last, ranges]
+    [first..last | ranges]
   end
 
   def utf8_char({first, last}, _ranges, _var) when is_list(first) and is_list(last) do
@@ -108,15 +108,15 @@ defmodule Unicode.Set.Transform do
 
   """
   def character_class({first, first}, ranges, _var) when is_integer(first) do
-    [to_binary(first)] ++ ranges
+    [to_binary(first) | ranges]
   end
 
   def character_class({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
-    [to_binary(first, last)] ++  ranges
+    [to_binary(first, last) | ranges]
   end
 
   def character_class({first, last}, ranges, _var) when is_list(first) and is_list(last) do
-    [to_binary(first, last)] ++ ranges
+    [to_binary(first, last) | ranges]
   end
 
   def character_class(:not_in, ranges, _var) do
