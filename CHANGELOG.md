@@ -1,3 +1,11 @@
+# Changelog for Unicode Set v0.10.0
+
+This is the changelog for Unicode Set v0.10.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Fix list composition in `Unicode.Set.to_uft8_char/1`
+
 # Changelog for Unicode Set v0.9.0
 
 This is the changelog for Unicode Set v0.9.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
