@@ -9,18 +9,33 @@ defmodule Unicode.Set.Operation do
 
   """
 
+  # Debug tracer.
+  #
+  # In production no code will be emitted (the erlang
+  # code generator will optimize out the assignment to `_`)
+  #
+  # In development, uncomment any required lines.
+
   if Mix.env() == :dev do
-    defmacrop d(step, a, b) do
-      quote do
-        IO.puts "Step #{unquote(step)}"
-        IO.inspect unquote(a), label: "a"
-        IO.inspect unquote(b), label: "b"
+    defmacrop debug(step, a, b) do
+      {caller, _} = __CALLER__.function
+      if caller in [] do
+        quote do
+          IO.inspect "#{unquote(caller)}", label: "Step #{unquote(step)}"
+          IO.inspect unquote(a), label: "a"
+          IO.inspect unquote(b), label: "b"
+          _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
+        end
+      else
+        quote do
+          _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
+        end
       end
     end
   else
-    defmacrop d(step, a, b) do
+    defmacrop debug(_step, a, b) do
       quote do
-        _ = {unquote(step), unquote(a), unquote(b)}
+        _ = {unquote(a), unquote(b)}
       end
     end
   end
@@ -257,7 +272,21 @@ defmodule Unicode.Set.Operation do
   """
 
   # The head of the first list is the same as the head of the second
-  # list so we need to advance the second list.
+  # list so we need to advance both lists.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:  <----------------->
+
+  def intersect([a_head | a_rest] = a, [a_head | b_rest] = b) do
+    debug(1, a, b)
+    [a_head | intersect(a_rest, b_rest)]
+  end
+
+  # The head of the first list starts at the same place
+  # as the second list but the first list is longer.
   #
   # This clause deals with the following relationship between the two
   # list heads:
@@ -265,13 +294,28 @@ defmodule Unicode.Set.Operation do
   # List 1:  <----------------->
   # List 2:  <------------>
 
-  def intersect([{as, ae} | a_rest], [{as, be} | b_rest]) when ae >= be do
-    new_list_a = [{min(be + 1, ae), ae} | a_rest]
-    [{as, be} | intersect(new_list_a, b_rest)]
+  def intersect([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when ae > be do
+    debug(2, a, b)
+    [{as, be} | intersect([{be + 1, ae} | a_rest], b_rest)]
   end
 
-  # The head of the first list is after the end of the second
-  # list so we need to advance the second list.
+  # The head of the first list starts at the same place
+  # as the second list but the second list is longer.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <------------->
+  # List 2:  <----------------->
+
+  def intersect([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when ae < be do
+    debug(3, a, b)
+    [{as, ae} | intersect(a_rest, [{ae + 1, be} | b_rest])]
+  end
+
+  # a_head starts after the end of b_list
+  # so there is no intersection but we still need to
+  # check against a_list.
   #
   # This clause deals with the following relationship between the two
   # list heads:
@@ -279,12 +323,14 @@ defmodule Unicode.Set.Operation do
   # List 1:                      <----------------->
   # List 2:  <---------------->
 
-  def intersect([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest]) when as > be do
+  def intersect([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest] = b) when as > be do
+    debug(4, a, b)
     intersect(a, b_rest)
   end
 
-  # The head of the second list starts after the end of the first
-  # list so we advance the first list.
+  # b_head starts after the end of a_list
+  # list so we advance the first list since there
+  # is no intersection.
   #
   # This clause deals with the following relationship between the two
   # list heads:
@@ -292,8 +338,23 @@ defmodule Unicode.Set.Operation do
   # List 1:  <----------------->
   # List 2:                       <---------------->
 
-  def intersect([{_as, ae} | a_rest], [{bs, _be} | _b_rest] = b) when bs > ae do
+  def intersect([{_as, ae} | a_rest] = a, [{bs, _be} | _b_rest] = b) when bs > ae do
+    debug(5, a, b)
     intersect(a_rest, b)
+  end
+
+  # b_head is wholly withing a_head so the
+  # intersection if the whole of b_head.
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:     <----------->
+
+  def intersect([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when bs > as and be < ae do
+    debug(6, a, b)
+    [{bs, be} | intersect([{be + 1, ae} | a_rest], b_rest)]
   end
 
   # An intersection which consumes the head of the second
@@ -302,40 +363,92 @@ defmodule Unicode.Set.Operation do
   # This clause deals with the following relationship between the two
   # list heads:
   #
-  # List 1:  <----------------->
-  # List 2:               <---------------->
+  # List 1:    <------------->
+  # List 2:  <----------------->
 
-  def intersect([{as, ae} | a_rest], [{bs, be} | b_rest]) do
-    intersection = {max(as, bs), min(ae, be)}
-    [intersection | intersect([intersection | a_rest], b_rest)]
+  def intersect([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when bs < as and be > ae do
+    debug(7, a, b)
+    [{as, ae} | intersect(a_rest, [{ae + 1, be} | b_rest])]
+  end
+
+  # a_head ends at the same place as b_head
+  # but b_head starts after a_head
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:     <-------------->
+
+  def intersect([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as < bs do
+    debug(8, a, b)
+    [{bs, ae} | intersect(a_rest, b_rest)]
+  end
+
+  # a_head ends at the same place as b_head
+  # but a_head starts after b_head
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:      <------------->
+  # List 2:  <----------------->
+
+  def intersect([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as > bs do
+    debug(9, a, b)
+    [{as, ae} | intersect(a_rest, b_rest)]
+  end
+
+  # a_head overlaps b_head but to the right
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:      <----------------->
+  # List 2:  <----------------->
+
+  def intersect([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as > bs and ae > be do
+    debug(10, a, b)
+    [{as, be} | intersect([{be + 1, ae} | a_rest], b_rest)]
+  end
+
+  # a_head overlaps b_head but to the left
+  #
+  # This clause deals with the following relationship between the two
+  # list heads:
+  #
+  # List 1:  <----------------->
+  # List 2:      <----------------->
+
+  def intersect([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and ae < be do
+    debug(10, a, b)
+    [{bs, ae} | intersect(a_rest, [{ae + 1, be} | b_rest])]
   end
 
   # To process character strings
   # like {abc}
-  def intersect([head | []], [head | _other]) do
+  def intersect([head] = a, [head | _other] = b) do
+    debug(12, a, b)
     head
   end
 
-  def intersect([head | _rest], head) do
+  def intersect([head | _rest] = a, head = b) do
+    debug(11, a, b)
     head
   end
 
-  def intersect([head | rest], [head | other]) do
-    [head, intersect(rest, other)]
+  def intersect([head | rest] = a, [head | other] = b) do
+    debug(12, a, b)
+    [head | intersect(rest, other)]
   end
 
-  def intersect([_head | rest], other) do
-    intersect(rest, other)
-  end
-
-  # And of course if either list is empty there is no
-  # intersection
-
-  def intersect(_rest, []) do
+  def intersect(a, [] = b) do
+    debug(13, a, b)
     []
   end
 
-  def intersect([], _rest) do
+  def intersect([] = a, b) do
+    debug(14, a, b)
     []
   end
 
@@ -359,12 +472,12 @@ defmodule Unicode.Set.Operation do
   # they are omitted from the result.
 
   def difference([a_head | a_rest] = a, [a_head | b_rest] = b) do
-    d(1, a, b)
+    debug(1, a, b)
     difference(a_rest, b_rest)
   end
 
   def difference([a_head | a_rest] = a, a_head = b) do
-    d("1b", a, b)
+    debug("1b", a, b)
     a_rest
   end
 
@@ -379,7 +492,7 @@ defmodule Unicode.Set.Operation do
   # a_rest with b
 
   def difference([{as, ae} | a_rest] = a, [{bs, _be} | _b_rest] = b) when bs > ae do
-    d(2, a, b)
+    debug(2, a, b)
     [{as, ae} | difference(a_rest, b)]
   end
 
@@ -392,7 +505,7 @@ defmodule Unicode.Set.Operation do
   # and is therefore b_head is discarded
 
   def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest] = b) when be < as do
-    d(3, a, b)
+    debug(3, a, b)
     difference(a, b_rest)
   end
 
@@ -406,7 +519,7 @@ defmodule Unicode.Set.Operation do
   # part of a_head that is after the end b_head
 
   def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when bs > as and be < ae do
-    d(4, a, b)
+    debug(4, a, b)
     [{as, bs - 1} | difference([{be + 1, ae} | a_rest], b_rest)]
   end
 
@@ -419,7 +532,7 @@ defmodule Unicode.Set.Operation do
   # that is after the end b_head
 
   def difference([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when be < ae do
-    d(5, a, b)
+    debug(5, a, b)
     difference([{be + 1, ae} | a_rest], b_rest)
   end
 
@@ -432,7 +545,7 @@ defmodule Unicode.Set.Operation do
   # that is after the end b_head
 
   def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when bs > as do
-    d(6, a, b)
+    debug(6, a, b)
     [{as, bs - 1} | difference(a_rest, b_rest)]
   end
 
@@ -445,7 +558,7 @@ defmodule Unicode.Set.Operation do
   # so a_head if omitted
 
   def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as >= bs do
-    d(7, a, b)
+    debug(7, a, b)
     difference(a_rest, b_rest)
   end
 
@@ -459,11 +572,11 @@ defmodule Unicode.Set.Operation do
   # the end of b_head against the a_rest
 
   def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as >= bs and be > ae do
-    d(8, a, b)
+    debug(8, a, b)
     difference(a_rest, [{ae + 1, be} | b_rest])
   end
 
-  # 9. list-B head overlaps list-A head
+  # 9. list-B head overlaps behind list-A head
   #
   # List A:  <---------->
   # List B:     <---------->
@@ -474,11 +587,26 @@ defmodule Unicode.Set.Operation do
   # of b_head because it may relate to a_rest
 
   def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and be > ae do
-    d(9, a, b)
-    [{as, bs - 1}, difference(a_rest, [{ae + 1, be} | b_rest])]
+    debug(9, a, b)
+    [{as, bs - 1} | difference(a_rest, [{ae + 1, be} | b_rest])]
   end
 
-  # 10. list-B head ends where list-A head starts
+  # 10. list-B head overlaps in front list-A head
+  #
+  # List A:     <---------->
+  # List B:  <---------->
+  #
+  # In this case b_head partially covers
+  # a_head so remove those parts of a_head
+  # covered by b_head but keep the remainder
+  # of a_head because it may relate to b_rest
+
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as > bs and be < ae do
+    debug(10, a, b)
+    [{as, be} | difference([{be + 1, ae} | a_rest], b_rest)]
+  end
+
+  # 11. list-B head ends where list-A head starts
   #
   # List A:             <---------->
   # List B:  <---------->
@@ -489,24 +617,24 @@ defmodule Unicode.Set.Operation do
   # of b_head because it may relate to a_rest
 
   def difference([{as, ae} | a_rest] = a, [{_bs, as} | b_rest] = b) do
-    d(10, a, b)
+    debug(11, a, b)
     difference([{as + 1, ae} | a_rest], b_rest)
   end
 
   # 9. list-A is empty
   def difference([] = a, b_list) do
-    d(11, a, b_list)
+    debug(12, a, b_list)
     []
   end
 
   # 10. list-B is empty
   def difference(a_list, [] = b_list) do
-    d(12, a_list, b_list)
+    debug(13, a_list, b_list)
     a_list
   end
 
   def difference(a_list, b_tuple) when is_tuple(b_tuple) do
-    d(13, a_list, b_tuple)
+    debug(14, a_list, b_tuple)
     difference(a_list, [b_tuple])
   end
 
