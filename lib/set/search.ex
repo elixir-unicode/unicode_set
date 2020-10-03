@@ -2,7 +2,7 @@ defmodule Unicode.Set.Search do
 
   defstruct [:binary_tree, :string_ranges, :operation]
 
-  def build_search_tree(%Unicode.Set{parsed: {operation, tuple_list}, state: :expanded}) do
+  def build_search_tree(%Unicode.Set{parsed: {operation, tuple_list}, state: :reduced}) do
     {ranges, string_ranges} = extract_and_expand_string_ranges(tuple_list)
     search_tree = build_search_tree(ranges)
     search_struct = [binary_tree: search_tree, string_ranges: string_ranges, operation: operation]

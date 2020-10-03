@@ -88,7 +88,7 @@ defmodule UnicodeSetTest do
 
     result =
       parsed
-      |> Unicode.Set.Operation.expand()
+      |> Unicode.Set.Operation.reduce()
       |> Unicode.Set.Operation.traverse(fun)
 
     assert result == {{97, 99}, {[], [], nil}, nil}
@@ -172,29 +172,29 @@ defmodule UnicodeSetTest do
   # which equals [[[abcdef] - [abc]] [def]], which equals [[def] [def]],
   # which equals [def].
   test "set operations associativity too" do
-    {:ok, result1} = Unicode.Set.parse_and_expand("[[ace][bdf] - [abc][def]]")
-    {:ok, result2} = Unicode.Set.parse_and_expand("[[def]]")
+    {:ok, result1} = Unicode.Set.parse_and_reduce("[[ace][bdf] - [abc][def]]")
+    {:ok, result2} = Unicode.Set.parse_and_reduce("[[def]]")
     assert result1.parsed == result2.parsed
   end
 
   test "set difference operations with string ranges" do
-    {:ok, parsed1} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}g]]")
-    {:ok, parsed2} = Unicode.Set.parse_and_expand("[[de{ef}fg]-[{ef}]]")
+    {:ok, parsed1} = Unicode.Set.parse_and_reduce("[[de{ef}fg]-[{ef}g]]")
+    {:ok, parsed2} = Unicode.Set.parse_and_reduce("[[de{ef}fg]-[{ef}]]")
 
     assert {:in, [{100, 102}]} = parsed1.parsed
     assert {:in, [{100, 103}]} = parsed2.parsed
   end
 
   test "set intersection operations with string ranges" do
-    {:ok, parsed1} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}g]]")
-    {:ok, parsed2} = Unicode.Set.parse_and_expand("[[de{ef}fg]&[{ef}]]")
+    {:ok, parsed1} = Unicode.Set.parse_and_reduce("[[de{ef}fg]&[{ef}g]]")
+    {:ok, parsed2} = Unicode.Set.parse_and_reduce("[[de{ef}fg]&[{ef}]]")
 
     assert {:in, [{103, 103}, {'ef', 'ef'}]} = parsed1.parsed
     assert {:in, [{'ef', 'ef'}]} = parsed2.parsed
   end
 
   test "set intersection when set is not a Unicode set and they align" do
-    {:ok, parsed} = Unicode.Set.parse_and_expand "[[:Lu:]&[ABCD]]"
+    {:ok, parsed} = Unicode.Set.parse_and_reduce "[[:Lu:]&[ABCD]]"
     assert {:in, [{65, 68}]} = parsed.parsed
   end
 

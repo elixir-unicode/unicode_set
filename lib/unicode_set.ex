@@ -77,9 +77,9 @@ defmodule Unicode.Set do
   character ranges.
 
   """
-  def parse_and_expand(unicode_set) do
+  def parse_and_reduce(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
-      {:ok, Operation.expand(parsed)}
+      {:ok, Operation.reduce(parsed)}
     end
   end
 
@@ -119,13 +119,13 @@ defmodule Unicode.Set do
 
     if __CALLER__.context == :guard do
       parse!(unicode_set)
-      |> Operation.expand()
+      |> Operation.reduce()
       |> Operation.traverse(var, &Transform.guard_clause/3)
     else
       search_tree =
         unicode_set
         |> Unicode.Set.parse!
-        |> Operation.expand()
+        |> Operation.reduce()
         |> Search.build_search_tree()
         |> Macro.escape
 
@@ -138,7 +138,7 @@ defmodule Unicode.Set do
   def to_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
-      |> Operation.expand()
+      |> Operation.reduce()
       |> Operation.traverse(&Transform.pattern/3)
     end
   end
@@ -152,7 +152,7 @@ defmodule Unicode.Set do
   def to_utf8_char(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
-      |> Operation.expand()
+      |> Operation.reduce()
       |> Operation.traverse(&Transform.utf8_char/3)
     end
   end
@@ -160,7 +160,7 @@ defmodule Unicode.Set do
   def to_character_class(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
-      |> Operation.expand()
+      |> Operation.reduce()
       |> Operation.traverse(&Transform.character_class/3)
       |> Enum.join
     end
@@ -176,7 +176,7 @@ defmodule Unicode.Set do
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
-      |> Operation.expand()
+      |> Operation.reduce()
       |> Operation.traverse(&Transform.regex/3)
       |> extract_and_expand_string_ranges
       |> form_regex_string
