@@ -99,6 +99,37 @@ defmodule Unicode.Regex do
   end
 
   @doc """
+  Returns a boolean indicating whether there was a match or not
+  with a Unicode Set.
+
+  ## Arguments
+
+  * `string` is a regular expression in
+    string form.
+
+  * `options` is a string or a list which is
+    passed unchanged to `Regex.compile/2`.
+    The default is "u" meaning the regular
+    expression will operate in Unicode mode
+
+  ## Returns
+
+  * a boolean indicating if there was a match of
+
+  * raises an exception
+
+  ## Example
+
+      iex> Unicode.Regex.match?("[:Sc:]", "$")
+      true
+
+  """
+  def match?(regex_string, string, opts \\ @default_options) do
+    regex = compile!(regex_string, opts)
+    Regex.match?(regex, string)
+  end
+
+  @doc """
   Split a regex into character classes
   so that these can then be later compiled.
 

@@ -9,6 +9,22 @@ defmodule Unicode.Set.Operation do
 
   """
 
+  if Mix.env() == :dev do
+    defmacrop d(step, a, b) do
+      quote do
+        IO.puts "Step #{unquote(step)}"
+        IO.inspect unquote(a), label: "a"
+        IO.inspect unquote(b), label: "b"
+      end
+    end
+  else
+    defmacrop d(step, a, b) do
+      quote do
+        _ = {unquote(step), unquote(a), unquote(b)}
+      end
+    end
+  end
+
   @doc """
   Expands all sets, properties and ranges to a list
   of 2-tuples expressing a range of codepoints
@@ -335,60 +351,162 @@ defmodule Unicode.Set.Operation do
   """
 
   # 1. list-B head is the same as list-A head
-  def difference([a_head | a_rest], [a_head | b_rest]) do
+  #
+  # List A:  <------------>
+  # List B:  <------------>
+  #
+  # Since a_head and b_head are not different
+  # they are omitted from the result.
+
+  def difference([a_head | a_rest] = a, [a_head | b_rest] = b) do
+    d(1, a, b)
     difference(a_rest, b_rest)
   end
 
-  def difference([a_head | a_rest], a_head) do
+  def difference([a_head | a_rest] = a, a_head = b) do
+    d("1b", a, b)
     a_rest
   end
 
-  # 2. list-B head is completely after list-A head
-  def difference([{as, ae} | a_rest], [{bs, _be} | _b_rest] = b) when bs > ae do
+  # 2. list-B is after head-A
+  #
+  # List A:  <----------------->
+  # List B:                       <----------------->
+  #
+  # Since list_b is completely after head_a then
+  # there is nothing to subtract from head_a so
+  # head_a is returned in full and we difference
+  # a_rest with b
+
+  def difference([{as, ae} | a_rest] = a, [{bs, _be} | _b_rest] = b) when bs > ae do
+    d(2, a, b)
     [{as, ae} | difference(a_rest, b)]
   end
 
   # 3. list-B head is completely before list-A head
-  def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest]) when be < as do
+  #
+  # List A:                       <----------------->
+  # List B:  <----------------->
+  #
+  # In this case b_head is a not part of a_head
+  # and is therefore b_head is discarded
+
+  def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest] = b) when be < as do
+    d(3, a, b)
     difference(a, b_rest)
   end
 
   # 4. list-B head is contained wholly within list-A head
-  def difference([{as, ae} | a_rest], [{bs, be} | b_rest]) when bs > as and be < ae do
+  #
+  # List A:  <----------------->
+  # List B:     <---------->
+  #
+  # In this case the difference is the part of a_head
+  # that is before the start of b_gead as well as the
+  # part of a_head that is after the end b_head
+
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when bs > as and be < ae do
+    d(4, a, b)
     [{as, bs - 1} | difference([{be + 1, ae} | a_rest], b_rest)]
   end
 
   # 5. list-B head is at the start of list-A head and is shorter than list-A head
-  def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be < ae do
-    [{be + 1, ae} | difference(a_rest, b_rest)]
+  #
+  # List A:  <----------------->
+  # List B:  <---------->
+  #
+  # In this case the difference is the part of a_head
+  # that is after the end b_head
+
+  def difference([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when be < ae do
+    d(5, a, b)
+    difference([{be + 1, ae} | a_rest], b_rest)
   end
 
   # 6. list-B head is at the end of list-A head and is shorter than list-A head
-  def difference([{as, ae} | a_rest], [{bs, ae} | b_rest]) when bs > as do
+  #
+  # List A:  <----------------->
+  # List B:         <---------->
+  #
+  # In this case the difference is the part of a_head
+  # that is after the end b_head
+
+  def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when bs > as do
+    d(6, a, b)
     [{as, bs - 1} | difference(a_rest, b_rest)]
   end
 
-  # 7. list-A head is at the end of list-B head and is short than list-B head
-  def difference([{as, ae} | a_rest], [{bs, ae} | b_rest]) when as >= bs do
-    [{bs, as - 1} | difference(a_rest, b_rest)]
+  # 7. list-A head is at the end of list-B head and is shorter than list-B head
+  #
+  # List A:       <----->
+  # List B:  <---------->
+  #
+  # In this case b_head completely covers a_head
+  # so a_head if omitted
+
+  def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as >= bs do
+    d(7, a, b)
+    difference(a_rest, b_rest)
   end
 
   # 8. list-B head encloses list-A head
-  def difference([{_as, ae} | a_rest], [{_bs, be} | b_rest]) when be > ae do
+  #
+  # List A:    <----->
+  # List B:  <---------->
+  #
+  # In this case b_head completely covers a_head
+  # so a_head if omitted but we need to check
+  # the end of b_head against the a_rest
+
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as >= bs and be > ae do
+    d(8, a, b)
     difference(a_rest, [{ae + 1, be} | b_rest])
   end
 
+  # 9. list-B head overlaps list-A head
+  #
+  # List A:  <---------->
+  # List B:     <---------->
+  #
+  # In this case b_head partially covers
+  # a_head so remove those parts of a_head
+  # covered by b_head but keep the remainder
+  # of b_head because it may relate to a_rest
+
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and be > ae do
+    d(9, a, b)
+    [{as, bs - 1}, difference(a_rest, [{ae + 1, be} | b_rest])]
+  end
+
+  # 10. list-B head ends where list-A head starts
+  #
+  # List A:             <---------->
+  # List B:  <---------->
+  #
+  # In this case b_head partially covers
+  # a_head so remove those parts of a_head
+  # covered by b_head but keep the remainder
+  # of b_head because it may relate to a_rest
+
+  def difference([{as, ae} | a_rest] = a, [{_bs, as} | b_rest] = b) do
+    d(10, a, b)
+    difference([{as + 1, ae} | a_rest], b_rest)
+  end
+
   # 9. list-A is empty
-  def difference([], _b_list) do
+  def difference([] = a, b_list) do
+    d(11, a, b_list)
     []
   end
 
   # 10. list-B is empty
-  def difference(a_list, []) do
+  def difference(a_list, [] = b_list) do
+    d(12, a_list, b_list)
     a_list
   end
 
   def difference(a_list, b_tuple) when is_tuple(b_tuple) do
+    d(13, a_list, b_tuple)
     difference(a_list, [b_tuple])
   end
 
@@ -416,6 +534,14 @@ defmodule Unicode.Set.Operation do
   def invert(ranges) do
     difference(Unicode.ranges(), ranges)
   end
+
+  # Can use this version for testing using
+  # just the ascii range
+
+  # @ascii_ranges [{0, 127}]
+  # def invert(ranges) do
+  #   difference(@ascii_ranges, ranges)
+  # end
 
   @doc """
   Prewalks the expanded AST from a parsed

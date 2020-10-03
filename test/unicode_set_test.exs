@@ -223,7 +223,7 @@ defmodule UnicodeSetTest do
       "Unable to parse \"[:ZZZZ:]\". The unicode script, category or property \"zzzz\" is not known."}}
   end
 
-  test "parsing an single escaped character" do
+  test "parsing a single escaped character" do
     assert Unicode.Set.parse("[\\:]")
   end
 
@@ -236,5 +236,10 @@ defmodule UnicodeSetTest do
       {:ok, ~r/[^\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
     assert Unicode.Regex.compile("\\p{Zs}") ==
       {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+  end
+
+  test "union of two negated sets" do
+    refute Unicode.Regex.match?("[:^S:]&[:^Z:]", "$")
+    assert Unicode.Regex.match?("[:^S:]&[:^Z:]", "T")
   end
 end
