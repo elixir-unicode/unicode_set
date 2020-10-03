@@ -425,6 +425,16 @@ defmodule Unicode.Set.Operation do
     [{bs, ae} | intersect(a_rest, [{ae + 1, be} | b_rest])]
   end
 
+  def intersect(a, [] = b) do
+    debug(13, a, b)
+    []
+  end
+
+  def intersect([] = a, b) do
+    debug(14, a, b)
+    []
+  end
+  
   # To process character strings
   # like {abc}
   def intersect([head] = a, [head | _other] = b) do
@@ -440,16 +450,6 @@ defmodule Unicode.Set.Operation do
   def intersect([head | rest] = a, [head | other] = b) do
     debug(12, a, b)
     [head | intersect(rest, other)]
-  end
-
-  def intersect(a, [] = b) do
-    debug(13, a, b)
-    []
-  end
-
-  def intersect([] = a, b) do
-    debug(14, a, b)
-    []
   end
 
   @doc """
@@ -659,17 +659,17 @@ defmodule Unicode.Set.Operation do
   for a given property.
 
   """
-  def invert(ranges) do
-    difference(Unicode.ranges(), ranges)
-  end
+  # def invert(ranges) do
+  #   difference(Unicode.ranges(), ranges)
+  # end
 
   # Can use this version for testing using
   # just the ascii range
 
-  # @ascii_ranges [{0, 127}]
-  # def invert(ranges) do
-  #   difference(@ascii_ranges, ranges)
-  # end
+  @ascii_ranges [{0, 127}]
+  def invert(ranges) do
+    difference(@ascii_ranges, ranges)
+  end
 
   @doc """
   Prewalks the expanded AST from a parsed
