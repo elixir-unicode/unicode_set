@@ -14,7 +14,8 @@ defmodule Unicode.Set.Operation do
   # In production no code will be emitted (the erlang
   # code generator will optimize out the assignment to `_`)
   #
-  # In development, uncomment any required lines.
+  # In development, add any of :intersection, :union and :difference
+  # into this list:
   @debug_functions []
 
   defmacrop debug(step, a, b) do
@@ -32,14 +33,29 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Expands all sets, properties and ranges to a list
-  of 2-tuples expressing a range of codepoints
+  Reduces all sets, properties and ranges to a list
+  of 2-tuples expressing a range of codepoints.
 
   It can return one of two forms
 
   `[{:in, [tuple_list]}]` for an inclusion list
 
   `[{:not_in, [tuple_list]}]` for an exclusion list
+
+  or a combination of both.
+
+  Attempts are made to preserve `:not_in` clauses
+  as long as possible since many uses, like regexes
+  and `nimble_parsec` can consume `:not_in` style
+  ranges.
+
+  When only single character classes are presented,
+  or several classes which are `unions`, `:not_in`
+  can be preserved.
+
+  When intersections and differences are required,
+  the rnages must be both reduced and expanded in
+  order for this set operations to complete.
 
   """
   def reduce(%Unicode.Set{state: :reduced} = unicode_set) do
@@ -59,7 +75,8 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Expand
+  Expand takes a reduced AST and expands
+  it into a single list of codepoint tuples.
 
   """
   def expand({:union, [this, that]}) do
@@ -85,6 +102,22 @@ defmodule Unicode.Set.Operation do
     |> compact_ranges
     |> expand_string_ranges
     |> invert
+  end
+
+  # The last two clauses are used
+  # When we take a reduced AST and
+  # need to exapnd it to a full list
+  # of codepoints
+  def expand([ranges]) do
+    expand(ranges)
+    |> Enum.sort
+    |> compact_ranges
+  end
+
+  def expand(ranges) when is_list(ranges) and length(ranges) == 2 do
+    expand({:union, ranges})
+    |> Enum.sort
+    |> compact_ranges
   end
 
   @doc """
@@ -662,17 +695,17 @@ defmodule Unicode.Set.Operation do
   for a given property.
 
   """
-  # def invert(ranges) do
-  #   difference(Unicode.ranges(), ranges)
-  # end
+  def invert(ranges) do
+    difference(Unicode.ranges(), ranges)
+  end
 
   # Can use this version for testing using
   # just the ascii range
 
-  @ascii_ranges [{0, 127}]
-  def invert(ranges) do
-    difference(@ascii_ranges, ranges)
-  end
+  # @ascii_ranges [{0, 127}]
+  # def invert(ranges) do
+  #   difference(@ascii_ranges, ranges)
+  # end
 
   @doc """
   Prewalks the expanded AST from a parsed
