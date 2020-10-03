@@ -7,14 +7,19 @@ defmodule Unicode.Set.IntersectionTest do
       set = "[[:#{cat}:]&[:^#{cat}:]]"
       assert Unicode.Set.to_utf8_char(set) == []
     end
-  end
 
-  for {category, _} <- Unicode.GeneralCategory.categories do
     test "Check difference of positive and negative for category #{category} is always the positive set" do
       cat = unquote(category)
       positive = "[:#{cat}:]"
       difference = "[[:#{cat}:]-[:^#{cat}:]]"
       assert Unicode.Set.to_utf8_char(difference) == Unicode.Set.to_utf8_char(positive)
     end
+
+    # test "Check union of positive and negative for category #{category} is always the unicode set" do
+    #   cat = unquote(category)
+    #   positive = "[:#{cat}:]"
+    #   union = "[[:#{cat}:][:^#{cat}:]]"
+    #   assert Unicode.Set.to_utf8_char(union) == Unicode.ranges()
+    # end
   end
 end

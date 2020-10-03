@@ -15,28 +15,19 @@ defmodule Unicode.Set.Operation do
   # code generator will optimize out the assignment to `_`)
   #
   # In development, uncomment any required lines.
+  @debug_functions []
 
-  if Mix.env() == :dev do
-    defmacrop debug(step, a, b) do
-      {caller, _} = __CALLER__.function
-      if caller in [] do
-        quote do
-          IO.inspect "#{unquote(caller)}", label: "Step #{unquote(step)}"
-          IO.inspect unquote(a), label: "a"
-          IO.inspect unquote(b), label: "b"
-          _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
-        end
-      else
-        quote do
-          _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
-        end
+  defmacrop debug(step, a, b) do
+    {caller, _} = __CALLER__.function
+    if caller in @debug_functions && Mix.env() == :dev do
+      quote do
+        IO.inspect "#{unquote(caller)}", label: "Step #{unquote(step)}"
+        IO.inspect unquote(a), label: "a"
+        IO.inspect unquote(b), label: "b"
       end
     end
-  else
-    defmacrop debug(_step, a, b) do
-      quote do
-        _ = {unquote(a), unquote(b)}
-      end
+    quote do
+      _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
     end
   end
 
@@ -152,7 +143,7 @@ defmodule Unicode.Set.Operation do
 
   def combine({:union, [this, that]}) do
     [combine(this), combine(that)]
-    |> List.flatten()
+    |> List.flatten
   end
 
   def combine(other) do
@@ -170,8 +161,16 @@ defmodule Unicode.Set.Operation do
     {:not_in, Unicode.Utils.compact_ranges(ranges)}
   end
 
+  def compact_ranges([{from, to} | _rest] = ranges) when is_integer(from) and is_integer(to) do
+    Unicode.Utils.compact_ranges(ranges)
+  end
+
   def compact_ranges(ranges) when is_list(ranges) do
-   Unicode.Utils.compact_ranges(ranges)
+    ranges
+    |> Enum.group_by(fn {k, _v} -> k end, fn {_k, v} -> v end)
+    |> Enum.map(fn {k, v} ->
+      {k, v |> List.flatten |> Enum.sort |> Unicode.Utils.compact_ranges}
+    end)
   end
 
   def compact_ranges({_charlist_1, _charlist_2} = range) do
@@ -434,7 +433,7 @@ defmodule Unicode.Set.Operation do
     debug(14, a, b)
     []
   end
-  
+
   # To process character strings
   # like {abc}
   def intersect([head] = a, [head | _other] = b) do

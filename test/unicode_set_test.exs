@@ -78,8 +78,8 @@ defmodule UnicodeSetTest do
   test "set intersection matching" do
     require Unicode.Set
 
-    assert Unicode.Set.match?(?๓, "[[:digit:]-[:thai:]]") == false
-    assert Unicode.Set.match?(?๓, "[[:digit:]]") == true
+    refute Unicode.Set.match?(?๓, "[[:digit:]-[:thai:]]")
+    assert Unicode.Set.match?(?๓, "[[:digit:]]")
   end
 
   test "traverse/3" do
@@ -103,8 +103,7 @@ defmodule UnicodeSetTest do
   end
 
   test "utf8_char/1" do
-    assert Unicode.Set.to_utf8_char("[[^abcd][mnb]]") ==
-             [{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
+    assert Unicode.Set.to_utf8_char("[[^abcd][mnb]]") == [98, 109..110, {:not, 97..100}]
   end
 
   test "string ranges" do
