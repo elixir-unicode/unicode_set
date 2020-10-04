@@ -136,12 +136,8 @@ defmodule Unicode.Set.Transform do
     ""
   end
 
-  defp to_binary(integer) when is_integer(integer) and integer > 127 or integer <= 32 do
-    "\\x{" <> Integer.to_string(integer, 16) <> "}"
-  end
-
   defp to_binary(integer) when is_integer(integer) do
-    <<integer::utf8>>
+    "\\x{" <> Integer.to_string(integer, 16) <> "}"
   end
 
   defp to_binary(first, last) when is_integer(first) and is_integer(last) do

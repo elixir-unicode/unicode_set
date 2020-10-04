@@ -238,7 +238,7 @@ defmodule UnicodeSetTest do
   end
 
   test "union of two negated sets" do
-    refute Unicode.Regex.match?("[:^S:]&[:^Z:]", "$")
-    assert Unicode.Regex.match?("[:^S:]&[:^Z:]", "T")
+    refute Unicode.Regex.match?("[[:^S:]&[:^Z:]]", "$")
+    assert Unicode.Regex.match?("[[:^S:]&[:^Z:]]", "T")
   end
 end

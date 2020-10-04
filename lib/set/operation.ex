@@ -79,6 +79,14 @@ defmodule Unicode.Set.Operation do
   it into a single list of codepoint tuples.
 
   """
+  def expand(%Unicode.Set{state: :expanded} = unicode_set) do
+    unicode_set
+  end
+
+  def expand(%Unicode.Set{parsed: ast} = unicode_set) do
+    %{unicode_set | parsed: expand(ast), state: :expanded}
+  end
+
   def expand({:union, [this, that]}) do
     union(expand(this), expand(that))
   end
@@ -86,6 +94,12 @@ defmodule Unicode.Set.Operation do
   def expand({:difference, [this, that]}) do
     difference(expand(this), expand(that))
   end
+
+  # De Morgan's law implementation
+  # def expand({:intersection, [{:not_in, this}, {:not_in, that}]}) do
+  #   ranges = expand({:union, [{:in, this}, {:in, that}]})
+  #   expand({:not_in, ranges})
+  # end
 
   def expand({:intersection, [this, that]}) do
     intersect(expand(this), expand(that))
@@ -101,7 +115,7 @@ defmodule Unicode.Set.Operation do
     ranges
     |> compact_ranges
     |> expand_string_ranges
-    |> invert
+    |> complement
   end
 
   # The last two clauses are used
@@ -209,10 +223,10 @@ defmodule Unicode.Set.Operation do
       {k, v |> List.flatten |> Enum.sort |> Unicode.Utils.compact_ranges}
     end)
   end
-
-  def compact_ranges({_charlist_1, _charlist_2} = range) do
-    range
-  end
+  #
+  # def compact_ranges({_charlist_1, _charlist_2} = range) do
+  #   range
+  # end
 
   @doc """
   Returns a boolean indicating whether the given
@@ -527,7 +541,7 @@ defmodule Unicode.Set.Operation do
   # head_a is returned in full and we difference
   # a_rest with b
 
-  def difference([{as, ae} | a_rest] = a, [{bs, _be} | _b_rest] = b) when bs > ae do
+  def difference([{as, ae} | a_rest] = a, [{bs, _be} | _b_rest] = b) when ae < bs do
     debug(2, a, b)
     [{as, ae} | difference(a_rest, b)]
   end
@@ -540,7 +554,7 @@ defmodule Unicode.Set.Operation do
   # In this case b_head is a not part of a_head
   # and is therefore b_head is discarded
 
-  def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest] = b) when be < as do
+  def difference([{as, _ae} | _a_rest] = a, [{_bs, be} | b_rest] = b) when as > be do
     debug(3, a, b)
     difference(a, b_rest)
   end
@@ -554,7 +568,7 @@ defmodule Unicode.Set.Operation do
   # that is before the start of b_gead as well as the
   # part of a_head that is after the end b_head
 
-  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when bs > as and be < ae do
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and ae > be do
     debug(4, a, b)
     [{as, bs - 1} | difference([{be + 1, ae} | a_rest], b_rest)]
   end
@@ -567,12 +581,25 @@ defmodule Unicode.Set.Operation do
   # In this case the difference is the part of a_head
   # that is after the end b_head
 
-  def difference([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when be < ae do
+  def difference([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when ae > be do
     debug(5, a, b)
     difference([{be + 1, ae} | a_rest], b_rest)
   end
 
-  # 6. list-B head is at the end of list-A head and is shorter than list-A head
+  # 6. list-B head is at the start of list-A head and is shorter than list-A head
+  #
+  # List A:  <------------>
+  # List B:  <----------------->
+  #
+  # In this case the difference is the part of a_head
+  # that is after the end b_head
+
+  def difference([{as, ae} | a_rest] = a, [{as, be} | b_rest] = b) when ae < be do
+    debug(6, a, b)
+    difference(a_rest, [{ae + 1, be} | b_rest])
+  end
+
+  # 7. list-B head is at the end of list-A head and is shorter than list-A head
   #
   # List A:  <----------------->
   # List B:         <---------->
@@ -580,12 +607,12 @@ defmodule Unicode.Set.Operation do
   # In this case the difference is the part of a_head
   # that is after the end b_head
 
-  def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when bs > as do
-    debug(6, a, b)
+  def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as < bs do
+    debug(7, a, b)
     [{as, bs - 1} | difference(a_rest, b_rest)]
   end
 
-  # 7. list-A head is at the end of list-B head and is shorter than list-B head
+  # 8. list-A head is at the end of list-B head and is shorter than list-B head
   #
   # List A:       <----->
   # List B:  <---------->
@@ -594,11 +621,11 @@ defmodule Unicode.Set.Operation do
   # so a_head if omitted
 
   def difference([{as, ae} | a_rest] = a, [{bs, ae} | b_rest] = b) when as >= bs do
-    debug(7, a, b)
+    debug(8, a, b)
     difference(a_rest, b_rest)
   end
 
-  # 8. list-B head encloses list-A head
+  # 9. list-B head encloses list-A head
   #
   # List A:    <----->
   # List B:  <---------->
@@ -607,12 +634,12 @@ defmodule Unicode.Set.Operation do
   # so a_head if omitted but we need to check
   # the end of b_head against the a_rest
 
-  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as >= bs and be > ae do
-    debug(8, a, b)
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as > bs and ae < be do
+    debug(9, a, b)
     difference(a_rest, [{ae + 1, be} | b_rest])
   end
 
-  # 9. list-B head overlaps behind list-A head
+  # 10. list-B head overlaps behind list-A head
   #
   # List A:  <---------->
   # List B:     <---------->
@@ -622,12 +649,12 @@ defmodule Unicode.Set.Operation do
   # covered by b_head but keep the remainder
   # of b_head because it may relate to a_rest
 
-  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and be > ae do
-    debug(9, a, b)
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as < bs and ae < be do
+    debug(10, a, b)
     [{as, bs - 1} | difference(a_rest, [{ae + 1, be} | b_rest])]
   end
 
-  # 10. list-B head overlaps in front list-A head
+  # 11. list-B head overlaps in front list-A head
   #
   # List A:     <---------->
   # List B:  <---------->
@@ -637,12 +664,12 @@ defmodule Unicode.Set.Operation do
   # covered by b_head but keep the remainder
   # of a_head because it may relate to b_rest
 
-  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as > bs and be < ae do
-    debug(10, a, b)
-    [{as, be} | difference([{be + 1, ae} | a_rest], b_rest)]
+  def difference([{as, ae} | a_rest] = a, [{bs, be} | b_rest] = b) when as > bs and ae > be do
+    debug(11, a, b)
+    difference([{be + 1, ae} | a_rest], b_rest)
   end
 
-  # 11. list-B head ends where list-A head starts
+  # 12. list-B head ends where list-A head starts
   #
   # List A:             <---------->
   # List B:  <---------->
@@ -653,26 +680,26 @@ defmodule Unicode.Set.Operation do
   # of b_head because it may relate to a_rest
 
   def difference([{as, ae} | a_rest] = a, [{_bs, as} | b_rest] = b) do
-    debug(11, a, b)
+    debug(12, a, b)
     difference([{as + 1, ae} | a_rest], b_rest)
   end
 
-  # 9. list-A is empty
+  # 13. list-A is empty
   def difference([] = a, b_list) do
-    debug(12, a, b_list)
+    debug(13, a, b_list)
     []
   end
 
-  # 10. list-B is empty
+  # 14. list-B is empty
   def difference(a_list, [] = b_list) do
-    debug(13, a_list, b_list)
+    debug(14, a_list, b_list)
     a_list
   end
 
-  def difference(a_list, b_tuple) when is_tuple(b_tuple) do
-    debug(14, a_list, b_tuple)
-    difference(a_list, [b_tuple])
-  end
+  # def difference(a_list, b_tuple) when is_tuple(b_tuple) do
+  #   debug(15, a_list, b_tuple)
+  #   difference(a_list, [b_tuple])
+  # end
 
   @doc """
   Returns the difference of two lists of
@@ -695,7 +722,7 @@ defmodule Unicode.Set.Operation do
   for a given property.
 
   """
-  def invert(ranges) do
+  def complement(ranges) do
     difference(Unicode.ranges(), ranges)
   end
 
@@ -703,7 +730,7 @@ defmodule Unicode.Set.Operation do
   # just the ascii range
 
   # @ascii_ranges [{0, 127}]
-  # def invert(ranges) do
+  # def complement(ranges) do
   #   difference(@ascii_ranges, ranges)
   # end
 

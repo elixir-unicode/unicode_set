@@ -15,6 +15,13 @@ defmodule Unicode.Set.IntersectionTest do
       assert Unicode.Set.to_utf8_char(difference) == Unicode.Set.to_utf8_char(positive)
     end
 
+    # test "Check complement of complement round trips for category #{category}" do
+    #   cat = unquote(category)
+    #   positive = "[:#{cat}:]"
+    #   double_complement = "[^[:^#{cat}:]]"
+    #   assert Unicode.Set.to_utf8_char(double_complement) == Unicode.Set.to_utf8_char(positive)
+    # end
+
     # test "Check union of positive and negative for category #{category} is always the unicode set" do
     #   cat = unquote(category)
     #   positive = "[:#{cat}:]"
