@@ -200,7 +200,7 @@ defmodule UnicodeSetTest do
 
   test "creating unicode classes for regex" do
     assert Unicode.Set.to_character_class("[{HZ}]") == "{HZ}"
-    assert Unicode.Set.to_character_class("[[:Lu:]&[AB{HZ}]]") == "A-B"
+    assert Unicode.Set.to_character_class("[[:Lu:]&[AB{HZ}]]") == "\\x{41}-\\x{42}"
   end
 
   test "parsing invalid unicode classes for regex" do

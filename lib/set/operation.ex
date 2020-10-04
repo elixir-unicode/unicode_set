@@ -88,7 +88,8 @@ defmodule Unicode.Set.Operation do
   end
 
   def expand({:union, [this, that]}) do
-    union(expand(this), expand(that))
+    expand(this)
+    |> union(expand(that))
   end
 
   def expand({:difference, [this, that]}) do
@@ -128,8 +129,8 @@ defmodule Unicode.Set.Operation do
     |> compact_ranges
   end
 
-  def expand(ranges) when is_list(ranges) and length(ranges) == 2 do
-    expand({:union, ranges})
+  def expand([a_list, b_list]) do
+    expand({:union, [a_list, b_list]})
     |> Enum.sort
     |> compact_ranges
   end
@@ -145,6 +146,7 @@ defmodule Unicode.Set.Operation do
 
   def expand_string_ranges(ranges) when is_list(ranges) do
     Enum.map(ranges, &expand_string_range/1)
+    |> List.flatten
   end
 
   def expand_string_range({from, to}) when is_integer(from) and is_integer(to) do
@@ -268,48 +270,53 @@ defmodule Unicode.Set.Operation do
   prior to merging.
 
   """
+  def union(a_list, b_list) when is_list(a_list) and is_list(b_list) do
+    (a_list ++ b_list)
+    |> Enum.sort
+    |> Enum.uniq
+  end
 
   # If two heads are the same then keep one and
   # advance the other list
 
-  def union([a_head | a_rest], [a_head | b_rest]) do
-    union([a_head | a_rest], b_rest)
-  end
-
-  # When the heads of the two lists are adjacent then
-  # we insert one new range that is the consolidation
-  # of them both
-
-  def union([{as, ae} | a_rest], [{bs, be} | _b_rest] = b) when ae + 1 == bs do
-    [{as, be} | union(a_rest, b)]
-  end
-
-  # We've advanced the second list beyond the start of the
-  # first list so copy the head of the first list over
-  # and advance the second list
-
-  def union([a_head | a_rest], [b_head | _b_rest] = b) when a_head < b_head do
-    [a_head | union(a_rest, b)]
-  end
-
-  # We've advanced the first list beyond the start of the
-  # second list so copy the head of the second list over
-  # and advance the second list
-
-  def union([a_head | _a_rest] = a, [b_head | b_rest]) when a_head > b_head do
-    [b_head | union(a, b_rest)]
-  end
-
-  # And of course if either list is empty there is now
-  # just one of the lists
-
-  def union([], b_list) do
-    b_list
-  end
-
-  def union(a_list, []) do
-    a_list
-  end
+  # def union([a_head | a_rest], [a_head | b_rest]) do
+  #   union([a_head | a_rest], b_rest)
+  # end
+  #
+  # # When the heads of the two lists are adjacent then
+  # # we insert one new range that is the consolidation
+  # # of them both
+  #
+  # def union([{as, ae} | a_rest], [{bs, be} | _b_rest] = b) when ae + 1 == bs do
+  #   [{as, be} | union(a_rest, b)]
+  # end
+  #
+  # # We've advanced the second list beyond the start of the
+  # # first list so copy the head of the first list over
+  # # and advance the second list
+  #
+  # def union([a_head | a_rest], [b_head | _b_rest] = b) when a_head < b_head do
+  #   [a_head | union(a_rest, b)]
+  # end
+  #
+  # # We've advanced the first list beyond the start of the
+  # # second list so copy the head of the second list over
+  # # and advance the second list
+  #
+  # def union([a_head | _a_rest] = a, [b_head | b_rest]) when a_head > b_head do
+  #   [b_head | union(a, b_rest)]
+  # end
+  #
+  # # And of course if either list is empty there is now
+  # # just one of the lists
+  #
+  # def union([], b_list) do
+  #   b_list
+  # end
+  #
+  # def union(a_list, []) do
+  #   a_list
+  # end
 
   @doc """
   Returns the intersection of two lists of
@@ -483,23 +490,6 @@ defmodule Unicode.Set.Operation do
   def intersect([] = a, b) do
     debug(14, a, b)
     []
-  end
-
-  # To process character strings
-  # like {abc}
-  def intersect([head] = a, [head | _other] = b) do
-    debug(12, a, b)
-    head
-  end
-
-  def intersect([head | _rest] = a, head = b) do
-    debug(11, a, b)
-    head
-  end
-
-  def intersect([head | rest] = a, [head | other] = b) do
-    debug(12, a, b)
-    [head | intersect(rest, other)]
   end
 
   @doc """
