@@ -68,6 +68,14 @@ defmodule Unicode.Set.Parser do
     reduce_set_operations([{:not_in, ranges} | rest])
   end
 
+  def reduce_set_operations([:not, {:not_in, ranges}]) do
+    reduce_set_operations([{:in, ranges}])
+  end
+
+  def reduce_set_operations([:not | ranges]) do
+    reduce_set_operations([{:not_in, ranges}])
+  end
+
   def reduce_set_operations([set_a | rest]) do
     {:union, [set_a, reduce_set_operations(rest)]}
   end

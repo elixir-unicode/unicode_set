@@ -1,7 +1,7 @@
 defmodule Unicode.Set.IntersectionTest do
   use ExUnit.Case
 
-  for {category, _} <- Unicode.GeneralCategory.categories do
+  for {category, _} <- Unicode.GeneralCategory.categories() do
     test "Check intersection of a set and its complement for #{category} is always []" do
       cat = unquote(category)
       set = "[[:#{cat}:]&[:^#{cat}:]]"
@@ -10,17 +10,18 @@ defmodule Unicode.Set.IntersectionTest do
 
     test "Check difference of a set and its complement for #{category} is always the set" do
       cat = unquote(category)
-      positive = "[:#{cat}:]"
+      set = "[:#{cat}:]"
       difference = "[[:#{cat}:]-[:^#{cat}:]]"
-      assert Unicode.Set.to_utf8_char(difference) == Unicode.Set.to_utf8_char(positive)
+      assert Unicode.Set.to_utf8_char(difference) == Unicode.Set.to_utf8_char(set)
     end
 
-    # test "Check complement of complement round trips for category #{category}" do
-    #   cat = unquote(category)
-    #   positive = "[:#{cat}:]"
-    #   double_complement = "[^[:^#{cat}:]]"
-    #   assert Unicode.Set.to_utf8_char(double_complement) == Unicode.Set.to_utf8_char(positive)
-    # end
+    test "Check complement of a complement round trips for category #{category}" do
+      cat = unquote(category)
+      set = "[:#{cat}:]"
+      double_complement = "[^[:^#{cat}:]]"
+
+      assert Unicode.Set.to_utf8_char(double_complement) == Unicode.Set.to_utf8_char(set)
+    end
 
     test "Check union of a set and its complement for #{category} is always the unicode set" do
       cat = unquote(category)

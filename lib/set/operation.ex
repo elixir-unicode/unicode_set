@@ -118,6 +118,7 @@ defmodule Unicode.Set.Operation do
 
   def expand({:not_in, ranges}) do
     ranges
+    |> expand
     |> compact_ranges
     |> expand_string_ranges
     |> complement
@@ -128,7 +129,8 @@ defmodule Unicode.Set.Operation do
   # need to exapnd it to a full list
   # of codepoints
   def expand([ranges]) do
-    expand(ranges)
+    ranges
+    |> expand
     |> Enum.sort
     |> compact_ranges
   end
@@ -137,6 +139,15 @@ defmodule Unicode.Set.Operation do
     expand({:union, [a_list, b_list]})
     |> Enum.sort
     |> compact_ranges
+  end
+
+  # Its an already expanded list
+  def expand(other) when is_list(other) do
+    other
+  end
+
+  def expand({from, to} = other) when is_integer(from) and is_integer(to) do
+    [other]
   end
 
   @doc """

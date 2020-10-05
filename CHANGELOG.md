@@ -1,22 +1,32 @@
-# Changelog for Unicode Set v0.10.0
+# Changelog for Unicode Set 0.11.0
 
-This is the changelog for Unicode Set v0.10.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 0.11.0 released on October 5th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Bug Fixes
+
+* Fix various bugs in set operations for `Union`, `Difference`, `Intersection` abd `Complement`
+
+* Correctly parse and interpret set complements such as `[^[:^Sc:]]` and more complex sets such as `[^[[:Sc:]-[:^Lu:]]]`
+
+# Changelog for Unicode Set 0.10.0
+
+This is the changelog for Unicode Set 0.10.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ## Bug Fixes
 
 * Fix list composition in `Unicode.Set.to_uft8_char/1`
 
-# Changelog for Unicode Set v0.9.0
+# Changelog for Unicode Set 0.9.0
 
-This is the changelog for Unicode Set v0.9.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 0.9.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ## Enhancements
 
 * Support `nimble_parsec` version 1.x. Thanks to @josevalim for the PR.
 
-# Changelog for Unicode Set v0.8.0
+# Changelog for Unicode Set 0.8.0
 
-This is the changelog for Unicode Set v0.8.0 released on July 12th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 0.8.0 released on July 12th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ## Enhancements
 
@@ -24,7 +34,7 @@ This is the changelog for Unicode Set v0.8.0 released on July 12th, 2020.  For o
 
 * Supports the property `East Asian Width` (short name `ea`) which is required for implementing the Unicode segmentation algorithms.  Also bumps the minimum requirement for [ex_unicode version 1.8](https://hex.pm/packages/ex_unicode/1.8.0).
 
-# Changelog for Unicode Set v.07.0
+# Changelog for Unicode Set 0.7.0
 
 This is the changelog for Unicode Set v.07.0 released on May 18th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -38,7 +48,7 @@ This is the changelog for Unicode Set v.07.0 released on May 18th, 2020.  For ol
 
 * Fixes a bug whereby a Unicode Set intersection would fail with a character class that starts at the same codepoint as the Unicode set.
 
-# Changelog for Unicode Set v.06.0
+# Changelog for Unicode Set 0.6.0
 
 This is the changelog for Unicode Set v.06.0 released on May 13th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -56,7 +66,7 @@ This is the changelog for Unicode Set v.06.0 released on May 13th, 2020.  For ol
 
 * Fixes intersection and difference set operations for sets that include string ranges like `{abc}`
 
-# Changelog for Unicode Set v.05.1
+# Changelog for Unicode Set 0.5.1
 
 This is the changelog for Unicode Set v.05.1 released on March 14th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -64,7 +74,7 @@ This is the changelog for Unicode Set v.05.1 released on March 14th, 2020.  For 
 
 * Compacts tuple-ranges in order to minimize the number of generated clauses in guards. Requires at least `ex_unicode` version 1.5.0.
 
-# Changelog for Unicode Set v.05.0
+# Changelog for Unicode Set 0.5.0
 
 This is the changelog for Unicode Set v.05.0 released on March 11th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -72,7 +82,7 @@ This is the changelog for Unicode Set v.05.0 released on March 11th, 2020.  For 
 
 * Updates `ex_unicode` to version `1.4.0` which includes support for [Unicode version 13.0](http://blog.unicode.org/2020/03/announcing-unicode-standard-version-130.html) as well as support for several derived categories related to quote marks.
 
-# Changelog for Unicode Set v.04.2
+# Changelog for Unicode Set 0.4.2
 
 This is the changelog for Unicode Set v.04.2 released on February 25th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -80,7 +90,7 @@ This is the changelog for Unicode Set v.04.2 released on February 25th, 2020.  F
 
 * Allow `\n`, `\t` and `\r`, `\s` as part of character classes
 
-# Changelog for Unicode Set v.04.1
+# Changelog for Unicode Set 0.4.1
 
 This is the changelog for Unicode Set v.04.1 released on January 8th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -88,7 +98,7 @@ This is the changelog for Unicode Set v.04.1 released on January 8th, 2020.  For
 
 * Fix `Unicode.Set.Operation.difference/2` when one list is wholly contained within another
 
-# Changelog for Unicode Set v.04.0
+# Changelog for Unicode Set 0.4.0
 
 This is the changelog for Unicode Set v.04.0 released on November 27th, 2019.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -96,7 +106,7 @@ This is the changelog for Unicode Set v.04.0 released on November 27th, 2019.  F
 
 * Bump to [ex_unicode](https://hex.pm/packages/ex_unicode) to version 1.3.0 to support an expanded set of properties resolved by `unicode_set`.
 
-# Changelog for Unicode Set v.03.0
+# Changelog for Unicode Set 0.3.0
 
 This is the changelog for Unicode Set v.03.0 released on November 26th, 2019.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -106,7 +116,7 @@ This is the changelog for Unicode Set v.03.0 released on November 26th, 2019.  F
 
 * Note that the supported proporties in this release are `script`, `block`, `category` and `combining class`.
 
-# Changelog for Unicode Set v.02.0
+# Changelog for Unicode Set 0.2.0
 
 This is the changelog for Unicode Set v.02.0 released on November 24th, 2019.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
@@ -118,7 +128,7 @@ This is the changelog for Unicode Set v.02.0 released on November 24th, 2019.  F
 
 Set the README for example usage.
 
-# Changelog for Unicode Set v.01.0
+# Changelog for Unicode Set 0.1.0
 
 This is the changelog for Unicode Set v.01.0 released on November 23rd, 2019.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
