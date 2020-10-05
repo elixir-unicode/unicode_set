@@ -713,7 +713,7 @@ defmodule Unicode.Set.Operation do
 
   """
   def complement(ranges) do
-    difference(Unicode.ranges(), ranges)
+    difference(Unicode.all(), ranges)
   end
 
   # Can use this version for testing using
