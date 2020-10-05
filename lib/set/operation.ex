@@ -62,6 +62,10 @@ defmodule Unicode.Set.Operation do
     unicode_set
   end
 
+  def reduce(%Unicode.Set{state: :expanded} = unicode_set) do
+    unicode_set
+  end
+
   def reduce(%Unicode.Set{parsed: [ast]} = unicode_set) do
     reduced =
       if has_difference_or_intersection?(ast) do
