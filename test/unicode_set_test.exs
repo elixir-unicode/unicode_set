@@ -198,18 +198,6 @@ defmodule UnicodeSetTest do
     assert {:in, [{65, 68}]} = parsed.parsed
   end
 
-  test "creating unicode classes for regex" do
-    assert Unicode.Set.to_character_class("[{HZ}]") == "{HZ}"
-    assert Unicode.Set.to_character_class("[[:Lu:]&[AB{HZ}]]") == "\\x{41}-\\x{42}"
-  end
-
-  test "parsing invalid unicode classes for regex" do
-    assert Unicode.Set.to_character_class("[:ZZZ:]") ==
-    {:error,
-      {Unicode.Set.ParseError,
-        "Unable to parse \"[:ZZZ:]\". The unicode script, category or property \"zzz\" is not known."}}
-  end
-
   test "parsing invalid regex" do
     assert Unicode.Regex.compile("[[:ZZZ:]]") ==
     {:error, {'unknown POSIX class name', 3}}
