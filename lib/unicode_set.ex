@@ -187,7 +187,7 @@ defmodule Unicode.Set do
   def to_regex_string!(unicode_set) when is_binary(unicode_set) do
     case to_regex_string(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
-      {:ok, class} -> class
+      {:ok, regex_string} -> regex_string
     end
   end
 
