@@ -118,7 +118,6 @@ defmodule Unicode.Set.Operation do
 
   def expand({:not_in, ranges}) do
     ranges
-    |> expand
     |> compact_ranges
     |> expand_string_ranges
     |> complement
@@ -129,8 +128,7 @@ defmodule Unicode.Set.Operation do
   # need to exapnd it to a full list
   # of codepoints
   def expand([ranges]) do
-    ranges
-    |> expand
+    expand(ranges)
     |> Enum.sort
     |> compact_ranges
   end
@@ -141,24 +139,10 @@ defmodule Unicode.Set.Operation do
     |> compact_ranges
   end
 
-  # Its an already expanded list
-  def expand(other) when is_list(other) do
-    other
-  end
-
-  def expand({from, to} = other) when is_integer(from) and is_integer(to) do
-    [other]
-  end
-
   @doc """
   Expand string ranges like `{ab}-{cd}`
 
   """
-  def expand_string_ranges([range]) do
-    expand_string_range(range)
-    |> maybe_list_wrap
-  end
-
   def expand_string_ranges(ranges) when is_list(ranges) do
     Enum.map(ranges, &expand_string_range/1)
     |> List.flatten
@@ -731,14 +715,6 @@ defmodule Unicode.Set.Operation do
     difference(Unicode.all(), ranges)
   end
 
-  # Can use this version for testing using
-  # just the ascii range
-
-  # @ascii_ranges [{0, 127}]
-  # def complement(ranges) do
-  #   difference(@ascii_ranges, ranges)
-  # end
-
   @doc """
   Prewalks the expanded AST from a parsed
   Unicode Set invoking a function on each
@@ -786,6 +762,6 @@ defmodule Unicode.Set.Operation do
     fun.(range, range, var)
   end
 
-  defp maybe_list_wrap(term) when is_list(term), do: term
-  defp maybe_list_wrap(term), do: [term]
+  # defp maybe_list_wrap(term) when is_list(term), do: term
+  # defp maybe_list_wrap(term), do: [term]
 end

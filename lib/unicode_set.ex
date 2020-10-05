@@ -174,11 +174,14 @@ defmodule Unicode.Set do
   end
 
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
-    with {:ok, parsed} <- parse(unicode_set) do
-      parsed
-      |> Operation.reduce()
+    with {:ok, set} <- parse_and_reduce(unicode_set),
+         {:ok, set} <- not_in_has_no_string_ranges(set) do
+      set
+      |> maybe_expand
       |> Operation.traverse(&Transform.regex/3)
-      |> extract_and_expand_string_ranges
+      |> extract_string_ranges
+      # |> reverse_strings
+      |> expand_string_ranges
       |> form_regex_string
       |> return(:ok)
     end
@@ -191,14 +194,63 @@ defmodule Unicode.Set do
     end
   end
 
+  defp not_in_has_no_string_ranges(%{parsed: {:in, _ranges}} = set) do
+    {:ok, set}
+  end
+
+  defp not_in_has_no_string_ranges(%{parsed: {:not_in, ranges}} = set) do
+    if Enum.find(ranges, &string_range?/1) do
+      {:error, negative_set_error()}
+    else
+      {:ok, set}
+    end
+  end
+
+  defp not_in_has_no_string_ranges(%{parsed: [{:in, _}, {:not_in, ranges}]} = set) do
+    if Enum.find(ranges, &string_range?/1) do
+      {:error, negative_set_error()}
+    else
+      {:ok, set}
+    end
+  end
+
+  # If its just an `:in` set then no expansion is required
+  defp maybe_expand(%{parsed: {:in, _ranges}} = set) do
+    set
+  end
+
+  # If its just an `:not_in` set then expansion is only required
+  # if there are string ranges
+  defp maybe_expand(%{parsed: {:not_in, ranges}} = set) do
+    if Enum.find(ranges, &string_range?/1) do
+      Operation.expand(set)
+    else
+      set
+    end
+  end
+
+  # Must have both `:in` and `:not_in` so must be expanded
+  # since to honour the union of two ranges they need to
+  # be combined
+  defp maybe_expand(set) do
+    Operation.expand(set)
+  end
+
+  defp string_range?({from, _to}) when is_list(from), do: true
+  defp string_range?(_), do: false
+
   # Separate the string ranges from the character
   # ranges and then expand the string ranges
-  defp extract_and_expand_string_ranges(elements) do
-    Enum.reduce(elements, {[], []}, fn
-      {first, last}, {strings, classes} -> {strings, [{first, last} | classes]}
-      string, {strings, classes} -> {[string | strings], classes}
+  defp extract_string_ranges(elements, acc \\ {[], []}) do
+    Enum.reduce(elements, acc, fn
+      elements, {strings, classes} when is_list(elements) ->
+        {add_strings, add_classes} = extract_string_ranges(elements, acc)
+        {[add_strings | strings], add_classes ++ classes}
+      {first, last}, {strings, classes} ->
+        {strings, [{first, last} | classes]}
+      string, {strings, classes} ->
+        {[string | strings], classes}
     end)
-    |> expand_string_ranges
   end
 
   @doc false
@@ -212,6 +264,16 @@ defmodule Unicode.Set do
     {Enum.reverse(strings), string_alternates}
   end
 
+  # defp reverse_strings({strings, string_ranges}) do
+  #   reversed =
+  #     Enum.reduce strings, [], fn
+  #       list, acc when is_list(list) -> [Enum.reverse(list) | acc]
+  #       string, acc -> [string | acc]
+  #     end
+  #
+  #   {reversed, string_ranges}
+  # end
+
   defp maybe_wrap_list([]), do: []
   defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
   defp maybe_wrap_list(range), do: [range]
@@ -220,24 +282,47 @@ defmodule Unicode.Set do
     Enum.map(string_range, fn {first, first} -> List.to_string(first) end)
   end
 
-  defp form_regex_string({["^" | strings], []}) do
-    "[^" <> Enum.join(strings) <> "]"
-  end
-
-  defp form_regex_string({["^" | _strings], _string_ranges}) do
-    {:error, {Unicode.Set.ParseError, "Can't negate string ranges"}}
-  end
+  # We receive a tuple of two lists:
+  # * A list of normal regexable expressions
+  # * A list of string ranges that are expanded
 
   defp form_regex_string({strings, []}) do
-    "[" <> Enum.join(strings) <> "]"
+    form_regex_string(strings)
   end
 
   defp form_regex_string({[], string_ranges}) do
-    "(" <> Enum.join(string_ranges, "|") <> ")"
+    form_string_ranges(string_ranges)
+  end
+
+  defp form_regex_string({["^" | _rest], _string_ranges}) do
+    {exception, reason} = negative_set_error()
+    raise exception, reason
+  end
+
+  defp form_regex_string({[_first, ["^" | _rest]], _string_ranges}) do
+    {exception, reason} = negative_set_error()
+    raise exception, reason
   end
 
   defp form_regex_string({strings, string_ranges}) do
-    "([" <> Enum.join(strings) <> "]|" <> Enum.join(string_ranges, "|") <> ")"
+    "(" <> form_regex_string(strings) <> "|" <> form_string_ranges(string_ranges) <> ")"
+  end
+
+  defp form_regex_string([list_one, list_two]) when is_list(list_one) and is_list(list_two) do
+    ["[", join_regex_strings(list_one), join_regex_strings(list_two), "]"]
+    |> :erlang.iolist_to_binary
+  end
+
+  defp form_regex_string(strings) do
+    join_regex_strings(strings)
+  end
+
+  defp join_regex_strings(strings) when is_list(strings) do
+    "[" <> Enum.join(strings) <> "]"
+  end
+
+  defp form_string_ranges(string_ranges) do
+    Enum.join(string_ranges, "|")
   end
 
   defp assert_binary_parameter!(unicode_set) do
@@ -259,6 +344,10 @@ defmodule Unicode.Set do
       "Unable to parse #{inspect unicode_set}. " <>
       "#{message}. Detected at #{inspect rest}."
     }
+  end
+
+  defp negative_set_error() do
+    {Unicode.Set.ParseError, "Negative sets with string ranges is not supported"}
   end
 
   defp return(term, atom) do
