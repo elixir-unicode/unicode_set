@@ -180,7 +180,6 @@ defmodule Unicode.Set do
       |> maybe_expand
       |> Operation.traverse(&Transform.regex/3)
       |> extract_string_ranges
-      # |> reverse_strings
       |> expand_string_ranges
       |> form_regex_string
       |> return(:ok)
@@ -264,23 +263,13 @@ defmodule Unicode.Set do
     {Enum.reverse(strings), string_alternates}
   end
 
-  # defp reverse_strings({strings, string_ranges}) do
-  #   reversed =
-  #     Enum.reduce strings, [], fn
-  #       list, acc when is_list(list) -> [Enum.reverse(list) | acc]
-  #       string, acc -> [string | acc]
-  #     end
-  #
-  #   {reversed, string_ranges}
-  # end
+  defp expand_string_range(string_range) when is_list(string_range) do
+    Enum.map(string_range, fn {first, first} -> List.to_string(first) end)
+  end
 
   defp maybe_wrap_list([]), do: []
   defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
   defp maybe_wrap_list(range), do: [range]
-
-  def expand_string_range(string_range) when is_list(string_range) do
-    Enum.map(string_range, fn {first, first} -> List.to_string(first) end)
-  end
 
   # We receive a tuple of two lists:
   # * A list of normal regexable expressions
