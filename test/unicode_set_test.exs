@@ -235,7 +235,7 @@ defmodule UnicodeSetTest do
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc{ac}][xyz{gg}]]") ==
       {:error,
-       {Unicode.Set.ParseError, "Negative sets with string ranges is not supported"}}
+       {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}}
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
       {:ok, "([\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}

@@ -166,6 +166,7 @@ defmodule Unicode.Set do
       |> extract_string_ranges
       |> expand_string_ranges
       |> form_regex_string
+      |> :erlang.iolist_to_binary
       |> return(:ok)
     end
   end
@@ -240,7 +241,7 @@ defmodule Unicode.Set do
   def expand_string_ranges({strings, string_ranges}) do
     string_alternates =
       string_ranges
-      |> Unicode.Set.Operation.expand_string_ranges
+      |> Operation.expand_string_ranges
       |> maybe_wrap_list()
       |> Enum.map(&expand_string_range/1)
 
@@ -255,35 +256,36 @@ defmodule Unicode.Set do
   defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
   defp maybe_wrap_list(range), do: [range]
 
-  # We receive a tuple of two lists:
-  # * A list of normal regexable expressions
-  # * A list of string ranges that are expanded
 
+  # Regex strings but no string ranges
   defp form_regex_string({strings, []}) do
     form_regex_string(strings)
   end
 
+  # No regex strings, only string ranges
   defp form_regex_string({[], string_ranges}) do
     form_string_ranges(string_ranges)
   end
 
+  # String ranges in a negative set is not supported
   defp form_regex_string({["^" | _rest], _string_ranges}) do
     {exception, reason} = negative_set_error()
     raise exception, reason
   end
 
+  # String ranges in a negative set is not supported
   defp form_regex_string({[_first, ["^" | _rest]], _string_ranges}) do
     {exception, reason} = negative_set_error()
     raise exception, reason
   end
 
+  # Both regex strings and string ranges
   defp form_regex_string({strings, string_ranges}) do
-    "(" <> form_regex_string(strings) <> "|" <> form_string_ranges(string_ranges) <> ")"
+    ["(", form_regex_string(strings), "|", form_string_ranges(string_ranges), ")"]
   end
 
   defp form_regex_string([list_one, list_two]) when is_list(list_one) and is_list(list_two) do
     ["[", join_regex_strings(list_one), join_regex_strings(list_two), "]"]
-    |> :erlang.iolist_to_binary
   end
 
   defp form_regex_string(strings) do
@@ -291,11 +293,11 @@ defmodule Unicode.Set do
   end
 
   defp join_regex_strings(strings) when is_list(strings) do
-    "[" <> Enum.join(strings) <> "]"
+    ["[", strings, "]"]
   end
 
   defp form_string_ranges(string_ranges) do
-    Enum.join(string_ranges, "|")
+    Enum.intersperse(string_ranges, "|")
   end
 
   defp assert_binary_parameter!(unicode_set) do
@@ -320,7 +322,7 @@ defmodule Unicode.Set do
   end
 
   defp negative_set_error() do
-    {Unicode.Set.ParseError, "Negative sets with string ranges is not supported"}
+    {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}
   end
 
   defp return(term, atom) do
