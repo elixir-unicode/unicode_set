@@ -25,7 +25,7 @@ defmodule Unicode.Set do
   @type state :: nil | :reduced | :expanded
 
   @type operator :: :union | :intersection | :difference | :in | :not_in
-  @type operation :: [{operator, operation | range_list}]
+  @type operation :: [{operator, operation | range_list}] | {operator, operation | range_list}
 
   @type t :: %__MODULE__{
     set: binary(),
@@ -33,24 +33,18 @@ defmodule Unicode.Set do
     state: state()
   }
 
-  @doc """
-  Parses a Unicode Set binary into an internal
-  AST-like representation
+  defparsecp(
+    :one_set,
+    unicode_set()
+  )
 
-  ## Example
-
-      Unicode.Set.parse("[[:Zs:]]")
-      #=> {:ok, #Unicode.Set<[[:Zs:]]>}
-
-  """
-  defparsec(
+  defparsecp(
     :parse_one,
     parsec(:one_set)
     |> eos()
   )
 
-  @doc false
-  defparsec(
+  defparsecp(
     :parse_many,
     parsec(:one_set)
     |> ignore(optional(whitespace()))
@@ -58,7 +52,7 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsec(
+  defparsecp(
     :parse_regex,
     repeat(
       parsec(:one_set)
@@ -68,10 +62,6 @@ defmodule Unicode.Set do
     |> optional(anchor())
     |> eos()
   )
-
-  @doc false
-  @dialyzer {:nowarn_function, one_set: 1}
-  defparsec(:one_set, unicode_set())
 
   @spec parse(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse(unicode_set) do
@@ -173,7 +163,7 @@ defmodule Unicode.Set do
 
   @spec compile_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
-    with pattern when is_list(pattern) <- to_pattern(unicode_set) do
+    with {:ok, pattern} <- to_pattern(unicode_set) do
       {:ok, :binary.compile_pattern(pattern)}
     end
   end
