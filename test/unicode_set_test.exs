@@ -229,4 +229,15 @@ defmodule UnicodeSetTest do
     refute Unicode.Regex.match?("[[:^S:]&[:^Z:]]", "$")
     assert Unicode.Regex.match?("[[:^S:]&[:^Z:]]", "T")
   end
+
+  test "to_regex_string/1 with negative sets" do
+    assert Unicode.Set.to_regex_string("[[^dfd]]") == {:ok, "[^\\x{64}\\x{66}]"}
+
+    assert Unicode.Set.to_regex_string("[[dfd][^abc{ac}][xyz{gg}]]") ==
+      {:error,
+       {Unicode.Set.ParseError, "Negative sets with string ranges is not supported"}}
+
+    assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
+      {:ok, "([\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
+  end
 end
