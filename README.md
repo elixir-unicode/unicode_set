@@ -82,9 +82,9 @@ For example:
 iex> Unicode.Regex.compile("\\p{Zs}")
 {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
 
-iex> Unicode.Regex.compile("[:visible:]")
+iex> Unicode.Regex.compile("[:graphic:]")
 {:ok,
- ~r/[\x{20}-\x{7E}\x{A0}-\x{AC}\x{AE}-\x{377}\x{37A}-\x{37F}.....\x{E0100}-\x{E01EF}...]/u}
+ ~r/[\x{20}-\x{7E}\x{A0}-\x{AC}\x{AE}-\x{377}\x{37A}-\x{37F}...]/u}
 ```
 
 ### Other Examples
