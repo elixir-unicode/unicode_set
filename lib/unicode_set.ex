@@ -12,7 +12,7 @@ defmodule Unicode.Set do
   @enforce_keys @keys
   defstruct @keys
 
-  @type codepoint :: 0..1114111
+  @type codepoint :: 0..1_114_111
   @type character_range :: {codepoint, codepoint}
   @type string_range :: {charlist, charlist}
   @type range :: character_range | string_range
@@ -28,10 +28,10 @@ defmodule Unicode.Set do
   @type operation :: [{operator, operation | range_list}] | {operator, operation | range_list}
 
   @type t :: %__MODULE__{
-    set: binary(),
-    parsed: operation() | range_list(),
-    state: state()
-  }
+          set: binary(),
+          parsed: operation() | range_list(),
+          state: state()
+        }
 
   defparsecp(
     :one_set,
@@ -52,7 +52,8 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsecp(
+  @doc false
+  defparsec(
     :parse_regex,
     repeat(
       parsec(:one_set)
@@ -99,6 +100,17 @@ defmodule Unicode.Set do
     end
   end
 
+  @spec parse_and_reduce!(binary) :: t() | no_return()
+  def parse_and_reduce!(unicode_set) do
+    case parse_and_reduce(unicode_set) do
+      {:ok, result} ->
+        result
+
+      {:error, {exception, reason}} ->
+        raise exception, reason
+    end
+  end
+
   @doc """
   Returns a boolean based upon whether `var`
   matches the provided `unicode_set`.
@@ -140,10 +152,10 @@ defmodule Unicode.Set do
     else
       search_tree =
         unicode_set
-        |> Unicode.Set.parse!
+        |> Unicode.Set.parse!()
         |> Operation.reduce()
         |> Search.build_search_tree()
-        |> Macro.escape
+        |> Macro.escape()
 
       quote do
         Unicode.Set.Search.member?(unquote(var), unquote(search_tree))
@@ -158,6 +170,17 @@ defmodule Unicode.Set do
       |> Operation.reduce()
       |> Operation.traverse(&Transform.pattern/3)
       |> return(:ok)
+    end
+  end
+
+  @spec to_pattern!(binary) :: t() | no_return()
+  def to_pattern!(unicode_set) do
+    case to_pattern(unicode_set) do
+      {:ok, result} ->
+        result
+
+      {:error, {exception, reason}} ->
+        raise exception, reason
     end
   end
 
@@ -178,6 +201,17 @@ defmodule Unicode.Set do
     end
   end
 
+  @spec to_utf8_char!(binary) :: t() | no_return()
+  def to_utf8_char!(unicode_set) do
+    case to_utf8_char(unicode_set) do
+      {:ok, result} ->
+        result
+
+      {:error, {exception, reason}} ->
+        raise exception, reason
+    end
+  end
+
   @spec to_regex_string(binary()) :: {:ok, binary()} | {:error, {module(), binary()}}
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
@@ -188,7 +222,7 @@ defmodule Unicode.Set do
       |> extract_string_ranges
       |> expand_string_ranges
       |> form_regex_string
-      |> :erlang.iolist_to_binary
+      |> :erlang.iolist_to_binary()
       |> return(:ok)
     end
   end
@@ -240,8 +274,10 @@ defmodule Unicode.Set do
       elements, {strings, classes} when is_list(elements) ->
         {add_strings, add_classes} = extract_string_ranges(elements, acc)
         {[add_strings | strings], add_classes ++ classes}
+
       {first, last}, {strings, classes} ->
         {strings, [{first, last} | classes]}
+
       string, {strings, classes} ->
         {[string | strings], classes}
     end)
@@ -251,7 +287,7 @@ defmodule Unicode.Set do
   def expand_string_ranges({strings, string_ranges}) do
     string_alternates =
       string_ranges
-      |> Operation.expand_string_ranges
+      |> Operation.expand_string_ranges()
       |> maybe_wrap_list()
       |> Enum.map(&expand_string_range/1)
 
@@ -265,7 +301,6 @@ defmodule Unicode.Set do
   defp maybe_wrap_list([]), do: []
   defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
   defp maybe_wrap_list(range), do: [range]
-
 
   # Regex strings but no string ranges
   defp form_regex_string({strings, []}) do
@@ -319,16 +354,14 @@ defmodule Unicode.Set do
 
   defp parse_error(unicode_set, message, "") do
     {Unicode.Set.ParseError,
-      "Unable to parse #{inspect unicode_set}. " <>
-      "#{message}."
-    }
+     "Unable to parse #{inspect(unicode_set)}. " <>
+       "#{message}."}
   end
 
   defp parse_error(unicode_set, message, rest) do
     {Unicode.Set.ParseError,
-      "Unable to parse #{inspect unicode_set}. " <>
-      "#{message}. Detected at #{inspect rest}."
-    }
+     "Unable to parse #{inspect(unicode_set)}. " <>
+       "#{message}. Detected at #{inspect(rest)}."}
   end
 
   defp negative_set_error() do

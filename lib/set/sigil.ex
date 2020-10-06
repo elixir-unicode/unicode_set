@@ -12,7 +12,7 @@ defmodule Unicode.Set.Sigil do
   """
   defmacro sigil_u({:<<>>, _meta, [string]}, []) when is_binary(string) do
     string
-    |> Unicode.Set.parse!
-    |> Macro.escape
+    |> Unicode.Set.parse!()
+    |> Macro.escape()
   end
 end

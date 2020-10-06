@@ -194,20 +194,20 @@ defmodule UnicodeSetTest do
   end
 
   test "set intersection when set is not a Unicode set and they align" do
-    {:ok, parsed} = Unicode.Set.parse_and_reduce "[[:Lu:]&[ABCD]]"
+    {:ok, parsed} = Unicode.Set.parse_and_reduce("[[:Lu:]&[ABCD]]")
     assert {:in, [{65, 68}]} = parsed.parsed
   end
 
   test "parsing invalid regex" do
     assert Unicode.Regex.compile("[[:ZZZ:]]") ==
-    {:error, {'unknown POSIX class name', 3}}
+             {:error, {'unknown POSIX class name', 3}}
   end
 
   test "parsing an invalid unicode set returns the right error" do
     assert Unicode.Set.parse("[:ZZZZ:]") ==
-    {:error,
-     {Unicode.Set.ParseError,
-      "Unable to parse \"[:ZZZZ:]\". The unicode script, category or property \"zzzz\" is not known."}}
+             {:error,
+              {Unicode.Set.ParseError,
+               "Unable to parse \"[:ZZZZ:]\". The unicode script, category or property \"zzzz\" is not known."}}
   end
 
   test "parsing a single escaped character" do
@@ -216,13 +216,16 @@ defmodule UnicodeSetTest do
 
   test "parsing perl and posix positive and negative regex" do
     assert Unicode.Regex.compile("[:Zs:]") ==
-      {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+             {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+
     assert Unicode.Regex.compile("[:^Zs:]") ==
-      {:ok, ~r/[^\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+             {:ok, ~r/[^\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+
     assert Unicode.Regex.compile("\\P{Zs}") ==
-      {:ok, ~r/[^\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+             {:ok, ~r/[^\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+
     assert Unicode.Regex.compile("\\p{Zs}") ==
-      {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
+             {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
   end
 
   test "union of two negated sets" do
@@ -234,10 +237,10 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.to_regex_string("[[^dfd]]") == {:ok, "[^\\x{64}\\x{66}]"}
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc{ac}][xyz{gg}]]") ==
-      {:error,
-       {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}}
+             {:error,
+              {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}}
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
-      {:ok, "([\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
+             {:ok, "([\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
   end
 end

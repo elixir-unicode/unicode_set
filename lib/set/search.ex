@@ -1,5 +1,4 @@
 defmodule Unicode.Set.Search do
-
   defstruct [:binary_tree, :string_ranges, :operation]
 
   def build_search_tree(%Unicode.Set{parsed: {operation, tuple_list}, state: :reduced}) do
@@ -31,10 +30,11 @@ defmodule Unicode.Set.Search do
     Enum.reduce(tuples, {[], []}, fn
       {from, to} = tuple, {ranges, string_ranges} when is_list(from) and is_list(to) ->
         {ranges, [tuple | string_ranges]}
+
       tuple, {ranges, string_ranges} ->
         {[tuple | ranges], string_ranges}
     end)
-    |> Unicode.Set.expand_string_ranges
+    |> Unicode.Set.expand_string_ranges()
     |> tag_string_ranges
   end
 
@@ -57,9 +57,10 @@ defmodule Unicode.Set.Search do
     !member?(codepoint, tree)
   end
 
-  string_match = quote do
-    << var!(codepoint) :: utf8, _rest :: binary >> = var!(string)
-  end
+  string_match =
+    quote do
+      <<var!(codepoint)::utf8, _rest::binary>> = var!(string)
+    end
 
   def member?(unquote(string_match), %__MODULE__{operation: :in} = search_tree) do
     %__MODULE__{binary_tree: tree, string_ranges: strings} = search_tree
@@ -103,14 +104,14 @@ defmodule Unicode.Set.Search do
   end
 
   def string_member?(string, strings) do
-    Enum.reduce_while strings, false, fn [len | pattern], acc ->
+    Enum.reduce_while(strings, false, fn [len | pattern], acc ->
       pattern = :binary.compile_pattern(pattern)
+
       if :binary.match(string, pattern, scope: {0, len}) == :nomatch do
         {:cont, acc}
       else
         {:halt, true}
       end
-    end
+    end)
   end
-
 end

@@ -132,7 +132,7 @@ defmodule Unicode.Set.Transform do
   # D800..DB7F;SG     # Cs   [896] <surrogate-D800>..<surrogate-DB7F>
   # DB80..DBFF;SG     # Cs   [128] <surrogate-DB80>..<surrogate-DBFF>
   # DC00..DFFF;SG     # Cs  [1024] <surrogate-DC00>..<surrogate-DFFF>
-  defp to_binary(integer) when is_integer(integer) and integer in 0xd800..0xdfff do
+  defp to_binary(integer) when is_integer(integer) and integer in 0xD800..0xDFFF do
     ""
   end
 

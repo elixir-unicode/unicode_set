@@ -61,7 +61,7 @@ defmodule Unicode.Regex do
     string
     |> split_character_classes
     |> expand_unicode_sets
-    |> Enum.join
+    |> Enum.join()
     |> Regex.compile(options)
   end
 
@@ -152,43 +152,44 @@ defmodule Unicode.Regex do
   def split_character_classes(string) do
     string
     |> split_character_classes([""])
-    |> Enum.reverse
+    |> Enum.reverse()
   end
 
   defp split_character_classes("", acc) do
     acc
   end
 
-  defp split_character_classes(<< "\\p{", rest :: binary >>, acc) do
-    split_character_classes(rest,  ["\\p{" | acc])
+  defp split_character_classes(<<"\\p{", rest::binary>>, acc) do
+    split_character_classes(rest, ["\\p{" | acc])
   end
 
-  defp split_character_classes(<< "\\P{", rest :: binary >>, acc) do
+  defp split_character_classes(<<"\\P{", rest::binary>>, acc) do
     split_character_classes(rest, ["\\P{" | acc])
   end
 
-  defp split_character_classes(<< "\\", char :: binary-1, rest :: binary >>, [head | others]) do
+  defp split_character_classes(<<"\\", char::binary-1, rest::binary>>, [head | others]) do
     split_character_classes(rest, [head <> "\\" <> char | others])
   end
 
-  defp split_character_classes(<< "[", _rest :: binary >> = string, acc) do
+  defp split_character_classes(<<"[", _rest::binary>> = string, acc) do
     {character_class, rest} = extract_character_class(string)
     split_character_classes(rest, ["" | [character_class | acc]])
   end
 
-  perl_set = quote do
-    [<< "\\", var!(c) :: binary-1, var!(head) :: binary >> | var!(others)]
-  end
+  perl_set =
+    quote do
+      [<<"\\", var!(c)::binary-1, var!(head)::binary>> | var!(others)]
+    end
 
-  defp split_character_classes(<< "}", rest :: binary >>, unquote(perl_set)) when is_perl_set(c) do
+  defp split_character_classes(<<"}", rest::binary>>, unquote(perl_set)) when is_perl_set(c) do
     split_character_classes(rest, ["" | ["\\" <> c <> head <> "}" | others]])
   end
 
-  defp split_character_classes(<< "]", rest :: binary >>, [head | others]) do
+  defp split_character_classes(<<"]", rest::binary>>, [head | others]) do
     split_character_classes(rest, ["" | [head <> "]" | others]])
   end
 
-  defp split_character_classes(<< char :: binary-1, rest :: binary >>, [head | others]) do
+  defp split_character_classes(<<char::binary-1, rest::binary>>, [head | others]) do
     split_character_classes(rest, [head <> char | others])
   end
 
@@ -201,38 +202,38 @@ defmodule Unicode.Regex do
     {string, ""}
   end
 
-  defp extract_character_class(<< "\\[", rest :: binary >>, level) do
+  defp extract_character_class(<<"\\[", rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level)
     {"\\[" <> string, rest}
   end
 
-  defp extract_character_class(<< "\\]", rest :: binary >>, level) do
+  defp extract_character_class(<<"\\]", rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level)
-    {"\\]" <> string , rest}
+    {"\\]" <> string, rest}
   end
 
-  defp extract_character_class(<< "[", rest :: binary >>, level) do
+  defp extract_character_class(<<"[", rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level + 1)
     {"[" <> string, rest}
   end
 
-  defp extract_character_class(<< "]", rest :: binary >>, 1) do
+  defp extract_character_class(<<"]", rest::binary>>, 1) do
     {"]", rest}
   end
 
-  defp extract_character_class(<< "]", rest :: binary >>, level) do
+  defp extract_character_class(<<"]", rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level - 1)
     {"]" <> string, rest}
   end
 
-  defp extract_character_class(<< char :: binary-1, rest :: binary >>, level) do
+  defp extract_character_class(<<char::binary-1, rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level)
     {char <> string, rest}
   end
 
   # Expand unicode sets to their codepoints
 
-  defp expand_unicode_sets([<< "[", set :: binary >> | rest]) do
+  defp expand_unicode_sets([<<"[", set::binary>> | rest]) do
     regex = "[" <> set
 
     case Unicode.Set.to_regex_string(regex) do
@@ -241,7 +242,7 @@ defmodule Unicode.Regex do
     end
   end
 
-  defp expand_unicode_sets([<< "\\", c :: binary-1, set :: binary >> | rest]) when is_perl_set(c) do
+  defp expand_unicode_sets([<<"\\", c::binary-1, set::binary>> | rest]) when is_perl_set(c) do
     regex = "\\" <> c <> set
 
     case Unicode.Set.to_regex_string(regex) do
@@ -279,5 +280,4 @@ defmodule Unicode.Regex do
       [:unicode | options]
     end
   end
-
 end

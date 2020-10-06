@@ -20,13 +20,15 @@ defmodule Unicode.Set.Operation do
 
   defmacrop debug(step, a, b) do
     {caller, _} = __CALLER__.function
+
     if caller in @debug_functions && Mix.env() == :dev do
       quote do
-        IO.inspect "#{unquote(caller)}", label: "Step #{unquote(step)}"
-        IO.inspect unquote(a), label: "a"
-        IO.inspect unquote(b), label: "b"
+        IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
+        IO.inspect(unquote(a), label: "a")
+        IO.inspect(unquote(b), label: "b")
       end
     end
+
     quote do
       _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
     end
@@ -129,13 +131,13 @@ defmodule Unicode.Set.Operation do
   # of codepoints
   def expand([ranges]) do
     expand(ranges)
-    |> Enum.sort
+    |> Enum.sort()
     |> compact_ranges
   end
 
   def expand([a_list, b_list]) do
     expand({:union, [a_list, b_list]})
-    |> Enum.sort
+    |> Enum.sort()
     |> compact_ranges
   end
 
@@ -145,7 +147,7 @@ defmodule Unicode.Set.Operation do
   """
   def expand_string_ranges(ranges) when is_list(ranges) do
     Enum.map(ranges, &expand_string_range/1)
-    |> List.flatten
+    |> List.flatten()
   end
 
   def expand_string_range({from, to}) when is_integer(from) and is_integer(to) do
@@ -195,7 +197,7 @@ defmodule Unicode.Set.Operation do
 
   def combine({:union, [this, that]}) do
     [combine(this), combine(that)]
-    |> List.flatten
+    |> List.flatten()
   end
 
   def combine(other) do
@@ -221,9 +223,10 @@ defmodule Unicode.Set.Operation do
     ranges
     |> Enum.group_by(fn {k, _v} -> k end, fn {_k, v} -> v end)
     |> Enum.map(fn {k, v} ->
-      {k, v |> List.flatten |> Enum.sort |> Unicode.Utils.compact_ranges}
+      {k, v |> List.flatten() |> Enum.sort() |> Unicode.Utils.compact_ranges()}
     end)
   end
+
   #
   # def compact_ranges({_charlist_1, _charlist_2} = range) do
   #   range
@@ -271,8 +274,8 @@ defmodule Unicode.Set.Operation do
   """
   def union(a_list, b_list) when is_list(a_list) and is_list(b_list) do
     (a_list ++ b_list)
-    |> Enum.sort
-    |> Enum.uniq
+    |> Enum.sort()
+    |> Enum.uniq()
   end
 
   # If two heads are the same then keep one and

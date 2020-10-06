@@ -272,7 +272,8 @@ defmodule Unicode.Set.Parser do
     |> ignore(ascii_char([?}]))
   end
 
-  @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}] # ++ @whitespace_chars
+  # ++ @whitespace_chars
+  @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}]
   @not_syntax_chars Enum.map(@syntax_chars, fn c -> {:not, c} end)
   def char do
     choice([
@@ -339,7 +340,6 @@ defmodule Unicode.Set.Parser do
     |> String.to_integer(16)
   end
 
-
   # Applied to a regex
   def repetition do
     ignore(optional(whitespace()))
@@ -369,8 +369,7 @@ defmodule Unicode.Set.Parser do
   end
 
   def anchor do
-    ignore(optional(whitespace()))
-    |> ascii_char([?$]) |> replace(:end)
+    ignore(optional(whitespace())) |> ascii_char([?$]) |> replace(:end)
   end
 
   #  Helpers
