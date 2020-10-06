@@ -8,7 +8,30 @@ defmodule Unicode.Set do
 
   alias Unicode.Set.{Operation, Transform, Search}
 
-  defstruct [:set, :parsed, :state]
+  @keys [:set, :parsed, :state]
+  @enforce_keys @keys
+  defstruct @keys
+
+  @type codepoint :: pos_integer
+  @type character_range :: {codepoint, codepoint}
+  @type string_range :: {charlist, charlist}
+  @type range :: character_range | string_range
+  @type range_list :: [range]
+
+  @type codepoint_range :: %Range{first: codepoint, last: codepoint}
+  @type nimble_range :: codepoint | codepoint_range | {:not, codepoint | codepoint_range}
+  @type nimble_list :: [nimble_range]
+
+  @type state :: nil | :reduced | :expanded
+
+  @type operator :: :union | :intersection | :difference | :in | :not_in
+  @type operation :: [{operator, operation | range_list}]
+
+  @type t :: %__MODULE__{
+    set: binary(),
+    parsed: operation() | range_list(),
+    state: state()
+  }
 
   @doc """
   Parses a Unicode Set binary into an internal
@@ -50,6 +73,7 @@ defmodule Unicode.Set do
   @dialyzer {:nowarn_function, one_set: 1}
   defparsec(:one_set, unicode_set())
 
+  @spec parse(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse(unicode_set) do
     case parse_one(unicode_set) do
       {:ok, parsed, "", _, _, _} ->
@@ -61,6 +85,7 @@ defmodule Unicode.Set do
     end
   end
 
+  @spec parse!(binary) :: t() | no_return()
   def parse!(unicode_set) do
     case parse(unicode_set) do
       {:ok, result} ->
@@ -77,6 +102,7 @@ defmodule Unicode.Set do
   character ranges.
 
   """
+  @spec parse_and_reduce(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse_and_reduce(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       {:ok, Operation.reduce(parsed)}
@@ -135,33 +161,39 @@ defmodule Unicode.Set do
     end
   end
 
+  @spec to_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def to_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.reduce()
       |> Operation.traverse(&Transform.pattern/3)
+      |> return(:ok)
     end
   end
 
+  @spec compile_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
     with pattern when is_list(pattern) <- to_pattern(unicode_set) do
-      :binary.compile_pattern(pattern)
+      {:ok, :binary.compile_pattern(pattern)}
     end
   end
 
+  @spec to_utf8_char(binary()) :: {:ok, nimble_list} | {:error, {module(), binary()}}
   def to_utf8_char(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.reduce()
       |> Operation.traverse(&Transform.utf8_char/3)
+      |> return(:ok)
     end
   end
 
+  @spec to_regex_string(binary()) :: {:ok, binary()} | {:error, {module(), binary()}}
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
          {:ok, set} <- not_in_has_no_string_ranges(set) do
       set
-      |> maybe_expand
+      |> maybe_expand_set
       |> Operation.traverse(&Transform.regex/3)
       |> extract_string_ranges
       |> expand_string_ranges
@@ -171,6 +203,7 @@ defmodule Unicode.Set do
     end
   end
 
+  @spec to_regex_string!(binary()) :: binary() | no_return()
   def to_regex_string!(unicode_set) when is_binary(unicode_set) do
     case to_regex_string(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
@@ -183,45 +216,33 @@ defmodule Unicode.Set do
   end
 
   defp not_in_has_no_string_ranges(%{parsed: {:not_in, ranges}} = set) do
-    if Enum.find(ranges, &string_range?/1) do
-      {:error, negative_set_error()}
-    else
-      {:ok, set}
-    end
+    if Enum.any?(ranges, &string_range?/1), do: {:error, negative_set_error()}, else: {:ok, set}
   end
 
   defp not_in_has_no_string_ranges(%{parsed: [{:in, _}, {:not_in, ranges}]} = set) do
-    if Enum.find(ranges, &string_range?/1) do
-      {:error, negative_set_error()}
-    else
-      {:ok, set}
-    end
+    if Enum.any?(ranges, &string_range?/1), do: {:error, negative_set_error()}, else: {:ok, set}
   end
 
+  defp string_range?({from, _to}) when is_list(from), do: true
+  defp string_range?(_), do: false
+
   # If its just an `:in` set then no expansion is required
-  defp maybe_expand(%{parsed: {:in, _ranges}} = set) do
+  defp maybe_expand_set(%{parsed: {:in, _ranges}} = set) do
     set
   end
 
   # If its just an `:not_in` set then expansion is only required
   # if there are string ranges
-  defp maybe_expand(%{parsed: {:not_in, ranges}} = set) do
-    if Enum.find(ranges, &string_range?/1) do
-      Operation.expand(set)
-    else
-      set
-    end
+  defp maybe_expand_set(%{parsed: {:not_in, ranges}} = set) do
+    if Enum.any?(ranges, &string_range?/1), do: Operation.expand(set), else: set
   end
 
   # Must have both `:in` and `:not_in` so must be expanded
   # since to honour the union of two ranges they need to
   # be combined
-  defp maybe_expand(set) do
+  defp maybe_expand_set(set) do
     Operation.expand(set)
   end
-
-  defp string_range?({from, _to}) when is_list(from), do: true
-  defp string_range?(_), do: false
 
   # Separate the string ranges from the character
   # ranges and then expand the string ranges

@@ -97,29 +97,29 @@ defmodule UnicodeSetTest do
   test "compile_pattern/1" do
     require Unicode.Set
 
-    pattern = Unicode.Set.compile_pattern("[[:digit:]]")
+    {:ok, pattern} = Unicode.Set.compile_pattern("[[:digit:]]")
     list = String.split("abc1def2ghi3jkl", pattern)
     assert list == ["abc", "def", "ghi", "jkl"]
   end
 
   test "utf8_char/1" do
-    assert Unicode.Set.to_utf8_char("[[^abcd][mnb]]") == [98, 109..110, {:not, 97..100}]
+    assert Unicode.Set.to_utf8_char("[[^abcd][mnb]]") == {:ok, [98, 109..110, {:not, 97..100}]}
   end
 
   test "string ranges" do
     assert Unicode.Set.to_pattern("[{ab}-{cd}]") ==
-             ["ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
+             {:ok, ["ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]}
 
     assert Unicode.Set.to_pattern("[{ab}-{cd}abc]") ==
-             ["a", "b", "c", "ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]
+             {:ok, ["a", "b", "c", "ab", "ac", "ad", "bb", "bc", "bd", "cb", "cc", "cd"]}
   end
 
   test "nested sets" do
     assert Unicode.Set.to_pattern("[[[ab]-[b]][def]]") ==
-             ["a", "d", "e", "f"]
+             {:ok, ["a", "d", "e", "f"]}
 
     assert Unicode.Set.to_pattern("[{👦🏻}-{👦🏿}]") ==
-             ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]
+             {:ok, ["👦🏻", "👦🏼", "👦🏽", "👦🏾", "👦🏿"]}
   end
 
   test "Sets of whitespace" do

@@ -5,7 +5,7 @@ defmodule Unicode.Set.IntersectionTest do
     test "Check intersection of a set and its complement for #{category} is always []" do
       cat = unquote(category)
       set = "[[:#{cat}:]&[:^#{cat}:]]"
-      assert Unicode.Set.to_utf8_char(set) == []
+      assert Unicode.Set.to_utf8_char(set) == {:ok, []}
     end
 
     test "Check difference of a set and its complement for #{category} is always the set" do
