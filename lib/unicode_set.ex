@@ -12,7 +12,7 @@ defmodule Unicode.Set do
   @enforce_keys @keys
   defstruct @keys
 
-  @type codepoint :: pos_integer
+  @type codepoint :: 0..1114111
   @type character_range :: {codepoint, codepoint}
   @type string_range :: {charlist, charlist}
   @type range :: character_range | string_range
@@ -231,7 +231,6 @@ defmodule Unicode.Set do
     set
   end
 
-  # If its just an `:not_in` set then expansion is only required
   # if there are string ranges
   defp maybe_expand_set(%{parsed: {:not_in, ranges}} = set) do
     if Enum.any?(ranges, &string_range?/1), do: Operation.expand(set), else: set
