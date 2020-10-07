@@ -52,18 +52,6 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  @doc false
-  defparsec(
-    :parse_regex,
-    repeat(
-      parsec(:one_set)
-      |> optional(repetition())
-      |> ignore(optional(whitespace()))
-    )
-    |> optional(anchor())
-    |> eos()
-  )
-
   @spec parse(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse(unicode_set) do
     case parse_one(unicode_set) do
