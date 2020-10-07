@@ -98,35 +98,6 @@ defmodule Unicode.Set.Transform do
     range_1 ++ range_2
   end
 
-  @doc """
-  Converts a expanded AST into a simple
-  character class.
-
-  This conversion supports converting
-  Unicode sets into character classes
-  for pre-processing regex expressions.
-
-  """
-  def character_class({first, first}, ranges, _var) when is_integer(first) do
-    [to_binary(first) | ranges]
-  end
-
-  def character_class({first, last}, ranges, _var) when is_integer(first) and is_integer(last) do
-    [to_binary(first, last) | ranges]
-  end
-
-  def character_class({first, last}, ranges, _var) when is_list(first) and is_list(last) do
-    [to_binary(first, last) | ranges]
-  end
-
-  def character_class(:not_in, ranges, _var) do
-    ["^", ranges]
-  end
-
-  def character_class(range_1, range_2, _var) do
-    range_1 ++ range_2
-  end
-
   # Regex doesn't all codepoints in this range so we just
   # omit them for now
   # D800..DB7F;SG     # Cs   [896] <surrogate-D800>..<surrogate-DB7F>
