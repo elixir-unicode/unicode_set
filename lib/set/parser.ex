@@ -187,32 +187,32 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property(property, value) do
+    with {:ok, ranges} <- fetch_property!(property, value) do
       {[{:not_in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, :not_in, property, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property(property, value) do
+    with {:ok, ranges} <- fetch_property!(property, value) do
       {[{:in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, operator, property], context, _line, _offset)
       when operator in [:in, :not_in] do
-    with {:ok, ranges} <- fetch_property(property, value) do
+    with {:ok, ranges} <- fetch_property!(property, value) do
       {[{operator, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property(:script_or_category, value) do
+    with {:ok, ranges} <- fetch_property!(:script_or_category, value) do
       {[{:not_in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property(:script_or_category, value) do
+    with {:ok, ranges} <- fetch_property!(:script_or_category, value) do
       {[{:in, ranges}], context}
     end
   end

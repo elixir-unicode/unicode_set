@@ -26,4 +26,12 @@ defmodule Unicode.Set.Property do
          "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end
   end
+
+  def fetch_property!(property, value) do
+    case fetch_property(property, value) do
+      {:ok, range_list} -> {:ok, range_list}
+      {:error, reason} -> raise Regex.CompileError, reason
+    end
+  end
+
 end

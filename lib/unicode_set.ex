@@ -62,6 +62,9 @@ defmodule Unicode.Set do
       {:error, message, rest, _, _, _} ->
         {:error, parse_error(unicode_set, message, rest)}
     end
+  rescue
+    e in Regex.CompileError ->
+      {:error, parse_error(unicode_set, e.message, "")}
   end
 
   @spec parse!(binary) :: t() | no_return()
