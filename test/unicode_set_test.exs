@@ -243,4 +243,11 @@ defmodule UnicodeSetTest do
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
              {:ok, "([\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
   end
+
+  test "parse nested set with invalid property" do
+    assert Unicode.Set.parse("[\\p{sdff}]") ==
+    {:error,
+     {Unicode.Set.ParseError,
+      "Unable to parse \"[\\\\p{sdff}]\". The unicode script, category or property \"sdff\" is not known."}}
+  end
 end
