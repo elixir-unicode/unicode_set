@@ -128,12 +128,14 @@ defmodule Unicode.Regex do
       true
 
   """
-  def match?(regex_string, string, opts \\ @default_options) when is_binary(regex_string) do
+  def match?(regex_string, string, opts \\ @default_options)
+
+  def match?(regex_string, string, opts) when is_binary(regex_string) do
     regex = compile!(regex_string, opts)
     Regex.match?(regex, string)
   end
 
-  def match?(%Regex{} = regex, string) do
+  def match?(%Regex{} = regex, string, _opts) do
     Regex.match?(regex, string)
   end
 
