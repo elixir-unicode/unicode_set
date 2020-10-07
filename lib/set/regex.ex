@@ -104,8 +104,11 @@ defmodule Unicode.Regex do
 
   ## Arguments
 
-  * `string` is a regular expression in
+  * `regex_string` is a regular expression in
     string form.
+
+  * `string` is any string against which
+    the regex match is executed
 
   * `options` is a string or a list which is
     passed unchanged to `Regex.compile/2`.
@@ -114,9 +117,10 @@ defmodule Unicode.Regex do
 
   ## Returns
 
-  * a boolean indicating if there was a match of
+  * a boolean indicating if there was a match or
 
-  * raises an exception
+  * raises an exception if `regex` is not
+    a valid regular expression.
 
   ## Example
 
@@ -124,8 +128,12 @@ defmodule Unicode.Regex do
       true
 
   """
-  def match?(regex_string, string, opts \\ @default_options) do
+  def match?(regex_string, string, opts \\ @default_options) when is_binary(regex_string) do
     regex = compile!(regex_string, opts)
+    Regex.match?(regex, string)
+  end
+
+  def match?(%Regex{} = regex, string) do
     Regex.match?(regex, string)
   end
 
