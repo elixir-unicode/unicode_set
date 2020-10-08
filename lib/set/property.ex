@@ -15,7 +15,7 @@ defmodule Unicode.Set.Property do
   end
 
   def property(:script_or_category, :punct) do
-    Unicode.Set.parse("\\p{gc=Punctuation}\\p{gc=Symbol}-\\p{alpha}")
+    Unicode.Set.parse("[\\p{gc=Punctuation}\\p{gc=Symbol}-\\p{alpha}]")
   end
 
   def property(:script_or_category, :digit) do
@@ -23,11 +23,11 @@ defmodule Unicode.Set.Property do
   end
 
   def property(:script_or_category, :xdigit) do
-    Unicode.Set.parse("\\p{gc=Decimal_Number}\\p{Hex_Digit}")
+    Unicode.Set.parse("[\\p{gc=Decimal_Number}\\p{Hex_Digit}]")
   end
 
   def property(:script_or_category, :alnum) do
-    Unicode.Set.parse("\\p{alpha}\\p{digit}")
+    Unicode.Set.parse("[\\p{alpha}\\p{digit}]")
   end
 
   def property(:script_or_category, :space) do
@@ -43,11 +43,11 @@ defmodule Unicode.Set.Property do
   end
 
   def property(:script_or_category, :print) do
-    Unicode.Set.parse("\\p{graph}\\p{blank}-\\p{cntrl}")
+    Unicode.Set.parse("[\\p{graph}\\p{blank}-\\p{cntrl}]")
   end
 
   def property(:script_or_category, :word) do
-    Unicode.Set.parse("\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}")
+    Unicode.Set.parse("[\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}]")
   end
 
   def property(:script_or_category, :graph) do

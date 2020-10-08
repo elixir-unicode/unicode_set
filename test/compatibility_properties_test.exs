@@ -9,7 +9,7 @@ defmodule Unicode.Set.CompatibilityTest do
 
   test "Compiling compatibility classes" do
     for property <- @compatibility_properties do
-      assert Unicode.Set.Property.property(:script_or_category, property)
+      assert match?({:ok, _any}, Unicode.Set.Property.property(:script_or_category, property))
     end
   end
 
