@@ -334,6 +334,25 @@ Any                 | Any	all code points	[\u{0}-\u{10FFFF}]
 Assigned            | Assigned	all assigned characters meaning	`\P{Cn}`
 ASCII               | ASCII	all ASCII characters	[\u{0}-\u{7F}]
 
+### Compatibility Property Names
+
+Property  | Unicode Category           | Comments
+--------- | -------------------------- | -----------
+
+alpha	    | \p{Alphabetic}	           | Alphabetic includes more than gc = Letter. Note that combining marks (Me, Mn, Mc) are required for words of many languages. While they could be applied to non-alphabetics, their principal use is on alphabetics. Alphabetic should not be used as an approximation for word boundaries: see word below.
+lower	    | \p{Lowercase}	             | Lowercase includes more than gc = Lowercase_Letter (Ll).
+upper	    | \p{Uppercase}	             | Uppercase includes more than gc = Uppercase_Letter (Lu).
+punct	    | \p{gc=Punctuation} \p{gc=Symbol} -- \p{alpha} | Punctuation and symbols.
+digit     |	\p{gc=Decimal_Number}	     | [0..9]	Non-decimal numbers (like Roman numerals) are normally excluded.
+xdigit    | \p{gc=Decimal_Number} \p{Hex_Digit}	| [0-9 A-F a-f]	Hex_Digit contains 0-9 A-F, fullwidth and halfwidth, upper and lowercase.
+alnum     |	\p{alpha} \p{digit}	       | Simple combination of other properties
+space     |	\p{Whitespace}	|
+blank	    | \p{gc=Space_Separator} \N{CHARACTER TABULATION}	| "horizontal" whitespace: space separators plus U+0009 tab.
+cntrl	    | \p{gc=Control}             | The characters in \p{gc=Format} share some, but not all aspects of control characters. Many format characters are required in the representation of plain text.
+graph	    | [^\p{space} \p{gc=Control} \p{gc=Surrogate} \p{gc=Unassigned}]	| Warning: the set shown here is defined by excluding space, controls, and so on with ^.
+print	    | \p{graph} \p{blank} -- \p{cntrl}	| Includes graph and space-like characters.
+word      | \p{alpha} \p{gc=Mark} \p{digit} \p{gc=Connector_Punctuation} \p{Join_Control}	|	This is only an approximation to Word Boundaries. The Connector Punctuation is added in for programming language identifiers, thus adding `_` and similar characters.
+
 ## Installation
 
 To install, add the package `unicode_set` to your list of dependencies in `mix.exs`:
