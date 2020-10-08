@@ -286,7 +286,7 @@ When these are processed, case and whitespace are ignored so you may use them fo
 
 <!-- MDOC -->
 
-### General Category Properties
+### General Categories
 
 Abb.	Long form
 L	Letter
