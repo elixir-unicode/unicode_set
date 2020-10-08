@@ -58,7 +58,7 @@ defmodule UnicodeSet.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_unicode, "~> 1.10"},
+      {:ex_unicode, "~> 1.11"},
       {:nimble_parsec, "~> 0.5 or ~> 1.0", runtime: false},
       {:benchee, "~> 1.0", only: :dev},
       {:ex_doc, "~> 0.19", runtime: false},
