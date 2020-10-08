@@ -286,6 +286,60 @@ When these are processed, case and whitespace are ignored so you may use them fo
 
 <!-- MDOC -->
 
+### General Category Properties
+
+Abb.	Long form
+L	Letter
+Lu	Uppercase Letter
+Ll	Lowercase Letter
+Lt	Titlecase Letter
+Lm	Modifier Letter
+Lo	Other Letter
+M	Mark
+Mn	Non-Spacing Mark
+Mc	Spacing Combining Mark
+Me	Enclosing Mark
+N	Number
+Nd	Decimal Digit Number
+Nl	Letter Number
+No	Other Number
+Abb.	Long form
+S	Symbol
+Sm	Math Symbol
+Sc	Currency Symbol
+Sk	Modifier Symbol
+So	Other Symbol
+P	Punctuation
+Pc	Connector Punctuation
+Pd	Dash Punctuation
+Ps	Open Punctuation
+Pe	Close Punctuation
+Pi	Initial Punctuation
+Pf	Final Punctuation
+Po	Other Punctuation
+Z	Separator
+Zs	Space Separator
+Zl	Line Separator
+Zp	Paragraph Separator
+C	Other
+Cc	Control
+Cf	Format
+Cs	Surrogate
+Co	Private Use
+Cn	Unassigned
+
+
+-	Any*
+-	Assigned*
+-	ASCII*
+Starred entries in the table are not part of the enumeration of General_Category values. They are explained below.
+
+### Derived Categories
+
+Any	all code points	[\u{0}-\u{10FFFF}]	In some regular expression languages, \p{Any} may be expressed by a period ("."), but that usage may exclude newline characters.
+Assigned	all assigned characters (for the target version of Unicode)	\P{Cn}	This also includes all private use characters. It is useful for avoiding confusing double negatives. Note that Cn includes noncharacters, so Assigned excludes them.
+ASCII	all ASCII characters	[\u{0}-\u{7F}]
+
 ## Installation
 
 To install, add the package `unicode_set` to your list of dependencies in `mix.exs`:
