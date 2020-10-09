@@ -2,57 +2,57 @@ defmodule Unicode.Set.Property do
   @moduledoc false
 
   @doc false
-  def property(:script_or_category, :alpha) do
-    Unicode.Set.parse("\\p{Alphabetic}")
-  end
-
-  def property(:script_or_category, :lower) do
-    Unicode.Set.parse("\\p{Lowercase}")
-  end
-
-  def property(:script_or_category, :upper) do
-    Unicode.Set.parse("\\p{Uppercase}")
-  end
-
-  def property(:script_or_category, :punct) do
-    Unicode.Set.parse("[\\p{gc=Punctuation}\\p{gc=Symbol}-\\p{alpha}]")
-  end
-
-  def property(:script_or_category, :digit) do
-    Unicode.Set.parse("\\p{gc=Decimal_Number}")
-  end
-
-  def property(:script_or_category, :xdigit) do
-    Unicode.Set.parse("[\\p{gc=Decimal_Number}\\p{Hex_Digit}]")
-  end
-
-  def property(:script_or_category, :alnum) do
-    Unicode.Set.parse("[\\p{alpha}\\p{digit}]")
-  end
-
-  def property(:script_or_category, :space) do
-    Unicode.Set.parse("\\p{Whitespace}")
-  end
-
-  def property(:script_or_category, :blank) do
-    Unicode.Set.parse("[\\p{gc=Space_Separator}\t]")
-  end
-
-  def property(:script_or_category, :cntrl) do
-    Unicode.Set.parse("\\p{gc=Control}")
-  end
-
-  def property(:script_or_category, :print) do
-    Unicode.Set.parse("[\\p{graph}\\p{blank}-\\p{cntrl}]")
-  end
-
-  def property(:script_or_category, :word) do
-    Unicode.Set.parse("[\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}]")
-  end
-
-  def property(:script_or_category, :graph) do
-    Unicode.Set.parse("[^\\p{space}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")
-  end
+  # def fetch_property(:script_or_category, "alpha") do
+  #   Unicode.Set.parse("\\p{Alphabetic}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "lower") do
+  #   Unicode.Set.parse("\\p{Lowercase}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "upper") do
+  #   Unicode.Set.parse("\\p{Uppercase}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "punct") do
+  #   Unicode.Set.parse("[\\p{gc=Punctuation}\\p{gc=Symbol}-\\p{alpha}]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "digit") do
+  #   Unicode.Set.parse("\\p{gc=Decimal_Number}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "xdigit") do
+  #   Unicode.Set.parse("[\\p{gc=Decimal_Number}\\p{Hex_Digit}]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "alnum") do
+  #   Unicode.Set.parse("[\\p{alpha}\\p{digit}]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "space") do
+  #   Unicode.Set.parse("\\p{Whitespace}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "blank") do
+  #   Unicode.Set.parse("[\\p{gc=Space_Separator}\t]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "cntrl") do
+  #   Unicode.Set.parse("\\p{gc=Control}")
+  # end
+  #
+  # def fetch_property(:script_or_category, "print") do
+  #   Unicode.Set.parse("[\\p{graph}\\p{blank}-\\p{cntrl}]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "word") do
+  #   Unicode.Set.parse("[\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}]")
+  # end
+  #
+  # def fetch_property(:script_or_category, "graph") do
+  #   Unicode.Set.parse("[^\\p{space}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")
+  # end
 
   def fetch_property(:script_or_category, value) do
     range_list =
