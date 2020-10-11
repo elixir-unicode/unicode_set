@@ -242,6 +242,9 @@ defmodule UnicodeSetTest do
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
              {:ok, "(?:[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
+
+    assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}{hh}]]") ==
+             {:ok, "(?:[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|hh|gg)"}
   end
 
   test "parse nested set with invalid property" do
