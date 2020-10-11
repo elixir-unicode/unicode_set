@@ -150,6 +150,14 @@ defmodule Unicode.Set.Operation do
     |> List.flatten()
   end
 
+  def expand_string_range({:in, ranges}) when is_list(ranges) do
+    {:in, expand_string_ranges(ranges)}
+  end
+
+  def expand_string_range({:not_in, ranges}) when is_list(ranges) do
+    {:not_in, expand_string_ranges(ranges)}
+  end
+
   def expand_string_range({from, to}) when is_integer(from) and is_integer(to) do
     {from, to}
   end
@@ -164,14 +172,6 @@ defmodule Unicode.Set.Operation do
     |> Enum.map(&(prefix ++ &1))
     |> Enum.map(&{&1, &1})
   end
-
-  # def expand_string_range([{a, a}]) do
-  #   a
-  # end
-  #
-  # def expand_string_range([{a, b}]) do
-  #   a..b
-  # end
 
   def expand_string_range([{a, b}, {c, d}]) do
     for x <- a..b, y <- c..d, do: [x, y]
@@ -226,11 +226,6 @@ defmodule Unicode.Set.Operation do
       {k, v |> List.flatten() |> Enum.sort() |> Unicode.Utils.compact_ranges()}
     end)
   end
-
-  #
-  # def compact_ranges({_charlist_1, _charlist_2} = range) do
-  #   range
-  # end
 
   @doc """
   Returns a boolean indicating whether the given
@@ -708,13 +703,28 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Returns a list of 2-tuples representing
-  codepoint ranges that are the full
-  set of Unicode ranges minus the ranges
-  for a given property.
+  Returns the complement (inverse) of a set.
 
   """
-  def complement(ranges) do
+  def complement(%Unicode.Set{parsed: {:in, parsed}} = set) do
+    %{set | parsed: {:not_in, parsed}}
+  end
+
+  def complement(%Unicode.Set{parsed: {:not_in, parsed}} = set) do
+    %{set | parsed: {:in, parsed}}
+  end
+
+  def complement(%Unicode.Set{state: :parsed} = set) do
+    set
+    |> reduce
+    |> complement
+  end
+
+  def complement(%Unicode.Set{parsed: parsed} = set) do
+    %{set | parsed: complement(parsed)}
+  end
+
+  def complement(ranges) when is_list(ranges) do
     difference(Unicode.all(), ranges)
   end
 

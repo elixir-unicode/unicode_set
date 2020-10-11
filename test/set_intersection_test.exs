@@ -12,7 +12,11 @@ defmodule Unicode.Set.IntersectionTest do
       cat = unquote(category)
       set = "[:#{cat}:]"
       difference = "[[:#{cat}:]-[:^#{cat}:]]"
-      assert Unicode.Set.to_utf8_char(difference) == Unicode.Set.to_utf8_char(set)
+
+      difference = Unicode.Set.parse!(difference) |> Unicode.Set.Operation.expand
+      set = Unicode.Set.parse!(set) |> Unicode.Set.Operation.expand
+
+      assert difference.parsed == set.parsed
     end
 
     test "Check complement of a complement round trips for category #{category}" do

@@ -4,8 +4,10 @@ defmodule Unicode.Set.Parser do
   import NimbleParsec
   import Unicode.Set.Property
 
+  @doc false
   defguard is_hex_digit(c) when c in ?0..?9 or c in ?a..?z or c in ?A..?Z
 
+  @doc false
   def unicode_set do
     choice([
       property(),
@@ -14,6 +16,7 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
+  @doc false
   def basic_set do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?-, ?^]) |> replace(:not))
@@ -23,11 +26,13 @@ defmodule Unicode.Set.Parser do
     |> label("set")
   end
 
+  @doc false
   def empty_set do
     string("[-]")
     |> label("empty set")
   end
 
+  @doc false
   def sequence do
     choice([
       maybe_repeated_set(),
@@ -37,49 +42,79 @@ defmodule Unicode.Set.Parser do
     |> label("sequence")
   end
 
+  @doc false
   def maybe_repeated_set do
     parsec(:one_set)
     |> repeat(set_operator() |> parsec(:one_set))
   end
 
+
+  @debug_functions []
+
+  defmacrop tracer(step, a) do
+    {caller, _} = __CALLER__.function
+
+    if Mix.env() == :dev and caller in @debug_functions do
+      quote do
+        IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
+        IO.inspect(unquote(a), label: "argument")
+      end
+    else
+      quote do
+        _ = {unquote(step), unquote(a)}
+      end
+    end
+  end
+
+  @doc false
   def reduce_set_operations([set_a]) do
+    tracer(0, [set_a])
     set_a
   end
 
   def reduce_set_operations([set_a, operator, set_b])
       when operator in [:difference, :intersection] do
+    tracer(1, [set_a, operator, set_b])
     {operator, [set_a, set_b]}
   end
 
   def reduce_set_operations([set_a, operator, set_b | repeated_sets])
       when operator in [:difference, :intersection] do
+    tracer(2, [set_a, operator, set_b | repeated_sets])
     reduce_set_operations([{operator, [set_a, set_b]} | repeated_sets])
   end
 
   def reduce_set_operations([{:in, ranges1}, {:in, ranges2} | rest]) do
+    tracer(2, [{:in, ranges1}, {:in, ranges2} | rest])
     reduce_set_operations([{:in, Enum.sort(ranges1 ++ ranges2)} | rest])
   end
 
   def reduce_set_operations([:not, {:in, ranges1}, {:in, ranges2} | rest]) do
+    tracer(3, [:not, {:in, ranges1}, {:in, ranges2} | rest])
     reduce_set_operations([:not, {:in, Enum.sort(ranges1 ++ ranges2)} | rest])
   end
 
   def reduce_set_operations([:not, {:in, ranges} | rest]) do
+    tracer(4, [:not, {:in, ranges} | rest])
     reduce_set_operations([{:not_in, ranges} | rest])
   end
 
   def reduce_set_operations([:not, {:not_in, ranges}]) do
+    tracer(5, [:not, {:not_in, ranges}])
     reduce_set_operations([{:in, ranges}])
   end
 
   def reduce_set_operations([:not | ranges]) do
+    tracer(6, [:not | ranges])
     reduce_set_operations([{:not_in, ranges}])
   end
 
   def reduce_set_operations([set_a | rest]) do
+    tracer(7, [set_a | rest])
     {:union, [set_a, reduce_set_operations(rest)]}
   end
 
+  @doc false
   def set_operator do
     ignore(optional(whitespace()))
     |> choice([
@@ -89,6 +124,7 @@ defmodule Unicode.Set.Parser do
     |> ignore(optional(whitespace()))
   end
 
+  @doc false
   def range do
     choice([
       character_range(),
@@ -99,6 +135,7 @@ defmodule Unicode.Set.Parser do
     |> label("range")
   end
 
+  @doc false
   def character_range do
     char()
     |> ignore(optional(whitespace()))
@@ -109,6 +146,7 @@ defmodule Unicode.Set.Parser do
     )
   end
 
+  @doc false
   # Of the forrm {abc} or {abc-def}
   def string_range do
     string()
@@ -121,6 +159,7 @@ defmodule Unicode.Set.Parser do
     )
   end
 
+  @doc false
   def reduce_range([[bracketed]]) when is_list(bracketed),
     do: {:in, Enum.map(bracketed, &{&1, &1})}
 
@@ -132,6 +171,7 @@ defmodule Unicode.Set.Parser do
   def reduce_range([from]), do: {:in, [{from, from}]}
   def reduce_range([from, to]), do: {:in, [{from, to}]}
 
+  @doc false
   def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _)
       when is_integer(from) and is_integer(to) do
     {args, context}
@@ -151,6 +191,7 @@ defmodule Unicode.Set.Parser do
     end
   end
 
+  @doc false
   def property do
     choice([
       perl_property(),
@@ -160,6 +201,7 @@ defmodule Unicode.Set.Parser do
     |> label("property")
   end
 
+  @doc false
   def posix_property do
     ignore(string("[:"))
     |> optional(ascii_char([?^]) |> replace(:not))
@@ -169,6 +211,7 @@ defmodule Unicode.Set.Parser do
     |> label("posix property")
   end
 
+  @doc false
   def perl_property do
     ignore(ascii_char([?\\]))
     |> choice([ascii_char([?P]) |> replace(:not), ignore(ascii_char([?p]))])
@@ -179,6 +222,7 @@ defmodule Unicode.Set.Parser do
     |> label("perl property")
   end
 
+  @doc false
   def operator do
     choice([
       utf8_char([0x2260]) |> replace(:not_in),
@@ -186,37 +230,53 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
+  @doc false
   def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property!(property, value) do
-      {[{:not_in, ranges}], context}
+    tracer(1, [value, :in, property, :not])
+    case fetch_property!(property, value) do
+      %{parsed: parsed} -> {{:not_in, parsed}, context}
+      ranges -> {[{:not_in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, :not_in, property, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property!(property, value) do
-      {[{:in, ranges}], context}
+    tracer(2, [value, :not_in, property, :not])
+    case fetch_property!(property, value) do
+      %{parsed: parsed} -> {parsed, context}
+      ranges -> {[{:in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, operator, property], context, _line, _offset)
       when operator in [:in, :not_in] do
-    with {:ok, ranges} <- fetch_property!(property, value) do
-      {[{operator, ranges}], context}
+    tracer(3, [value, operator, property])
+    case fetch_property!(property, value) do
+      %{parsed: parsed} -> {[{operator, parsed}], context}
+      ranges -> {[{operator, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value, :not], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property!(:script_or_category, value) do
-      {[{:not_in, ranges}], context}
+    tracer(4, [value, :not])
+    case fetch_property!(:script_or_category, value)  do
+      %{parsed: [{:not_in, parsed}]} -> {[{:in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {[{:not_in, parsed}], context}
+      %{parsed: parsed} -> {[{:not_in, parsed}], context}
+      ranges -> {[{:not_in, ranges}], context}
     end
   end
 
   def reduce_property(_rest, [value], context, _line, _offset) do
-    with {:ok, ranges} <- fetch_property!(:script_or_category, value) do
-      {[{:in, ranges}], context}
+    tracer(5, [value])
+    case fetch_property!(:script_or_category, value) do
+      %{parsed: [{:not_in, parsed}]} -> {[{:not_in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {[{:in, parsed}], context}
+      %{parsed: parsed} -> {parsed, context}
+      ranges -> {[{:in, ranges}], context}
     end
   end
 
+  @doc false
   @alphanumeric [?a..?z, ?A..?Z, ?0..?9]
   def property_name do
     ignore(optional(whitespace()))
@@ -227,6 +287,7 @@ defmodule Unicode.Set.Parser do
     |> label("property name")
   end
 
+  @doc false
   def value_1 do
     times(
       choice([
@@ -238,6 +299,7 @@ defmodule Unicode.Set.Parser do
     |> reduce(:to_lower_string)
   end
 
+  @doc false
   def value_2 do
     times(
       choice([
@@ -249,6 +311,7 @@ defmodule Unicode.Set.Parser do
     |> reduce(:to_lower_string)
   end
 
+  @doc false
   def to_lower_string(args) do
     args
     |> List.to_string()
@@ -256,15 +319,18 @@ defmodule Unicode.Set.Parser do
     |> String.downcase()
   end
 
+  @doc false
   @whitespace_chars [0x20, 0x9..0xD, 0x85, 0x200E, 0x200F, 0x2028, 0x2029]
   def whitespace_char do
     ascii_char(@whitespace_chars)
   end
 
+  @doc false
   def whitespace do
     times(whitespace_char(), min: 1)
   end
 
+  @doc false
   def string do
     ignore(ascii_char([?{]))
     |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
@@ -272,6 +338,7 @@ defmodule Unicode.Set.Parser do
     |> ignore(ascii_char([?}]))
   end
 
+  @doc false
   # ++ @whitespace_chars
   @syntax_chars [?&, ?-, ?[, ?], ?\\, ?{, ?}]
   @not_syntax_chars Enum.map(@syntax_chars, fn c -> {:not, c} end)
@@ -282,6 +349,7 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
+  @doc false
   def quoted do
     choice([
       ignore(ascii_char([?x]))
@@ -298,6 +366,7 @@ defmodule Unicode.Set.Parser do
     |> label("quoted character")
   end
 
+  @doc false
   def bracketed_hex do
     ignore(ascii_char([?{]))
     |> ignore(optional(whitespace()))
@@ -309,6 +378,7 @@ defmodule Unicode.Set.Parser do
     |> label("bracketed hex")
   end
 
+  @doc false
   def hex_codepoint do
     choice([
       times(hex(), min: 1, max: 5),
@@ -318,11 +388,13 @@ defmodule Unicode.Set.Parser do
     |> label("hex codepoint")
   end
 
+  @doc false
   def hex do
     ascii_char([?a..?f, ?A..?F, ?0..?9])
     |> label("hex character")
   end
 
+  @doc false
   # Its just an escaped char
   def hex_to_codepoint([?t]), do: ?\t
   def hex_to_codepoint([?n]), do: ?\n
@@ -340,6 +412,7 @@ defmodule Unicode.Set.Parser do
     |> String.to_integer(16)
   end
 
+  @doc false
   # Applied to a regex
   def repetition do
     ignore(optional(whitespace()))
@@ -351,6 +424,7 @@ defmodule Unicode.Set.Parser do
     ])
   end
 
+  @doc false
   def iterations do
     ignore(ascii_char([?{]))
     |> ignore(optional(whitespace()))
@@ -364,10 +438,12 @@ defmodule Unicode.Set.Parser do
     |> reduce(:iteration)
   end
 
+  @doc false
   def iteration([from, to]) do
     {:repeat, min: from, max: to}
   end
 
+  @doc false
   def anchor do
     ignore(optional(whitespace())) |> ascii_char([?$]) |> replace(:end)
   end
