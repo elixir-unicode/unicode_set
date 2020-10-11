@@ -250,4 +250,12 @@ defmodule UnicodeSetTest do
      {Unicode.Set.ParseError,
       "Unable to parse \"[\\\\p{sdff}]\". The unicode script, category or property \"sdff\" is not known."}}
   end
+
+  test "compile_string/1 raises with negative string classes" do
+    error_message = ~r/[^...] unicode sets are not supported for compiled patterns/
+
+    assert_raise ArgumentError, error_message, fn ->
+      Unicode.Set.compile_pattern("[^{ab}]")
+    end
+  end
 end
