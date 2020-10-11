@@ -22,7 +22,7 @@ defmodule Unicode.Set do
   @type nimble_range :: codepoint | codepoint_range | {:not, codepoint | codepoint_range}
   @type nimble_list :: [nimble_range]
 
-  @type state :: nil | :reduced | :expanded
+  @type state :: nil | :parsed | :reduced | :expanded
 
   @type operator :: :union | :intersection | :difference | :in | :not_in
   @type operation :: [{operator, operation | range_list}] | {operator, operation | range_list}
@@ -164,7 +164,7 @@ defmodule Unicode.Set do
     end
   end
 
-  @spec to_pattern!(binary) :: t() | no_return()
+  @spec to_pattern!(binary) :: [binary()] | no_return()
   def to_pattern!(unicode_set) do
     case to_pattern(unicode_set) do
       {:ok, result} ->
@@ -192,7 +192,7 @@ defmodule Unicode.Set do
     end
   end
 
-  @spec to_utf8_char!(binary) :: t() | no_return()
+  @spec to_utf8_char!(binary) :: nimble_list | no_return()
   def to_utf8_char!(unicode_set) do
     case to_utf8_char(unicode_set) do
       {:ok, result} ->

@@ -103,6 +103,8 @@ defmodule Unicode.Set.Transform do
   # D800..DB7F;SG     # Cs   [896] <surrogate-D800>..<surrogate-DB7F>
   # DB80..DBFF;SG     # Cs   [128] <surrogate-DB80>..<surrogate-DBFF>
   # DC00..DFFF;SG     # Cs  [1024] <surrogate-DC00>..<surrogate-DFFF>
+
+  @spec to_binary(integer) :: String.t()
   defp to_binary(integer) when is_integer(integer) and integer in 0xD800..0xDFFF do
     ""
   end
@@ -111,17 +113,24 @@ defmodule Unicode.Set.Transform do
     "\\x{" <> Integer.to_string(integer, 16) <> "}"
   end
 
+  @spec to_binary(integer, integer ) :: String.t()
+  @spec to_binary(charlist, charlist) :: String.t()
+
+  defp to_binary(first, first) when is_integer(first) do
+    to_binary(first)
+  end
+
   defp to_binary(first, last) when is_integer(first) and is_integer(last) do
     to_binary(first) <> "-" <> to_binary(last)
   end
 
-  defp to_binary(first, first) when is_list(first) do
-    "{" <> List.to_string(first) <> "}"
-  end
-
-  defp to_binary(first, last) when is_list(first) and is_list(last) do
-    "{" <> List.to_string(first) <> "}" <> "-" <> "{" <> List.to_string(last) <> "}"
-  end
+  # defp to_binary(first, first) when is_list(first) do
+  #   "{" <> List.to_string(first) <> "}"
+  # end
+  #
+  # defp to_binary(first, last) when is_list(first) and is_list(last) do
+  #   "{" <> List.to_string(first) <> "}" <> "-" <> "{" <> List.to_string(last) <> "}"
+  # end
 
   @doc """
   Converts a expanded AST into a simple
