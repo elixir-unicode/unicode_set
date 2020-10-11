@@ -126,14 +126,6 @@ defmodule Unicode.Set.Transform do
     to_binary(first) <> "-" <> to_binary(last)
   end
 
-  # defp to_binary(first, first) when is_list(first) do
-  #   "{" <> List.to_string(first) <> "}"
-  # end
-  #
-  # defp to_binary(first, last) when is_list(first) and is_list(last) do
-  #   "{" <> List.to_string(first) <> "}" <> "-" <> "{" <> List.to_string(last) <> "}"
-  # end
-
   @doc """
   Converts a expanded AST into a simple
   regex.
