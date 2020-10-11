@@ -8,6 +8,8 @@ This is the changelog for Unicode Set 0.11.0 released on October 5th, 2020.  For
 
 * Correctly parse and interpret set complements such as `[^[:^Sc:]]` and more complex sets such as `[^[[:Sc:]-[:^Lu:]]]`
 
+* Add recurively defined sets to support compatibility with Posix classes. See `Unicode.Set.Property`.
+
 # Changelog for Unicode Set 0.10.0
 
 This is the changelog for Unicode Set 0.10.0 released on October 2nd, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
