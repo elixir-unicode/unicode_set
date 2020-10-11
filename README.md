@@ -338,7 +338,6 @@ ASCII               | ASCII	all ASCII characters	[\u{0}-\u{7F}]
 
 Property  | Unicode Category           | Comments
 --------- | -------------------------- | -----------
-
 alpha	    | `\p{Alphabetic}`           | Alphabetic includes more than gc = Letter. Note that combining marks (Me, Mn, Mc) are required for words of many languages. While they could be applied to non-alphabetics, their principal use is on alphabetics. Alphabetic should not be used as an approximation for word boundaries: see `word` below.
 lower	    | `\p{Lowercase}`	             | Lowercase includes more than gc = Lowercase_Letter (Ll).
 upper	    | `\p{Uppercase}`	             | Uppercase includes more than gc = Uppercase_Letter (Lu).
