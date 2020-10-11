@@ -5,15 +5,18 @@
 [![Hex.pm](https://img.shields.io/hexpm/dw/unicode_set.svg?)](https://hex.pm/packages/ex_unicode_set)
 [![Hex.pm](https://img.shields.io/hexpm/l/unicode_set.svg)](https://hex.pm/packages/ex_unicode_set)
 
-A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This is all consolidated into a single primary macro, `Unicode.Set.match?/2`.
+A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This expansion support the following public API:
+
+* `Unicode.Set.match?/2` which is a macro that matches a codepoint to a unicode set.
+* `Unicode.Regex.compile/2` which pre-processes a regex string expanding unicode sets into a regex executable by the `Regex` module.
+* `Unicode.Set.to_utf8_char/1` that converts a unicode set into a form usable with [nimble_parsec](https://hex.pm/packages/nimble_parsec)
+* `Unicode.Set.compile_pattern/1` which converts a unicode set into a string that is then compiled with `:binary.compile_pattern/1`.
 
 The implementation conforms closely to the [Unicode Set specification](http://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
 
 <!-- MDOC -->
 
 ## Usage
-
-The primary api is the macro `Unicode.Set.match?/2` that returns a boolean based upon whether a given codepoint matches a unicode set.
 
 ### Function guards
 
@@ -62,7 +65,7 @@ This can be used as shown in the following example:
 defmodule MyCombinators do
   import NimbleParsec
 
-  @digit_list = Unicode.Set.utf8_char("[[:digit:]]")
+  @digit_list = Unicode.Set.to_utf8_char("[[:digit:]]")
   def unicode_digit do
     utf8_char(@digit_list)
     |> label("a digit in any Unicode script")
@@ -116,23 +119,91 @@ This version of `Unicode Set` supports the following enumerable unicode properti
 * `combining class` such as `[:ccc=230:]`
 
 In addition, the following boolean properties are supported. These are expressed as `[:white space:]` or `\p{White Space}`.
-```
-alphabetic, ascii_hex_digit, bidi_control, case_ignorable, cased,
-changes_when_casefolded, changes_when_casemapped, changes_when_lowercased,
-changes_when_titlecased, changes_when_uppercased, dash,
-default_ignorable_code_point, deprecated, diacritic, extender,
-grapheme_base, grapheme_extend, grapheme_link, hex_digit, hyphen,
-id_continue, id_start, ideographic, ids_binary_operator,
-ids_trinary_operator, join_control, logical_order_exception, lowercase,
-math, noncharacter_code_point, other_alphabetic,
-other_default_ignorable_code_point, other_grapheme_extend,
-other_id_continue, other_id_start, other_lowercase, other_math,
-other_uppercase, pattern_syntax, pattern_white_space,
-prepended_concatenation_mark, quotation_mark, radical, regional_indicator,
-sentence_terminal, soft_dotted, terminal_punctuation, unified_ideograph,
-uppercase, variation_selector, white_space, xid_continue, xid_start
-```
+
+
+Property   | Property | Property | Property
+---------- | -------- | -------- | ----------
+alphabetic | ascii_hex_digit | bidi_control | cased
+ changes_when_casemapped | changes_when_lowercased |  changes_when_titlecased | changes_when_uppercased
+dash | default_ignorable_code_point |  deprecated |  diacritic
+extender | grapheme_base |  grapheme_extend |  grapheme_link
+hex_digit | hyphen |  id_continue |  id_start
+ideographic | ids_binary_operator |  ids_trinary_operator |  join_control
+logical_order_exception | lowercase |  math |  noncharacter_code_point
+other_alphabetic | other_default_ignorable_code_point |  other_grapheme_extend |  other_id_continue
+other_id_start |  other_lowercase | other_math |  other_uppercase
+pattern_syntax |  pattern_white_space | prepended_concatenation_mark |  quotation_mark
+radical |  regional_indicator | sentence_terminal |  soft_dotted
+terminal_punctuation |  unified_ideograph | uppercase |  variation_selector
+white_space |  xid_continue | xid_start | changes_when_casefolded
+
 In all cases, property names and property values may include whitespace and mixed case notation.
+
+### General Categories
+
+Abbreviation	      | Long Form
+------------------- | --------------------------------------
+L  |	Letter
+Lu |	Uppercase Letter
+Ll |	Lowercase Letter
+Lt |	Titlecase Letter
+Lm |	Modifier Letter
+Lo |	Other Letter
+M  |	Mark
+Mn |	Non-Spacing Mark
+Mc |	Spacing Combining Mark
+Me |	Enclosing Mark
+N  |	Number
+Nd |	Decimal Digit Number
+Nl |	Letter Number
+No |	Other Number
+S  |	Symbol
+Sm |	Math Symbol
+Sc |	Currency Symbol
+Sk |	Modifier Symbol
+So |	Other Symbol
+P  |	Punctuation
+Pc |	Connector Punctuation
+Pd |	Dash Punctuation
+Ps |	Open Punctuation
+Pe |	Close Punctuation
+Pi |	Initial Punctuation
+Pf |	Final Punctuation
+Po |	Other Punctuation
+Z  |	Separator
+Zs |	Space Separator
+Zl |	Line Separator
+Zp |	Paragraph Separator
+C  |	Other
+Cc |	Control
+Cf |	Format
+Cs |	Surrogate
+Co |	Private Use
+Cn |	Unassigned
+
+Derived Categories	| Long Form
+------------------- | --------------------------------------
+Any                 | Any	all code points	[\u{0}-\u{10FFFF}]
+Assigned            | Assigned	all assigned characters meaning	`\P{Cn}`
+ASCII               | ASCII	all ASCII characters	[\u{0}-\u{7F}]
+
+### Compatibility Property Names
+
+Property  | Unicode Category           | Comments
+--------- | -------------------------- | -----------
+alpha	    | `\p{Alphabetic}`           | Alphabetic includes more than gc = Letter. Note that combining marks (Me, Mn, Mc) are required for words of many languages. While they could be applied to non-alphabetics, their principal use is on alphabetics. Alphabetic should not be used as an approximation for word boundaries: see `word` below.
+lower	    | `\p{Lowercase}`	             | Lowercase includes more than gc = Lowercase_Letter (Ll).
+upper	    | `\p{Uppercase}`	             | Uppercase includes more than gc = Uppercase_Letter (Lu).
+punct	    | `\p{gc=Punctuation} \p{gc=Symbol} - \p{alpha}` | Punctuation and symbols.
+digit     |	`\p{gc=Decimal_Number}`	     | [0..9]	Non-decimal numbers (like Roman numerals) are normally excluded.
+xdigit    | `\p{gc=Decimal_Number} \p{Hex_Digit}`	| [0-9 A-F a-f]	Hex_Digit contains 0-9 A-F, fullwidth and halfwidth, upper and lowercase.
+alnum     |	`\p{alpha} \p{digit}`	       | Simple combination of other properties
+space     |	`\p{Whitespace}`	|
+blank	    | `\p{gc=Space_Separator} \N{CHARACTER TABULATION}`	| "horizontal" whitespace: space separators plus U+0009 tab.
+cntrl	    | `\p{gc=Control} `            | The characters in \p{gc=Format} share some, but not all aspects of control characters. Many format characters are required in the representation of plain text.
+graph	    | `[^\p{space} \p{gc=Control} \p{gc=Surrogate} \p{gc=Unassigned}]`	| Warning: the set shown here is defined by excluding space, controls, and so on with ^.
+print	    | `\p{graph} \p{blank} -- \p{cntrl}`	| Includes graph and space-like characters.
+word      | `\p{alpha} \p{gc=Mark} \p{digit} \p{gc=Connector_Punctuation} \p{Join_Control}`	|	This is only an approximation to Word Boundaries. The Connector Punctuation is added in for programming language identifiers, thus adding `_` and similar characters.
 
 ## Additional Derived properties
 
@@ -147,7 +218,7 @@ In addition to the Unicode properties, some additional properties are also defin
 
 As above these properties can be expressed in mixed case with spaces and underscores inserted for readability.  They can be used in the same way as any Unicode property name.
 
-## Introduction to Unicode Sets
+## Example Unicode Sets
 
 Here are a few examples of sets. Although elements of the syntax appear similar to regular expressions, unicode sets only expresses one or more ranges of unicode codepoints.
 
@@ -286,72 +357,6 @@ When these are processed, case and whitespace are ignored so you may use them fo
 
 <!-- MDOC -->
 
-### General Categories
-
-Abbreviation	      | Long Form
-------------------- | --------------------------------------
-L  |	Letter
-Lu |	Uppercase Letter
-Ll |	Lowercase Letter
-Lt |	Titlecase Letter
-Lm |	Modifier Letter
-Lo |	Other Letter
-M  |	Mark
-Mn |	Non-Spacing Mark
-Mc |	Spacing Combining Mark
-Me |	Enclosing Mark
-N  |	Number
-Nd |	Decimal Digit Number
-Nl |	Letter Number
-No |	Other Number
-S  |	Symbol
-Sm |	Math Symbol
-Sc |	Currency Symbol
-Sk |	Modifier Symbol
-So |	Other Symbol
-P  |	Punctuation
-Pc |	Connector Punctuation
-Pd |	Dash Punctuation
-Ps |	Open Punctuation
-Pe |	Close Punctuation
-Pi |	Initial Punctuation
-Pf |	Final Punctuation
-Po |	Other Punctuation
-Z  |	Separator
-Zs |	Space Separator
-Zl |	Line Separator
-Zp |	Paragraph Separator
-C  |	Other
-Cc |	Control
-Cf |	Format
-Cs |	Surrogate
-Co |	Private Use
-Cn |	Unassigned
-
-Derived Categories	| Long Form
-------------------- | --------------------------------------
-Any                 | Any	all code points	[\u{0}-\u{10FFFF}]
-Assigned            | Assigned	all assigned characters meaning	`\P{Cn}`
-ASCII               | ASCII	all ASCII characters	[\u{0}-\u{7F}]
-
-### Compatibility Property Names
-
-Property  | Unicode Category           | Comments
---------- | -------------------------- | -----------
-alpha	    | `\p{Alphabetic}`           | Alphabetic includes more than gc = Letter. Note that combining marks (Me, Mn, Mc) are required for words of many languages. While they could be applied to non-alphabetics, their principal use is on alphabetics. Alphabetic should not be used as an approximation for word boundaries: see `word` below.
-lower	    | `\p{Lowercase}`	             | Lowercase includes more than gc = Lowercase_Letter (Ll).
-upper	    | `\p{Uppercase}`	             | Uppercase includes more than gc = Uppercase_Letter (Lu).
-punct	    | `\p{gc=Punctuation} \p{gc=Symbol} - \p{alpha}` | Punctuation and symbols.
-digit     |	`\p{gc=Decimal_Number}`	     | [0..9]	Non-decimal numbers (like Roman numerals) are normally excluded.
-xdigit    | `\p{gc=Decimal_Number} \p{Hex_Digit}`	| [0-9 A-F a-f]	Hex_Digit contains 0-9 A-F, fullwidth and halfwidth, upper and lowercase.
-alnum     |	`\p{alpha} \p{digit}`	       | Simple combination of other properties
-space     |	`\p{Whitespace}`	|
-blank	    | `\p{gc=Space_Separator} \N{CHARACTER TABULATION}`	| "horizontal" whitespace: space separators plus U+0009 tab.
-cntrl	    | `\p{gc=Control} `            | The characters in \p{gc=Format} share some, but not all aspects of control characters. Many format characters are required in the representation of plain text.
-graph	    | `[^\p{space} \p{gc=Control} \p{gc=Surrogate} \p{gc=Unassigned}]`	| Warning: the set shown here is defined by excluding space, controls, and so on with ^.
-print	    | `\p{graph} \p{blank} -- \p{cntrl}`	| Includes graph and space-like characters.
-word      | `\p{alpha} \p{gc=Mark} \p{digit} \p{gc=Connector_Punctuation} \p{Join_Control}`	|	This is only an approximation to Word Boundaries. The Connector Punctuation is added in for programming language identifiers, thus adding `_` and similar characters.
-
 ## Installation
 
 To install, add the package `unicode_set` to your list of dependencies in `mix.exs`:
@@ -359,7 +364,7 @@ To install, add the package `unicode_set` to your list of dependencies in `mix.e
 ```elixir
 def deps do
   [
-    {:unicode_set, "~> 0.9.0"}
+    {:unicode_set, "~> 0.11.0"}
   ]
 end
 ```
