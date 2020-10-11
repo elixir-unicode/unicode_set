@@ -252,7 +252,7 @@ defmodule UnicodeSetTest do
   end
 
   test "compile_string/1 raises with negative string classes" do
-    error_message = ~r/[^...] unicode sets are not supported for compiled patterns/
+    error_message = "complement (inverse) unicode sets like [^...] are not supported for compiled patterns"
 
     assert_raise ArgumentError, error_message, fn ->
       Unicode.Set.compile_pattern("[^{ab}]")

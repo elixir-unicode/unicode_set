@@ -66,7 +66,9 @@ defmodule Unicode.Set.Transform do
   end
 
   def pattern(:not_in, _ranges, _var) do
-    raise ArgumentError, "[^...] unicode sets are not supported for compiled patterns"
+    raise ArgumentError,
+      "complement (inverse) unicode sets like [^...] " <>
+      "are not supported for compiled patterns"
   end
 
   def pattern(range_1, range_2, _var) do
