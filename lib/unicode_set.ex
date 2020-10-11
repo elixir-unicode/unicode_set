@@ -279,19 +279,18 @@ defmodule Unicode.Set do
     string_alternates =
       string_ranges
       |> Operation.expand_string_ranges()
-      |> maybe_wrap_list()
       |> Enum.map(&expand_string_range/1)
 
     {Enum.reverse(strings), string_alternates}
   end
 
   defp expand_string_range(string_range) when is_list(string_range) do
-    Enum.map(string_range, fn {first, first} -> List.to_string(first) end)
+    Enum.map(string_range, &expand_string_range/1)
   end
 
-  defp maybe_wrap_list([]), do: []
-  defp maybe_wrap_list([head | _rest] = range) when is_list(head), do: range
-  defp maybe_wrap_list(range), do: [range]
+  defp expand_string_range({first, first}) do
+    List.to_string(first)
+  end
 
   # Regex strings but no string ranges
   defp form_regex_string({strings, []}) do
@@ -317,7 +316,7 @@ defmodule Unicode.Set do
 
   # Both regex strings and string ranges
   defp form_regex_string({strings, string_ranges}) do
-    ["(", form_regex_string(strings), "|", form_string_ranges(string_ranges), ")"]
+    ["(?:", form_regex_string(strings), "|", form_string_ranges(string_ranges), ")"]
   end
 
   defp form_regex_string([list_one, list_two]) when is_list(list_one) and is_list(list_two) do
