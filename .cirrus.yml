@@ -13,7 +13,6 @@ test_task:
       image: elixir:1.8.2
       image: elixir:1.9.4
       image: elixir:1.10.4
-      image: elixir:1.11.0
   mix_cache:
     folder: deps
     fingerprint_script: cat mix.lock
