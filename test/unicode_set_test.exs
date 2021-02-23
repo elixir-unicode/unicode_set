@@ -261,4 +261,44 @@ defmodule UnicodeSetTest do
       Unicode.Set.compile_pattern("[^{ab}]")
     end
   end
+
+  test "[[:IsBasicLatin:]] property syntax" do
+    basic_latin = Unicode.Regex.compile!("[[:block=BasicLatin:]]")
+    assert Unicode.Regex.compile!("[[:IsBasicLatin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:Is BasicLatin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:IsBasic_Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:Is Basic_Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:Is Basic Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:is basic latin:]]") == basic_latin
+  end
+
+  test "[[:^IsBasicLatin:]] property syntax" do
+    basic_latin = Unicode.Regex.compile!("[[:^block=BasicLatin:]]")
+    assert Unicode.Regex.compile!("[[:^IsBasicLatin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:^Is BasicLatin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:^IsBasic_Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:^Is Basic_Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:^Is Basic Latin:]]") == basic_latin
+    assert Unicode.Regex.compile!("[[:^is basic latin:]]") == basic_latin
+  end
+
+  test "\\p{isBlockName} property syntax" do
+    basic_latin = Unicode.Regex.compile!("[[:block=BasicLatin:]]")
+    assert Unicode.Regex.compile!("\\p{IsBasicLatin}") == basic_latin
+    assert Unicode.Regex.compile!("\\p{Is BasicLatin}") == basic_latin
+    assert Unicode.Regex.compile!("\\p{IsBasic_Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\p{Is Basic_Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\p{Is Basic Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\p{is basic latin}") == basic_latin
+  end
+
+  test "\\P{isBlockName} property syntax" do
+    basic_latin = Unicode.Regex.compile!("[[:^block=BasicLatin:]]")
+    assert Unicode.Regex.compile!("\\P{IsBasicLatin}") == basic_latin
+    assert Unicode.Regex.compile!("\\P{Is BasicLatin}") == basic_latin
+    assert Unicode.Regex.compile!("\\P{IsBasic_Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\P{Is Basic_Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\P{Is Basic Latin}") == basic_latin
+    assert Unicode.Regex.compile!("\\P{is basic latin}") == basic_latin
+  end
 end

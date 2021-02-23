@@ -1,3 +1,11 @@
+# Changelog for Unicode Set 0.12.0
+
+This is the changelog for Unicode Set 0.12.0 released on February 23rd, 2021.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+## Enhancements
+
+* Adds support for "isBlockName" Perl and POSIX regex syntax. Used in a regex as `[[:isLatin1]]` or `\p{isLatin1}` or their inverse forms `[[:^isLatin1]]` and `\P{isLatin1}`.
+
 # Changelog for Unicode Set 0.11.0
 
 This is the changelog for Unicode Set 0.11.0 released on October 5th, 2020.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

@@ -48,13 +48,11 @@ defmodule Unicode.Set.Parser do
     |> repeat(set_operator() |> parsec(:one_set))
   end
 
-
-  @debug_functions []
+  @debug_functions [:reduce_property]
 
   defmacrop tracer(step, a) do
     {caller, _} = __CALLER__.function
-
-    if Mix.env() == :dev and caller in @debug_functions do
+    if Mix.env() in [:dev] and caller in @debug_functions do
       quote do
         IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
         IO.inspect(unquote(a), label: "argument")
@@ -205,8 +203,7 @@ defmodule Unicode.Set.Parser do
   def posix_property do
     ignore(string("[:"))
     |> optional(ascii_char([?^]) |> replace(:not))
-    |> concat(property_name())
-    |> optional(operator() |> ignore(optional(whitespace())) |> concat(value_2()))
+    |> property_expression([{:not, ?:}])
     |> ignore(string(":]"))
     |> label("posix property")
   end
@@ -216,8 +213,7 @@ defmodule Unicode.Set.Parser do
     ignore(ascii_char([?\\]))
     |> choice([ascii_char([?P]) |> replace(:not), ignore(ascii_char([?p]))])
     |> ignore(ascii_char([?{]))
-    |> concat(property_name())
-    |> optional(operator() |> ignore(optional(whitespace())) |> concat(value_1()))
+    |> property_expression([{:not, ?}}])
     |> ignore(ascii_char([?}]))
     |> label("perl property")
   end
@@ -231,8 +227,36 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
+  def property_expression(combinator \\ empty(), fence) do
+    combinator
+    |> choice([
+      is_block()
+      |> ignore(optional(whitespace()))
+      |> concat(value(fence)),
+      property_name()
+      |> optional(operator() |> ignore(optional(whitespace())) |> concat(value(fence)))
+    ])
+  end
+
+  @doc false
+  def reduce_property(_rest, [value, "block" = property], context, _line, _offset) do
+    tracer(0, [value, :in, property])
+    case fetch_property!(property, value) do
+      %{parsed: parsed} -> {[{:in, parsed}], context}
+      ranges -> {[{:in, ranges}], context}
+    end
+  end
+
+  def reduce_property(_rest, [value, "block" = property, :not], context, _line, _offset) do
     tracer(1, [value, :in, property, :not])
+    case fetch_property!(property, value) do
+      %{parsed: parsed} -> {[{:not_in, parsed}], context}
+      ranges -> {[{:not_in, ranges}], context}
+    end
+  end
+
+  def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
+    tracer(2, [value, :in, property, :not])
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {{:not_in, parsed}, context}
       ranges -> {[{:not_in, ranges}], context}
@@ -240,7 +264,7 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_property(_rest, [value, :not_in, property, :not], context, _line, _offset) do
-    tracer(2, [value, :not_in, property, :not])
+    tracer(3, [value, :not_in, property, :not])
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {parsed, context}
       ranges -> {[{:in, ranges}], context}
@@ -249,7 +273,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(_rest, [value, operator, property], context, _line, _offset)
       when operator in [:in, :not_in] do
-    tracer(3, [value, operator, property])
+    tracer(4, [value, operator, property])
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {[{operator, parsed}], context}
       ranges -> {[{operator, ranges}], context}
@@ -257,7 +281,7 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_property(_rest, [value, :not], context, _line, _offset) do
-    tracer(4, [value, :not])
+    tracer(5, [value, :not])
     case fetch_property!(:script_or_category, value)  do
       %{parsed: [{:not_in, parsed}]} -> {[{:in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {[{:not_in, parsed}], context}
@@ -267,7 +291,7 @@ defmodule Unicode.Set.Parser do
   end
 
   def reduce_property(_rest, [value], context, _line, _offset) do
-    tracer(5, [value])
+    tracer(6, [value])
     case fetch_property!(:script_or_category, value) do
       %{parsed: [{:not_in, parsed}]} -> {[{:not_in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {[{:in, parsed}], context}
@@ -277,10 +301,20 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  def is_block do
+    choice([
+      string("is") |> replace("block"),
+      string("Is") |> replace("block"),
+      string("iS") |> replace("block"),
+      string("IS") |> replace("block")
+    ])
+    |> label("property name")
+  end
+
+  @doc false
   @alphanumeric [?a..?z, ?A..?Z, ?0..?9]
   def property_name do
-    ignore(optional(whitespace()))
-    |> ascii_char(@alphanumeric)
+    ascii_char(@alphanumeric)
     |> repeat(ascii_char(@alphanumeric ++ [?_, ?\s]))
     |> ignore(optional(whitespace()))
     |> reduce(:to_lower_string)
@@ -288,23 +322,11 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  def value_1 do
+  def value(gate) do
     times(
       choice([
         ignore(ascii_char([?\\])) |> concat(quoted()),
-        ascii_char([{:not, ?}}])
-      ]),
-      min: 1
-    )
-    |> reduce(:to_lower_string)
-  end
-
-  @doc false
-  def value_2 do
-    times(
-      choice([
-        ignore(ascii_char([?\\])) |> concat(quoted()),
-        ascii_char([{:not, ?:}])
+        ascii_char(gate)
       ]),
       min: 1
     )
