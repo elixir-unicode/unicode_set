@@ -114,7 +114,7 @@ As much work as possible is done at compile time in order to deliver good perfor
 This version of `Unicode Set` supports the following enumerable unicode properties in unicode sets:
 
 * `script` such as `[:script=arabic:]`, `\p{script=arabic}` or `[:arabic:]`
-* `block` such as `[:block=sudanese:]`, `\p{block=sudanese}` or `[:sudanese:]`
+* `block` such as `[:block=sudanese:]`, `\p{block=sudanese}`, `\p{IsSudanese}` or `[:IsSudanese:]`
 * `general category` such as `[:Lu:]`, `\p{Lu}`, `[:gc=Lu:]` or `[:general category=Lu:]`
 * `combining class` such as `[:ccc=230:]`
 
