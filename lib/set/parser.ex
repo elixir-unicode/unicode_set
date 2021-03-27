@@ -48,7 +48,7 @@ defmodule Unicode.Set.Parser do
     |> repeat(set_operator() |> parsec(:one_set))
   end
 
-  @debug_functions [:reduce_property]
+  @debug_functions []
 
   defmacrop tracer(step, a) do
     {caller, _} = __CALLER__.function

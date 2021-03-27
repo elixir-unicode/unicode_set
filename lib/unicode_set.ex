@@ -117,20 +117,22 @@ defmodule Unicode.Set do
 
   ## Returns
 
-  `true` or `false`
+  * `true` or `false`
 
   ## Examples
 
-  * `Unicode.Set.match?/2` can be used in as `defguard` argument.
+  * `Unicode.Set.match?/2` can be used with `defguard/1`.
     For example:
 
-      defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
-
+  ```elixir
+  defguard is_lower(codepoint) when Unicode.Set.match?(codepoint, "[[:Lu:]]")
+  ```
   * Or as a guard clause itself:
 
-      def my_function(<< codepoint :: utf8, _rest :: binary>>)
-      #=>    when Unicode.Set.match?(codepoint, "[[:Lu:]]")
-
+  ```elixir
+  def my_function(<< codepoint :: utf8, _rest :: binary>>)
+    when Unicode.Set.match?(codepoint, "[[:Lu:]]")
+  ```
   """
 
   defmacro match?(var, unicode_set) do
