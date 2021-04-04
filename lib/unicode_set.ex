@@ -351,8 +351,8 @@ defmodule Unicode.Set do
   # use regexs. The library `unicode_transform` uses
   # this function for that purpose.
 
-  @spec to_generated_match(binary()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
-  def to_generated_match(unicode_set) when is_binary(unicode_set) do
+  @spec generate_matches(binary()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
+  def generate_matches(unicode_set) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
          {:ok, set} <- not_in_has_no_string_ranges(set) do
       expanded = maybe_expand_set(set)
@@ -370,14 +370,18 @@ defmodule Unicode.Set do
         |> Operation.traverse(&Transform.reject_string_range/3)
         |> Operation.traverse(&Transform.guard_clause/3)
 
-      {:ok, {guard, strings}}
+      if guard == false do
+        {:ok, strings}
+      else
+        {:ok, [guard | strings]}
+      end
     end
   end
 
   @doc false
-  @spec to_generated_match!(binary()) :: binary() | no_return()
-  def to_generated_match!(unicode_set) when is_binary(unicode_set) do
-    case to_generated_match(unicode_set) do
+  @spec generate_matches!(binary()) :: binary() | no_return()
+  def generate_matches!(unicode_set) when is_binary(unicode_set) do
+    case generate_matches(unicode_set) do
       {:error, {exception, reason}} -> raise exception, reason
       {:ok, match_strings} -> match_strings
     end

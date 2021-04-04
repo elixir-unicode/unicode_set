@@ -4,7 +4,7 @@ This is the changelog for Unicode Set 0.13.0 released on April 4th, 2021.  For o
 
 ## Enhancements
 
-* Adds `Unicode.Set.to_generated_match/1` that returns a tuple whose first element is the AST of a guard clause and the second element is a list of strings. This function is marked private and is implemented to suport [unicode_transform](https://hex.pm/unicode_transform) which uses this information to generate optimised code for matching unicode sets in a `case` expression.
+* Adds `Unicode.Set.to_generat_matches/1` that returns a tuple whose first element is the AST of a guard clause and the second element is a list of strings. This function is marked private and is implemented to suport [unicode_transform](https://hex.pm/unicode_transform) which uses this information to generate optimised code for matching unicode sets in a `case` expression.
 
 # Changelog for Unicode Set 0.12.0
 
