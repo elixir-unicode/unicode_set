@@ -22,6 +22,8 @@ defmodule Unicode.Set do
   @type nimble_range :: codepoint | codepoint_range | {:not, codepoint | codepoint_range}
   @type nimble_list :: [nimble_range]
 
+  @type generated_match :: {any(), list(binary())}
+
   @type state :: nil | :parsed | :reduced | :expanded
 
   @type operator :: :union | :intersection | :difference | :in | :not_in
@@ -335,6 +337,50 @@ defmodule Unicode.Set do
 
   defp form_string_ranges(string_ranges) do
     Enum.intersperse(string_ranges, "|")
+  end
+
+  @doc false
+
+  # This function takes a unicode set and returns
+  # a 2-tuple where the first element is a guard clause
+  # and the second element is a list of strings
+  #
+  # The primary use of this function is to return
+  # a structure than can be used to generate code that
+  # matches a string to a unicode set without having to
+  # use regexs. The library `unicode_transform` uses
+  # this function for that purpose.
+
+  @spec to_generated_match(binary()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
+  def to_generated_match(unicode_set) when is_binary(unicode_set) do
+    with {:ok, set} <- parse_and_reduce(unicode_set),
+         {:ok, set} <- not_in_has_no_string_ranges(set) do
+      expanded = maybe_expand_set(set)
+
+      strings =
+        expanded
+        |> Operation.traverse(&Transform.regex/3)
+        |> extract_string_ranges
+        |> expand_string_ranges
+        |> elem(1)
+
+      guard =
+        expanded
+        |> Map.fetch!(:parsed)
+        |> Operation.traverse(&Transform.reject_string_range/3)
+        |> Operation.traverse(&Transform.guard_clause/3)
+
+      {:ok, {guard, strings}}
+    end
+  end
+
+  @doc false
+  @spec to_generated_match!(binary()) :: binary() | no_return()
+  def to_generated_match!(unicode_set) when is_binary(unicode_set) do
+    case to_generated_match(unicode_set) do
+      {:error, {exception, reason}} -> raise exception, reason
+      {:ok, match_strings} -> match_strings
+    end
   end
 
   defp assert_binary_parameter!(unicode_set) do

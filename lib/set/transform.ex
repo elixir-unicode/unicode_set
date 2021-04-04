@@ -43,6 +43,26 @@ defmodule Unicode.Set.Transform do
   end
 
   @doc """
+  Remove string ranges from the AST
+
+  """
+  def reject_string_range({first, last}, ranges, _var) when is_list(first) and is_list(last) do
+    ranges
+  end
+
+  def reject_string_range({first, last}, ranges, _var) do
+    [{first, last}, ranges]
+  end
+
+  def reject_string_range([], [], _var) do
+    []
+  end
+
+  # def reject_string_range({first, last}, nil, _var) do
+  #   {first, last}
+  # end
+
+  @doc """
   Converts an expanded AST into a format that
   can be fed to `:binary.compile_pattern/1`.
 
