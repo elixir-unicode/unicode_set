@@ -22,7 +22,7 @@ defmodule Unicode.Set do
   @type nimble_range :: codepoint | codepoint_range | {:not, codepoint | codepoint_range}
   @type nimble_list :: [nimble_range]
 
-  @type generated_match :: {any(), list(binary())}
+  @type generated_match :: list(Macro.t() | String.t())
 
   @type state :: nil | :parsed | :reduced | :expanded
 
