@@ -351,8 +351,8 @@ defmodule Unicode.Set do
   # use regexs. The library `unicode_transform` uses
   # this function for that purpose.
 
-  @spec generate_matches(binary()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
-  def generate_matches(unicode_set) when is_binary(unicode_set) do
+  @spec generate_matches(binary(), any()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
+  def generate_matches(unicode_set, var) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
          {:ok, set} <- not_in_has_no_string_ranges(set) do
       expanded = maybe_expand_set(set)
@@ -367,8 +367,8 @@ defmodule Unicode.Set do
       guard =
         expanded
         |> Map.fetch!(:parsed)
-        |> Operation.traverse(&Transform.reject_string_range/3)
-        |> Operation.traverse(&Transform.guard_clause/3)
+        |> Operation.traverse(var, &Transform.reject_string_range/3)
+        |> Operation.traverse(var, &Transform.guard_clause/3)
 
       if guard == false do
         {:ok, strings}
@@ -379,9 +379,9 @@ defmodule Unicode.Set do
   end
 
   @doc false
-  @spec generate_matches!(binary()) :: binary() | no_return()
-  def generate_matches!(unicode_set) when is_binary(unicode_set) do
-    case generate_matches(unicode_set) do
+  @spec generate_matches!(binary(), any()) :: generated_match() | no_return()
+  def generate_matches!(unicode_set, var) when is_binary(unicode_set) do
+    case generate_matches(unicode_set, var) do
       {:error, {exception, reason}} -> raise exception, reason
       {:ok, match_strings} -> match_strings
     end
