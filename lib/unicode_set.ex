@@ -138,7 +138,7 @@ defmodule Unicode.Set do
   """
 
   defmacro match?(var, unicode_set) do
-    assert_binary_parameter!(unicode_set)
+    unicode_set = assert_binary_parameter!(unicode_set)
 
     if __CALLER__.context == :guard do
       parse!(unicode_set)
@@ -387,9 +387,20 @@ defmodule Unicode.Set do
     end
   end
 
+  # Assert that the argument is a binary or
+  # if the argument is a struct from this module
+  # then extract the binary set.
+
   defp assert_binary_parameter!(unicode_set) do
-    unless is_binary(unicode_set) do
-      raise ArgumentError,
+    case unicode_set do
+      unicode_set when is_binary(unicode_set) ->
+        unicode_set
+      {:%, _, [{:__aliases__, _, [:UnicodeSet]}, {:%{}, _, fields}]} ->
+        Keyword.fetch!(fields, :set) |> assert_binary_parameter!
+      {:%, _, [{:__aliases__, _, [:Unicode, :Set]}, {:%{}, _, fields}]} ->
+        Keyword.fetch!(fields, :set) |> assert_binary_parameter!
+      true ->
+        raise ArgumentError,
             "unicode_set must be a compile-time binary. Found #{inspect(unicode_set)}"
     end
   end

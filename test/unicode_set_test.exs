@@ -75,6 +75,12 @@ defmodule UnicodeSetTest do
     assert MyModule.my_other_function("3") == :digit
   end
 
+  test "matching on a set as a struct" do
+    require Unicode.Set
+
+    assert Unicode.Set.match?(?L, %Unicode.Set{set: "[:Lu:]"})
+  end
+
   test "set intersection matching" do
     require Unicode.Set
 
