@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "0.13.0"
+  @version "0.13.1"
 
   def project do
     [
@@ -55,7 +55,6 @@ defmodule UnicodeSet.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:ex_unicode, "~> 1.11"},
