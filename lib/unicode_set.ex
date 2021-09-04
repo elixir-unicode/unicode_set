@@ -158,6 +158,32 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a pattern
+  that can be used with `String.split/3`
+  and `String.replace/3`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `{:ok, pattern}` or
+
+  * `{:error, {exception, reason}}`
+
+  ## Example
+  ```
+      iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
+      {:ok,
+       ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "٠", "١", "٢", "٣",
+        "٤", "٥", "٦", "٧", "٨", "٩", "۰", "۱", "۲", "۳", "۴", "۵", "۶",
+        "۷", "۸", "۹", "߀", "߁", "߂", "߃", "߄", "߅", "߆", "߇", "߈", "߉",
+        "०", "१", "२", "३", "४", "५", "६", "७", ...]}
+
+  """
   @spec to_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def to_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
@@ -168,6 +194,31 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a pattern
+  that can be used with `String.split/3`
+  and `String.replace/3`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `pattern` or
+
+  * raises an exception
+
+  ## Example
+  ```
+      iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
+      ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "٠", "١", "٢", "٣",
+       "٤", "٥", "٦", "٧", "٨", "٩", "۰", "۱", "۲", "۳", "۴", "۵", "۶",
+        "۷", "۸", "۹", "߀", "߁", "߂", "߃", "߄", "߅", "߆", "߇", "߈", "߉"
+       "०", "१", "२", "३", "४", "५", "६", "७", ...]
+
+  """
   @spec to_pattern!(binary) :: [binary()] | no_return()
   def to_pattern!(unicode_set) do
     case to_pattern(unicode_set) do
@@ -179,6 +230,33 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a compiled
+  pattern that can be used with `String.split/3`
+  and `String.replace/3`.
+
+  [Compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1)
+  can be the more performant when matching strings.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `{:ok, compiled_pattern}` or
+
+  * `{:error, {exception, reason}}`
+
+  ## Example
+  ```
+      iex> pattern = Unicode.Set.compile_pattern "[[:digit:]]"
+      {:ok, {:ac, #Reference<0.2927979228.2367029250.255911>}}
+      iex> String.split("abc1def2ghi3jkl", pattern)
+      ["abc", "def", "ghi", "jkl"]
+
+  """
   @spec compile_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, pattern} <- to_pattern(unicode_set) do
@@ -186,6 +264,40 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a list of
+  codepoints that can be used with
+  [nimble_parsec](https://hex.pm/packages/nimble_parsec).
+
+  THe list of codepoints can be used as an
+  argument to `NimbleParsec.utf8_char/1`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `{:ok, list_of_codepints}` or
+
+  * `{:error, {exception, reason}}`
+
+  ## Example
+  ```
+      iex> pattern = Unicode.Set.to_utf8_char "[[:digit:]-[:Zs]]"
+      {:ok,
+       [48..57, 1632..1641, 1776..1785, 1984..1993, 2406..2415, 2534..2543,
+        2662..2671, 2790..2799, 2918..2927, 3046..3055, 3174..3183, 3302..3311,
+        3430..3439, 3558..3567, 3664..3673, 3792..3801, 3872..3881, 4160..4169,
+        4240..4249, 6112..6121, 6160..6169, 6470..6479, 6608..6617, 6784..6793,
+        6800..6809, 6992..7001, 7088..7097, 7232..7241, 7248..7257, 42528..42537,
+        43216..43225, 43264..43273, 43472..43481, 43504..43513, 43600..43609,
+        44016..44025, 65296..65305, 66720..66729, 68912..68921, 69734..69743,
+        69872..69881, 69942..69951, 70096..70105, 70384..70393, 70736..70745,
+        70864..70873, 71248..71257, 71360..71369, ...]}
+
+  """
   @spec to_utf8_char(binary()) :: {:ok, nimble_list} | {:error, {module(), binary()}}
   def to_utf8_char(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
@@ -196,6 +308,39 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a list of
+  codepoints that can be used with
+  [nimble_parsec](https://hex.pm/packages/nimble_parsec).
+
+  THe list of codepoints can be used as an
+  argument to `NimbleParsec.utf8_char/1`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `list_of_codepints` or
+
+  * raises an exception
+
+  ## Example
+  ```
+      iex> pattern = Unicode.Set.to_utf8_char! "[[:digit:]-[:Zs]]"
+      [48..57, 1632..1641, 1776..1785, 1984..1993, 2406..2415, 2534..2543,
+       2662..2671, 2790..2799, 2918..2927, 3046..3055, 3174..3183, 3302..3311,
+       3430..3439, 3558..3567, 3664..3673, 3792..3801, 3872..3881, 4160..4169,
+       4240..4249, 6112..6121, 6160..6169, 6470..6479, 6608..6617, 6784..6793,
+       6800..6809, 6992..7001, 7088..7097, 7232..7241, 7248..7257, 42528..42537,
+       43216..43225, 43264..43273, 43472..43481, 43504..43513, 43600..43609,
+       44016..44025, 65296..65305, 66720..66729, 68912..68921, 69734..69743,
+       69872..69881, 69942..69951, 70096..70105, 70384..70393, 70736..70745,
+       70864..70873, 71248..71257, 71360..71369, ...]}
+
+  """
   @spec to_utf8_char!(binary) :: nimble_list | no_return()
   def to_utf8_char!(unicode_set) do
     case to_utf8_char(unicode_set) do
@@ -207,6 +352,28 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a regex
+  string that can be used as an argument
+  to `Regex.compile/1`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `{:ok, regex_string}` or
+
+  * `{:error, {exception, reason}}`
+
+  ## Example
+  ```
+      iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
+      {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
+
+  """
   @spec to_regex_string(binary()) :: {:ok, binary()} | {:error, {module(), binary()}}
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
@@ -222,6 +389,28 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Transforms a Unicode Set into a regex
+  string that can be used as an argument
+  to `Regex.compile/1`.
+
+  ## Arguements
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `regex_string` or
+
+  * raises an exception
+
+  ## Example
+  ```
+      iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
+      {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
+
+  """
   @spec to_regex_string!(binary()) :: binary() | no_return()
   def to_regex_string!(unicode_set) when is_binary(unicode_set) do
     case to_regex_string(unicode_set) do
