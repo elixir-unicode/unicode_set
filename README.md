@@ -364,7 +364,7 @@ To install, add the package `unicode_set` to your list of dependencies in `mix.e
 ```elixir
 def deps do
   [
-    {:unicode_set, "~> 0.11.0"}
+    {:unicode_set, "~> 1.0"}
   ]
 end
 ```
