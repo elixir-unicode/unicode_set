@@ -1,5 +1,13 @@
 # Changelog
 
+## Unicode Set 1.1.0
+
+This is the changelog for Unicode Set 1.1.0 released on September 15th, 2021.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Enhancements
+
+* `ex_unicode` is renamed to `unicode` in collaboration with @Qqwy and therefore this release updates the dependency name.
+
 ## Unicode Set 1.0.0
 
 This is the changelog for Unicode Set 1.0.0 released on September 14th, 2021.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
