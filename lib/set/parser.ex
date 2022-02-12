@@ -170,22 +170,22 @@ defmodule Unicode.Set.Parser do
   def reduce_range([from, to]), do: {:in, [{from, to}]}
 
   @doc false
-  def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _)
+  def check_valid_range(rest, [in: [{from, to}]] = args, context, _, _)
       when is_integer(from) and is_integer(to) do
-    {args, context}
+    {rest, args, context}
   end
 
-  def check_valid_range(_rest, [in: [{from, from}]] = args, context, _, _) do
-    {args, context}
+  def check_valid_range(rest, [in: [{from, from}]] = args, context, _, _) do
+    {rest, args, context}
   end
 
-  def check_valid_range(_rest, [in: [{from, to}]] = args, context, _, _) do
+  def check_valid_range(rest, [in: [{from, to}]] = args, context, _, _) do
     if length(from) == 1 or length(to) == 1 do
       {:error,
        "String ranges must be longer than one character. Found " <>
          format_string_range(from, to)}
     else
-      {args, context}
+      {rest, args, context}
     end
   end
 
@@ -239,64 +239,64 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  def reduce_property(_rest, [value, "block" = property], context, _line, _offset) do
+  def reduce_property(rest, [value, "block" = property], context, _line, _offset) do
     tracer(0, [value, :in, property])
     case fetch_property!(property, value) do
-      %{parsed: parsed} -> {[{:in, parsed}], context}
-      ranges -> {[{:in, ranges}], context}
+      %{parsed: parsed} -> {rest, [{:in, parsed}], context}
+      ranges -> {rest, [{:in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value, "block" = property, :not], context, _line, _offset) do
+  def reduce_property(rest, [value, "block" = property, :not], context, _line, _offset) do
     tracer(1, [value, :in, property, :not])
     case fetch_property!(property, value) do
-      %{parsed: parsed} -> {[{:not_in, parsed}], context}
-      ranges -> {[{:not_in, ranges}], context}
+      %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
+      ranges -> {rest, [{:not_in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value, :in, property, :not], context, _line, _offset) do
+  def reduce_property(rest, [value, :in, property, :not], context, _line, _offset) do
     tracer(2, [value, :in, property, :not])
     case fetch_property!(property, value) do
-      %{parsed: parsed} -> {{:not_in, parsed}, context}
-      ranges -> {[{:not_in, ranges}], context}
+      %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
+      ranges -> {rest, [{:not_in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value, :not_in, property, :not], context, _line, _offset) do
+  def reduce_property(rest, [value, :not_in, property, :not], context, _line, _offset) do
     tracer(3, [value, :not_in, property, :not])
     case fetch_property!(property, value) do
-      %{parsed: parsed} -> {parsed, context}
-      ranges -> {[{:in, ranges}], context}
+      %{parsed: parsed} -> {rest, parsed, context}
+      ranges -> {rest, [{:in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value, operator, property], context, _line, _offset)
+  def reduce_property(rest, [value, operator, property], context, _line, _offset)
       when operator in [:in, :not_in] do
     tracer(4, [value, operator, property])
     case fetch_property!(property, value) do
-      %{parsed: parsed} -> {[{operator, parsed}], context}
-      ranges -> {[{operator, ranges}], context}
+      %{parsed: parsed} -> {rest, [{operator, parsed}], context}
+      ranges -> {rest, [{operator, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value, :not], context, _line, _offset) do
+  def reduce_property(rest, [value, :not], context, _line, _offset) do
     tracer(5, [value, :not])
     case fetch_property!(:script_or_category, value)  do
-      %{parsed: [{:not_in, parsed}]} -> {[{:in, parsed}], context}
-      %{parsed: [{:in, parsed}]} -> {[{:not_in, parsed}], context}
-      %{parsed: parsed} -> {[{:not_in, parsed}], context}
-      ranges -> {[{:not_in, ranges}], context}
+      %{parsed: [{:not_in, parsed}]} -> {rest, [{:in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {rest, [{:not_in, parsed}], context}
+      %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
+      ranges -> {rest, [{:not_in, ranges}], context}
     end
   end
 
-  def reduce_property(_rest, [value], context, _line, _offset) do
+  def reduce_property(rest, [value], context, _line, _offset) do
     tracer(6, [value])
     case fetch_property!(:script_or_category, value) do
-      %{parsed: [{:not_in, parsed}]} -> {[{:not_in, parsed}], context}
-      %{parsed: [{:in, parsed}]} -> {[{:in, parsed}], context}
-      %{parsed: parsed} -> {parsed, context}
-      ranges -> {[{:in, ranges}], context}
+      %{parsed: [{:not_in, parsed}]} -> {rest, [{:not_in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {rest, [{:in, parsed}], context}
+      %{parsed: parsed} -> {rest, parsed, context}
+      ranges -> {rest, [{:in, ranges}], context}
     end
   end
 
