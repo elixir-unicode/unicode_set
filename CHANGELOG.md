@@ -30,7 +30,7 @@ This is the changelog for Unicode Set 0.13.0 released on April 4th, 2021.  For o
 
 ### Enhancements
 
-* Adds `Unicode.Set.to_generate_matches/1` that returns a tuple whose first element is the AST of a guard clause and the second element is a list of strings. This function is marked private and is implemented to suport [unicode_transform](https://hex.pm/unicode_transform) which uses this information to generate optimised code for matching unicode sets in a `case` expression.
+* Adds `Unicode.Set.to_generate_matches/1` that returns a tuple whose first element is the AST of a guard clause and the second element is a list of strings. This function is marked private and is implemented to support [unicode_transform](https://hex.pm/unicode_transform) which uses this information to generate optimised code for matching unicode sets in a `case` expression.
 
 ## Unicode Set 0.12.0
 
@@ -46,7 +46,7 @@ This is the changelog for Unicode Set 0.11.0 released on October 5th, 2020.  For
 
 ### Enhancements
 
-* Add recurively defined sets to support compatibility with Posix classes. See `Unicode.Set.Property`.
+* Add recursively defined sets to support compatibility with Posix classes. See `Unicode.Set.Property`.
 
 ### Bug Fixes
 
