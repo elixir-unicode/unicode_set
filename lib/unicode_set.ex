@@ -163,7 +163,7 @@ defmodule Unicode.Set do
   that can be used with `String.split/3`
   and `String.replace/3`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -199,7 +199,7 @@ defmodule Unicode.Set do
   that can be used with `String.split/3`
   and `String.replace/3`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -238,7 +238,7 @@ defmodule Unicode.Set do
   [Compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1)
   can be the more performant when matching strings.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -272,7 +272,7 @@ defmodule Unicode.Set do
   THe list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -316,7 +316,7 @@ defmodule Unicode.Set do
   THe list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -357,7 +357,7 @@ defmodule Unicode.Set do
   string that can be used as an argument
   to `Regex.compile/1`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
@@ -394,7 +394,7 @@ defmodule Unicode.Set do
   string that can be used as an argument
   to `Regex.compile/1`.
 
-  ## Arguements
+  ## Arguments
 
   * `unicode_set` is a string representation
     of a Unicode Set
