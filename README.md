@@ -1,9 +1,9 @@
 # Unicode Set
 
 ![Build Status](https://api.cirrus-ci.com/github/elixir-unicode/unicode_set.svg)
-[![Hex.pm](https://img.shields.io/hexpm/v/unicode_set.svg)](https://hex.pm/packages/ex_unicode_set)
-[![Hex.pm](https://img.shields.io/hexpm/dw/unicode_set.svg?)](https://hex.pm/packages/ex_unicode_set)
-[![Hex.pm](https://img.shields.io/hexpm/l/unicode_set.svg)](https://hex.pm/packages/ex_unicode_set)
+[![Hex.pm](https://img.shields.io/hexpm/v/unicode_set.svg)](https://hex.pm/packages/unicode_set)
+[![Hex.pm](https://img.shields.io/hexpm/dw/unicode_set.svg?)](https://hex.pm/packages/unicode_set)
+[![Hex.pm](https://img.shields.io/hexpm/l/unicode_set.svg)](https://hex.pm/packages/unicode_set)
 
 A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This expansion supports the following public API:
 
