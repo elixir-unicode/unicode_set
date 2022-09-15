@@ -61,7 +61,7 @@ iex> Unicode.Set.utf8_char("[[^abcd][mnb]]")
 [{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
 ```
 This can be used as shown in the following example:
-```
+```elixir
 defmodule MyCombinators do
   import NimbleParsec
 
