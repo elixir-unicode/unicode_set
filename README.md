@@ -47,7 +47,7 @@ end
 ### Generating compiled patterns for String matching
 
 `String.split/3` and `String.replace/3` allow for patterns and [compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1) to be used with compiled patterns being the more performant approach.  Unicode Set supports the generation of patterns and compiled patterns:
-```
+```elixir
 iex> pattern = Unicode.Set.compile_pattern "[[:digit:]]"
 iex> list = String.split("abc1def2ghi3jkl", pattern)
 ["abc", "def", "ghi", "jkl"]
