@@ -397,7 +397,7 @@ defmodule Unicode.Set.Operation do
     intersect(a_rest, b)
   end
 
-  # b_head is wholly withing a_head so the
+  # b_head is wholly within a_head so the
   # intersection if the whole of b_head.
   #
   # This clause deals with the following relationship between the two
