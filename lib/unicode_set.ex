@@ -175,7 +175,7 @@ defmodule Unicode.Set do
   * `{:error, {exception, reason}}`
 
   ## Example
-  ```
+
       iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
       {:ok,
        ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "٠", "١", "٢", "٣",
@@ -211,7 +211,7 @@ defmodule Unicode.Set do
   * raises an exception
 
   ## Example
-  ```
+
       iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
       ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "٠", "١", "٢", "٣",
        "٤", "٥", "٦", "٧", "٨", "٩", "۰", "۱", "۲", "۳", "۴", "۵", "۶",
@@ -250,7 +250,7 @@ defmodule Unicode.Set do
   * `{:error, {exception, reason}}`
 
   ## Example
-  ```
+
       iex> pattern = Unicode.Set.compile_pattern "[[:digit:]]"
       {:ok, {:ac, #Reference<0.2927979228.2367029250.255911>}}
       iex> String.split("abc1def2ghi3jkl", pattern)
@@ -284,7 +284,7 @@ defmodule Unicode.Set do
   * `{:error, {exception, reason}}`
 
   ## Example
-  ```
+
       iex> pattern = Unicode.Set.to_utf8_char "[[:digit:]-[:Zs]]"
       {:ok,
        [48..57, 1632..1641, 1776..1785, 1984..1993, 2406..2415, 2534..2543,
@@ -328,7 +328,7 @@ defmodule Unicode.Set do
   * raises an exception
 
   ## Example
-  ```
+
       iex> pattern = Unicode.Set.to_utf8_char! "[[:digit:]-[:Zs]]"
       [48..57, 1632..1641, 1776..1785, 1984..1993, 2406..2415, 2534..2543,
        2662..2671, 2790..2799, 2918..2927, 3046..3055, 3174..3183, 3302..3311,
@@ -369,7 +369,7 @@ defmodule Unicode.Set do
   * `{:error, {exception, reason}}`
 
   ## Example
-  ```
+
       iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
       {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
 
@@ -406,7 +406,7 @@ defmodule Unicode.Set do
   * raises an exception
 
   ## Example
-  ```
+
       iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
       {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
 

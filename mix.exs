@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.1.0"
+  @version "1.2.0"
 
   def project do
     [
@@ -35,7 +35,7 @@ defmodule UnicodeSet.MixProject do
   defp package do
     [
       maintainers: ["Kip Cole"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       logo: "logo.png",
       links: links(),
       files: [

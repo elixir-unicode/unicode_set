@@ -1,5 +1,17 @@
 # Changelog
 
+## Unicode Set 1.2.0
+
+This is the changelog for Unicode Set 1.2.0 released on September 15th, 2022.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Enhancements
+
+* Update parsing code to ensure compatibility against furture deprecations. Thanks to @josevalim.
+
+* Fix library name in doc links. Thanks to @zmaril for the PR.
+
+* Update dependencies. Thanks to @kianmeng
+
 ## Unicode Set 1.1.0
 
 This is the changelog for Unicode Set 1.1.0 released on September 15th, 2021.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
