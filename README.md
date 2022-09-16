@@ -5,14 +5,14 @@
 [![Hex.pm](https://img.shields.io/hexpm/dw/unicode_set.svg?)](https://hex.pm/packages/unicode_set)
 [![Hex.pm](https://img.shields.io/hexpm/l/unicode_set.svg)](https://hex.pm/packages/unicode_set)
 
-A [Unicode Set](http://userguide.icu-project.org/strings/unicodeset) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This expansion supports the following public API:
+A [Unicode Set](https://unicode-org.github.io/icu/userguide/strings/unicodeset.html) is a representation of a set of Unicode characters or character strings. The contents of that set are specified by patterns or by building them programmatically. This library implements parsing of unicode sets, resolving them to a list of codepoints and matching a given codepoint to that list.  This expansion supports the following public API:
 
 * `Unicode.Set.match?/2` which is a macro that matches a codepoint to a unicode set.
 * `Unicode.Regex.compile/2` which pre-processes a regex string expanding unicode sets into a regex executable by the `Regex` module.
 * `Unicode.Set.to_utf8_char/1` that converts a unicode set into a form usable with [nimble_parsec](https://hex.pm/packages/nimble_parsec)
 * `Unicode.Set.compile_pattern/1` which converts a unicode set into a string that is then compiled with `:binary.compile_pattern/1`.
 
-The implementation conforms closely to the [Unicode Set specification](http://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
+The implementation conforms closely to the [Unicode Set specification](https://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
 
 <!-- MDOC -->
 
