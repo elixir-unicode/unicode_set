@@ -251,7 +251,7 @@ defmodule Unicode.Set do
 
   ## Example
 
-      iex> pattern = Unicode.Set.compile_pattern "[[:digit:]]"
+      iex> pattern = Unicode.Set.compile_pattern("[[:digit:]]")
       {:ok, {:ac, #Reference<0.2927979228.2367029250.255911>}}
       iex> String.split("abc1def2ghi3jkl", pattern)
       ["abc", "def", "ghi", "jkl"]
@@ -261,6 +261,45 @@ defmodule Unicode.Set do
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, pattern} <- to_pattern(unicode_set) do
       {:ok, :binary.compile_pattern(pattern)}
+    end
+  end
+
+  @doc """
+  Transforms a Unicode Set into a compiled
+  pattern that can be used with `String.split/3`
+  and `String.replace/3`. Raises an exception on
+  error.
+
+  [Compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1)
+  can be the more performant when matching strings.
+
+  ## Arguments
+
+  * `unicode_set` is a string representation
+    of a Unicode Set
+
+  ## Returns
+
+  * `compiled_pattern` or
+
+  * raises an exception.
+
+  ## Example
+
+      iex> pattern = Unicode.Set.compile_pattern!("[[:digit:]]")
+      {:ac, #Reference<0.2927979228.2367029250.255911>}
+      iex> String.split("abc1def2ghi3jkl", pattern)
+      ["abc", "def", "ghi", "jkl"]
+
+  """
+  @doc since: "1.3.0"
+  @dialyzer {:nowarn_function, compile_pattern!: 1}
+
+  @spec compile_pattern!(binary()) :: [binary()] | no_return()
+  def compile_pattern!(unicode_set) when is_binary(unicode_set) do
+    case compile_pattern(unicode_set) do
+      {:ok, compiled_pattern} -> compiled_pattern
+      {:error, {exception, reason}} -> raise exception, reason
     end
   end
 

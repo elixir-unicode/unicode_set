@@ -48,7 +48,7 @@ end
 
 `String.split/3` and `String.replace/3` allow for patterns and [compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1) to be used with compiled patterns being the more performant approach.  Unicode Set supports the generation of patterns and compiled patterns:
 ```elixir
-iex> pattern = Unicode.Set.compile_pattern "[[:digit:]]"
+iex> pattern = Unicode.Set.compile_pattern!("[[:digit:]]")
 iex> list = String.split("abc1def2ghi3jkl", pattern)
 ["abc", "def", "ghi", "jkl"]
 ```
@@ -57,15 +57,15 @@ iex> list = String.split("abc1def2ghi3jkl", pattern)
 
 The parser generator [nimble_parsec](https://hex.pm/packages/nimble_parsec) allows a list of codepoint ranges as parameters to several combinators. Unicode Set can generate such ranges:
 ```
-iex> Unicode.Set.to_utf8_char("[[^abcd][mnb]]")
-[{:not, 97}, {:not, 98}, {:not, 99}, {:not, 100}, 98, 109, 110]
+iex> Unicode.Set.to_utf8_char!("[[^abcd][mnb]]")
+[98, 109..110, {:not, 97..100}]
 ```
 This can be used as shown in the following example:
 ```elixir
 defmodule MyCombinators do
   import NimbleParsec
 
-  @digit_list = Unicode.Set.to_utf8_char("[[:digit:]]")
+  @digit_list = Unicode.Set.to_utf8_char!("[[:digit:]]")
   def unicode_digit do
     utf8_char(@digit_list)
     |> label("a digit in any Unicode script")

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unicode Set 1.3.0
+
+This is the changelog for Unicode Set 1.3.0 released on February 18th, 2023  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Bug Fixes
+
+* Correct the code examples in README.md.  Thanks to @DianaOlympos for the PR. Closes #9.
+
+### Enhancements
+
+* Add `Unicode.Set.compile_pattern!/1` to accompany `Unicode.Set.compile_pattern/1`.
+
 ## Unicode Set 1.2.0
 
 This is the changelog for Unicode Set 1.2.0 released on September 15th, 2022.  For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
