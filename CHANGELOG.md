@@ -18,11 +18,11 @@ This is the changelog for Unicode Set 1.2.0 released on September 15th, 2022.  F
 
 ### Enhancements
 
-* Update parsing code to ensure compatibility against furture deprecations. Thanks to @josevalim.
+* Update parsing code to ensure compatibility against future deprecations. Thanks to @josevalim.
 
 * Fix library name in doc links. Thanks to @zmaril for the PR.
 
-* Update dependencies. Thanks to @kianmeng
+* Update dependencies. Thanks to @kianmeng.
 
 ## Unicode Set 1.1.0
 
