@@ -58,8 +58,8 @@ defmodule Unicode.Set do
   def parse(unicode_set) do
     case parse_one(unicode_set) do
       {:ok, parsed, "", _, _, _} ->
-        set = [set: unicode_set, parsed: parsed, state: :parsed]
-        {:ok, struct(__MODULE__, set)}
+        set = struct(__MODULE__, [set: unicode_set, parsed: parsed, state: :parsed])
+        {:ok, set}
 
       {:error, message, rest, _, _, _} ->
         {:error, parse_error(unicode_set, message, rest)}
@@ -189,6 +189,7 @@ defmodule Unicode.Set do
     with {:ok, parsed} <- parse(unicode_set) do
       parsed
       |> Operation.reduce()
+      # |> IO.inspect(label: "Reduced", structs: false)
       |> Operation.traverse(&Transform.pattern/3)
       |> return(:ok)
     end

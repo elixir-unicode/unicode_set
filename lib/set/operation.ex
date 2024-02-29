@@ -128,7 +128,8 @@ defmodule Unicode.Set.Operation do
   # The last two clauses are used
   # When we take a reduced AST and
   # need to exapnd it to a full list
-  # of codepoints
+  # of codepoints.
+
   def expand([ranges]) do
     expand(ranges)
     |> Enum.sort()
@@ -262,9 +263,6 @@ defmodule Unicode.Set.Operation do
   single list of 2-tuple codepoint ranges
   that includes all codepoint from the
   two lists.
-
-  It is assumed that both lists are sorted
-  prior to merging.
 
   """
   def union(a_list, b_list) when is_list(a_list) and is_list(b_list) do
@@ -716,8 +714,8 @@ defmodule Unicode.Set.Operation do
 
   def complement(%Unicode.Set{state: :parsed} = set) do
     set
-    |> reduce
-    |> complement
+    |> reduce()
+    |> complement()
   end
 
   def complement(%Unicode.Set{parsed: parsed} = set) do

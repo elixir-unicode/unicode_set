@@ -58,7 +58,7 @@ defmodule Unicode.Set.Property do
   end
 
   def fetch_property(:script_or_category, "graph") do
-    {:ok, Unicode.Set.parse!("[^\\p{space}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")}
+    {:ok, Unicode.Set.parse!("[^\\p{Whitespace}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")}
   end
 
   def fetch_property(:script_or_category, value) do
