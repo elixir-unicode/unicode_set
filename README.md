@@ -20,7 +20,7 @@ The implementation conforms closely to the [Unicode Set specification](https://u
 
 ### Function guards
 
-This is helpful in defining [function guards](https://hexdocs.pm/elixir/guards.html). For example:
+This is helpful in defining [function guards](https://hexdocs.pm/elixir/patterns-and-guards.html#guards). For example:
 ```elixir
 defmodule Guards do
   require Unicode.Set
