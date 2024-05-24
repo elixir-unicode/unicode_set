@@ -77,7 +77,7 @@ defmodule Unicode.Set.Search do
   end
 
   def member?(codepoint, {start, finish})
-      when is_integer(codepoint) and codepoint in start..finish do
+      when is_integer(codepoint) and codepoint in start..finish//1 do
     true
   end
 
@@ -87,12 +87,12 @@ defmodule Unicode.Set.Search do
   end
 
   def member?(codepoint, {_left, {right_start, right_finish}})
-      when is_integer(codepoint) and codepoint in right_start..right_finish do
+      when is_integer(codepoint) and codepoint in right_start..right_finish//1 do
     true
   end
 
   def member?(codepoint, {{left_start, left_finish}, _right})
-      when is_integer(codepoint) and codepoint in left_start..left_finish do
+      when is_integer(codepoint) and codepoint in left_start..left_finish//1 do
     true
   end
 
