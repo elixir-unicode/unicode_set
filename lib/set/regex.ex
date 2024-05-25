@@ -52,7 +52,7 @@ defmodule Unicode.Regex do
       {:ok, ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u}
 
       iex> Unicode.Regex.compile("[:ZZZZ:]")
-      {:error, {'POSIX named classes are supported only within a class', 0}}
+      {:error, {~c"POSIX named classes are supported only within a class", 0}}
 
   """
   def compile(string, options \\ @default_options) do

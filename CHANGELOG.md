@@ -1,12 +1,14 @@
 # Changelog
 
-## Unicode Set 1.3.1
+As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
-This is the changelog for Unicode Set 1.3.1 released on _____ 2023. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+## Unicode Set 1.4.0
+
+This is the changelog for Unicode Set 1.4.0 released on _____ 2024. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Bug Fixes
 
-* Fix warnings for Elixir 1.16.
+* Fix warnings for Elixir 1.17. Thanks to @alco for the PR.
 
 ## Unicode Set 1.3.0
 

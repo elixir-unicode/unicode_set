@@ -195,8 +195,8 @@ defmodule UnicodeSetTest do
     {:ok, parsed1} = Unicode.Set.parse_and_reduce("[[de{ef}fg]&[{ef}g]]")
     {:ok, parsed2} = Unicode.Set.parse_and_reduce("[[de{ef}fg]&[{ef}]]")
 
-    assert {:in, [{103, 103}, {'ef', 'ef'}]} = parsed1.parsed
-    assert {:in, [{'ef', 'ef'}]} = parsed2.parsed
+    assert {:in, [{103, 103}, {~c"ef", ~c"ef"}]} = parsed1.parsed
+    assert {:in, [{~c"ef", ~c"ef"}]} = parsed2.parsed
   end
 
   test "set intersection when set is not a Unicode set and they align" do
@@ -206,7 +206,7 @@ defmodule UnicodeSetTest do
 
   test "parsing invalid regex" do
     assert Unicode.Regex.compile("[[:ZZZ:]]") ==
-             {:error, {'unknown POSIX class name', 3}}
+             {:error, {~c"unknown POSIX class name", 3}}
   end
 
   test "parsing an invalid unicode set returns the right error" do
