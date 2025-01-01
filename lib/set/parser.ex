@@ -48,19 +48,29 @@ defmodule Unicode.Set.Parser do
     |> repeat(set_operator() |> parsec(:one_set))
   end
 
-  @debug_functions []
+  # Fails the Elixir 1.18 type checker for now.
+  # TODO revisit by Elixir 1.19
+
+  # @debug_functions []
+  #
+  # defmacrop tracer(step, a) do
+  #   {caller, _} = __CALLER__.function
+  #
+  #   if Mix.env() in [:dev] and caller in @debug_functions do
+  #     quote do
+  #       IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
+  #       IO.inspect(unquote(a), label: "argument")
+  #     end
+  #   else
+  #     quote do
+  #       _ = {unquote(step), unquote(a)}
+  #     end
+  #   end
+  # end
 
   defmacrop tracer(step, a) do
-    {caller, _} = __CALLER__.function
-    if Mix.env() in [:dev] and caller in @debug_functions do
-      quote do
-        IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
-        IO.inspect(unquote(a), label: "argument")
-      end
-    else
-      quote do
-        _ = {unquote(step), unquote(a)}
-      end
+    quote do
+      _ = {unquote(step), unquote(a)}
     end
   end
 
