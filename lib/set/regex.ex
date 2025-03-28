@@ -59,9 +59,7 @@ defmodule Unicode.Regex do
     options = force_unicode_option(options)
 
     string
-    |> split_character_classes
-    |> expand_unicode_sets
-    |> Enum.join()
+    |> expand_regex()
     |> Regex.compile(options)
   end
 
@@ -137,6 +135,35 @@ defmodule Unicode.Regex do
 
   def match?(%Regex{} = regex, string, _opts) do
     Regex.match?(regex, string)
+  end
+
+
+  @doc """
+  Expand a Unicode Set regex string into a regex string
+  supported OTP's `:re` module.
+
+  ## Arguments
+
+  * `string` is a regular expression in
+    string form.
+
+  ## Returns
+
+  * A regex string that can be compiled by
+    the `:re` module.
+
+  """
+  def expand_regex(regex_string) do
+    regex_string
+    |> split_character_classes()
+    |> expand_unicode_sets()
+    |> Enum.join()
+  end
+
+  @doc false
+  # Used only by :unicode_string package
+  def expand_regex(regex_string, options) do
+    {expand_regex(regex_string), options}
   end
 
   @doc """
