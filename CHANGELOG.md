@@ -2,6 +2,18 @@
 
 As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
+## Unicode Set 1.6.0
+
+This is the changelog for Unicode Set 1.5.1 released on January 19th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Bug Fixes
+
+* Fix tests for OTP 28 and Elixir 1.20.
+
+### Enhancements
+
+* Updates to [Unicode 17.0](https://unicode.org/versions/Unicode17.0.0/) data.
+
 ## Unicode Set 1.5.0
 
 This is the changelog for Unicode Set 1.5.0 released on March 29th, 2025. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

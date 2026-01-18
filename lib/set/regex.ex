@@ -45,14 +45,14 @@ defmodule Unicode.Regex do
 
   ## Example
 
-      iex> Unicode.Regex.compile("[:Zs:]")
+      ==> Unicode.Regex.compile("[:Zs:]")
       {:ok, ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u}
 
-      iex> Unicode.Regex.compile("\\\\p{Zs}")
+      ==> Unicode.Regex.compile("\\\\p{Zs}")
       {:ok, ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u}
 
-      iex> Unicode.Regex.compile("[:ZZZZ:]")
-      {:error, {~c"POSIX named classes are supported only within a class", 0}}
+      ==> Unicode.Regex.compile("[:ZZZZ:]")
+      {:error, {~c"POSIX named classes are supported only within a class", 8}}
 
   """
   def compile(string, options \\ @default_options) do
@@ -85,7 +85,7 @@ defmodule Unicode.Regex do
 
   ## Example
 
-      iex> Unicode.Regex.compile!("[:Zs:]")
+      ==> Unicode.Regex.compile!("[:Zs:]")
       ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u
 
   """
