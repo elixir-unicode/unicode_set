@@ -205,8 +205,7 @@ defmodule UnicodeSetTest do
   end
 
   test "parsing invalid regex" do
-    assert Unicode.Regex.compile("[[:ZZZ:]]") ==
-             {:error, {~c"unknown POSIX class name", 8}}
+    assert {:error, {~c"unknown POSIX class name", _}} = Unicode.Regex.compile("[[:ZZZ:]]")
   end
 
   test "parsing an invalid unicode set returns the right error" do

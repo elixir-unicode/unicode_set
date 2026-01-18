@@ -40,8 +40,18 @@ jobs:
       # Specify the OTP and Elixir versions to use when building
       # and running the workflow steps.
       matrix:
-        otp: ['27.2']       # Define the OTP version [required]
-        elixir: ['1.18.1-otp-27']    # Define the elixir version [required]
+        include:
+          - otp: "27.2.4"
+            elixir: "1.18.4-otp-27"
+          - otp: "28.3.1"
+            elixir: "1.18.4-otp-28"
+          - otp: "27.2.4"
+            elixir: "1.19.5-otp-27"
+          - otp: "28.3.1"
+            elixir: "1.19.5-otp-28"
+          - otp: "28.3.1"
+            elixir: "1.20.0-rc.1-otp-28"
+            lint: true
     steps:
     # Step: Setup Elixir + Erlang image as the base.
     - name: Set up Elixir
