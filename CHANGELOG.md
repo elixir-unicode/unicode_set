@@ -2,9 +2,17 @@
 
 As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
+## Unicode Set 1.6.1
+
+This is the changelog for Unicode Set 1.6.1 released on March 16th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Bug Fixes
+
+* Fix a bug where a set starting with "-" was interpreted as negation.
+
 ## Unicode Set 1.6.0
 
-This is the changelog for Unicode Set 1.5.1 released on January 19th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 1.6.0 released on January 19th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Bug Fixes
 

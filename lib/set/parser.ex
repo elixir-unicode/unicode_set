@@ -19,7 +19,7 @@ defmodule Unicode.Set.Parser do
   @doc false
   def basic_set do
     ignore(ascii_char([?[]))
-    |> optional(ascii_char([?-, ?^]) |> replace(:not))
+    |> optional(ascii_char([?^]) |> replace(:not))
     |> times(sequence(), min: 1)
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)

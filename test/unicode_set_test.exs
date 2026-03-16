@@ -8,6 +8,11 @@ defmodule UnicodeSetTest do
   doctest Sigil
   doctest Unicode.Regex
 
+  test "basic character range" do
+    assert Unicode.Regex.compile!("[-\\ ]").source ==  "[-\\ ]"
+    assert Unicode.Regex.compile!("[-\\ ]").opts ==  [:unicode, :ucp]
+  end
+
   test "set intersection when one list is a true subset of another" do
     l = Unicode.GeneralCategory.get(:L)
     ll = Unicode.GeneralCategory.get(:Ll)

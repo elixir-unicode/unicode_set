@@ -16,20 +16,21 @@ defmodule Unicode.Set.Operation do
   #
   # In development, add any of :intersection, :union and :difference
   # into this list:
-  @debug_functions []
+  # @debug_functions []
 
   defmacrop debug(step, a, b) do
-    {caller, _} = __CALLER__.function
+    # {caller, _arity} = __CALLER__.function
+    #
+    # if caller in @debug_functions && Mix.env() == :dev do
+    #   quote generated: true do
+    #     IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
+    #     IO.inspect(unquote(a), label: "a")
+    #     IO.inspect(unquote(b), label: "b")
+    #   end
+    # end
+    caller = :unknown
 
-    if caller in @debug_functions && Mix.env() == :dev do
-      quote do
-        IO.inspect("#{unquote(caller)}", label: "Step #{unquote(step)}")
-        IO.inspect(unquote(a), label: "a")
-        IO.inspect(unquote(b), label: "b")
-      end
-    end
-
-    quote do
+    quote generated: true do
       _ = {unquote(step), unquote(a), unquote(b), unquote(caller)}
     end
   end
