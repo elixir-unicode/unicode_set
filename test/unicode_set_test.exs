@@ -372,6 +372,12 @@ defmodule UnicodeSetTest do
     end)
   end
 
+  defp compiled(set) do
+    {:ok, regex_string} = Unicode.Set.to_regex_string(set)
+    {:ok, regex} = Regex.compile(regex_string, "u")
+    regex
+  end
+
   describe "backslash escapes (Phase 2)" do
     test "named control escapes map to control codes" do
       assert cp!("[\\a]") == 0x07
@@ -457,6 +463,44 @@ defmodule UnicodeSetTest do
     test "reversed and mismatched-length ranges are rejected, not silently accepted" do
       assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[z-a]")
       assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[{abc}-{de}]")
+    end
+  end
+
+  describe "regex emission (Phase 4)" do
+    test "string members are PCRE-escaped so they match literally (RE-1)" do
+      assert Unicode.Set.to_regex_string("[{a.c}]") == {:ok, "(?:a\\.c)"}
+      refute Regex.match?(compiled("[{a.c}]"), "aXc")
+      assert Regex.match?(compiled("[{a.c}]"), "a.c")
+      # A metacharacter that would otherwise produce an uncompilable regex.
+      assert Regex.match?(compiled("[x{a)b}]"), "a)b")
+    end
+
+    test "a set of multiple string members emits no empty character class (SR-1)" do
+      {:ok, regex_string} = Unicode.Set.to_regex_string("[{ab}{cd}]")
+      refute String.contains?(regex_string, "[]")
+      assert Regex.match?(compiled("[{ab}{cd}]"), "ab")
+      refute Regex.match?(compiled("[{ab}{cd}]"), "[")
+    end
+
+    test "string-range alternations are grouped so they compose when embedded (RE-4)" do
+      assert Unicode.Regex.expand_regex("x[{ab}-{cd}]y") == "x(?:ab|ac|ad|bb|bc|bd|cb|cc|cd)y"
+      regex = Unicode.Regex.compile!("x[{ab}-{cd}]y")
+      refute Regex.match?(regex, "cdy")
+      assert Regex.match?(regex, "xaby")
+    end
+
+    test "surrogate endpoints are clipped, not emitted as a dangling hyphen (RE-2)" do
+      {:ok, regex_string} = Unicode.Set.to_regex_string("[[\\uD000-\\uE7FF]-[\\uD500-\\uD600]]")
+      refute String.starts_with?(regex_string, "[-")
+      assert {:ok, _} = Regex.compile(regex_string, "u")
+    end
+
+    test "a set of only surrogates yields a never-matching regex, not [] (RE-5)" do
+      assert Unicode.Set.to_regex_string("[\\uD800]") == {:ok, "(?!)"}
+    end
+
+    test "a class containing an escaped backslash is split correctly (RS-2)" do
+      assert Unicode.Regex.split_character_classes("[a\\\\]xyz") == ["", "[a\\\\]", "xyz"]
     end
   end
 end

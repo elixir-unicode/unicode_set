@@ -15,6 +15,10 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * Set operations now bind strictly left-to-right, including across an implicit-union boundary: `[[a-f]-[b][g]&[g-z]]` is now `{g}` and the README precedence example evaluates as documented. Previously a trailing `&` or `-` bound only to its immediate neighbour.
 * `union/2` merges overlapping and adjacent ranges, so a union feeding a difference or intersection no longer retains codepoints that should have been subtracted; `symmetric_difference/2` is likewise correct for overlapping inputs.
 * Reversed character ranges (`[z-a]`) and mismatched-length string ranges (`[{abc}-{de}]`) are rejected with a clear error instead of being silently accepted.
+* String members and string ranges are PCRE-escaped when emitted as a regex, so `[{a.c}]` matches the literal string and sets containing regex metacharacters no longer produce an uncompilable pattern (RE-1).
+* Sets of multiple string members no longer emit a bogus empty `[[][]]` class, and string-range alternations are wrapped in `(?:...)` so they compose correctly when embedded in a larger regex (SR-1, RE-4).
+* Character ranges with a surrogate endpoint are clipped rather than emitting a dangling `-` or dropping codepoints, and a surrogate-only set emits a never-matching `(?!)` instead of the uncompilable `[]` (RE-2, RE-5).
+* The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2).
 
 ### Enhancements
 

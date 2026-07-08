@@ -531,47 +531,56 @@ defmodule Unicode.Set do
   end
 
   defp expand_string_range({first, first}) do
-    List.to_string(first)
+    # A string member matches literally, so escape any PCRE metacharacters
+    # (`.`, `(`, `|`, ...) before it is interpolated into the alternation.
+    first |> List.to_string() |> Regex.escape()
   end
 
-  # An empty set (e.g. `[-]`) matches nothing. Emit a never-matching pattern
-  # rather than the empty, uncompilable character class `[]`.
-  defp form_regex_string({[], []}) do
-    "(?!)"
-  end
-
-  # Regex strings but no string ranges
-  defp form_regex_string({strings, []}) do
-    form_regex_string(strings)
-  end
-
-  # No regex strings, only string ranges
-  defp form_regex_string({[], string_ranges}) do
-    form_string_ranges(string_ranges)
-  end
-
-  # String ranges in a negative set is not supported
-  defp form_regex_string({["^" | _rest], _string_ranges}) do
-    {exception, reason} = negative_set_error()
-    raise exception, reason
-  end
-
-  # String ranges in a negative set is not supported
-  defp form_regex_string({[_first, ["^" | _rest]], _string_ranges}) do
-    {exception, reason} = negative_set_error()
-    raise exception, reason
-  end
-
-  # Both regex strings and string ranges
+  # A character class with no actual members (an empty set, or one whose only
+  # members were dropped surrogates) is treated as empty so we never emit the
+  # uncompilable `[]` / `[[][]]` classes.
   defp form_regex_string({strings, string_ranges}) do
-    ["(?:", form_regex_string(strings), "|", form_string_ranges(string_ranges), ")"]
+    char_class = if empty_char_class?(strings), do: [], else: strings
+
+    case {char_class, string_ranges} do
+      {[], []} ->
+        # Matches nothing; a never-matching group rather than an empty class.
+        "(?!)"
+
+      {[], ranges} ->
+        # Only string alternates; group them so they compose when embedded.
+        ["(?:", form_string_ranges(ranges), ")"]
+
+      {class, []} ->
+        form_char_class(class)
+
+      {class, ranges} ->
+        # A negated (complement) class cannot be unioned with string members
+        # in a single PCRE class, so this combination is unsupported.
+        if negated_class?(class) do
+          {exception, reason} = negative_set_error()
+          raise exception, reason
+        else
+          ["(?:", form_char_class(class), "|", form_string_ranges(ranges), ")"]
+        end
+    end
   end
 
-  defp form_regex_string([list_one, list_two]) when is_list(list_one) and is_list(list_two) do
+  defp empty_char_class?(strings) do
+    strings
+    |> List.flatten()
+    |> Enum.all?(&(&1 == ""))
+  end
+
+  defp negated_class?(["^" | _rest]), do: true
+  defp negated_class?([_first, ["^" | _rest]]), do: true
+  defp negated_class?(_other), do: false
+
+  defp form_char_class([list_one, list_two]) when is_list(list_one) and is_list(list_two) do
     ["[", join_regex_strings(list_one), join_regex_strings(list_two), "]"]
   end
 
-  defp form_regex_string(strings) do
+  defp form_char_class(strings) do
     join_regex_strings(strings)
   end
 

@@ -238,6 +238,13 @@ defmodule Unicode.Regex do
     {string, ""}
   end
 
+  # An escaped backslash is consumed as a unit so a following `]` is still seen
+  # as the class terminator (e.g. `[\\]`, a class matching a single backslash).
+  defp extract_character_class(<<"\\\\", rest::binary>>, level) do
+    {string, rest} = extract_character_class(rest, level)
+    {"\\\\" <> string, rest}
+  end
+
   defp extract_character_class(<<"\\[", rest::binary>>, level) do
     {string, rest} = extract_character_class(rest, level)
     {"\\[" <> string, rest}

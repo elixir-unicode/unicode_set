@@ -147,8 +147,35 @@ defmodule Unicode.Set.Transform do
   end
 
   defp to_binary(first, last) when is_integer(first) and is_integer(last) do
-    to_binary(first) <> "-" <> to_binary(last)
+    # The surrogate block D800..DFFF cannot appear in UTF-8 / PCRE, so split any
+    # range that overlaps it and drop the surrogate portion. Emitting the raw
+    # endpoints would corrupt the class (a dropped endpoint leaves a dangling
+    # "-", e.g. `[-\x{E7FF}]`) or fail to compile.
+    first
+    |> surrogate_free_segments(last)
+    |> Enum.map_join("", fn
+      {low, low} ->
+        "\\x{" <> Integer.to_string(low, 16) <> "}"
+
+      {low, high} ->
+        "\\x{" <> Integer.to_string(low, 16) <> "}-\\x{" <> Integer.to_string(high, 16) <> "}"
+    end)
   end
+
+  # A range whose endpoints are both non-surrogates is emitted unchanged even if
+  # it spans the surrogate block: PCRE accepts `\x{64}-\x{10FFFF}` and no valid
+  # character is a surrogate. Only a *surrogate endpoint* must be clipped, since
+  # emitting it would drop to "" and leave a dangling hyphen.
+  defp surrogate_free_segments(first, last) do
+    cond do
+      not surrogate?(first) and not surrogate?(last) -> [{first, last}]
+      surrogate?(first) and surrogate?(last) -> []
+      surrogate?(first) -> [{0xE000, last}]
+      surrogate?(last) -> [{first, 0xD7FF}]
+    end
+  end
+
+  defp surrogate?(codepoint), do: codepoint in 0xD800..0xDFFF
 
   @doc """
   Converts a expanded AST into a simple
