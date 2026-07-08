@@ -79,46 +79,57 @@ defmodule Unicode.Set.Parser do
     set_a
   end
 
-  def reduce_set_operations([set_a, operator, set_b])
-      when operator in [:difference, :intersection] do
-    tracer(1, [set_a, operator, set_b])
-    {operator, [set_a, set_b]}
-  end
-
-  def reduce_set_operations([set_a, operator, set_b | repeated_sets])
-      when operator in [:difference, :intersection] do
-    tracer(2, [set_a, operator, set_b | repeated_sets])
-    reduce_set_operations([{operator, [set_a, set_b]} | repeated_sets])
-  end
-
-  def reduce_set_operations([{:in, ranges1}, {:in, ranges2} | rest]) do
-    tracer(2, [{:in, ranges1}, {:in, ranges2} | rest])
-    reduce_set_operations([{:in, Enum.sort(ranges1 ++ ranges2)} | rest])
-  end
-
+  # A leading `^` complements the set. Merge any adjacent plain classes first so
+  # the complement applies to their union, then flip `:in` <-> `:not_in`.
   def reduce_set_operations([:not, {:in, ranges1}, {:in, ranges2} | rest]) do
-    tracer(3, [:not, {:in, ranges1}, {:in, ranges2} | rest])
+    tracer(1, [:not, {:in, ranges1}, {:in, ranges2} | rest])
     reduce_set_operations([:not, {:in, Enum.sort(ranges1 ++ ranges2)} | rest])
   end
 
   def reduce_set_operations([:not, {:in, ranges} | rest]) do
-    tracer(4, [:not, {:in, ranges} | rest])
+    tracer(2, [:not, {:in, ranges} | rest])
     reduce_set_operations([{:not_in, ranges} | rest])
   end
 
-  def reduce_set_operations([:not, {:not_in, ranges}]) do
-    tracer(5, [:not, {:not_in, ranges}])
-    reduce_set_operations([{:in, ranges}])
+  def reduce_set_operations([:not, {:not_in, ranges} | rest]) do
+    tracer(3, [:not, {:not_in, ranges} | rest])
+    reduce_set_operations([{:in, ranges} | rest])
   end
 
-  def reduce_set_operations([:not | ranges]) do
-    tracer(6, [:not | ranges])
-    reduce_set_operations([{:not_in, ranges}])
+  def reduce_set_operations([:not | rest]) do
+    tracer(4, [:not | rest])
+    reduce_set_operations([{:not_in, rest}])
   end
 
+  # The binary operators (implicit union, `&`, `-`) have equal precedence and
+  # bind left-to-right (TR35). Fold the flat operand/operator sequence so each
+  # operator applies to the entire accumulated result, not just its neighbour.
   def reduce_set_operations([set_a | rest]) do
-    tracer(7, [set_a | rest])
-    {:union, [set_a, reduce_set_operations(rest)]}
+    tracer(5, [set_a | rest])
+    fold_set_operations(rest, set_a)
+  end
+
+  defp fold_set_operations([], accumulated) do
+    accumulated
+  end
+
+  defp fold_set_operations([operator, set_b | rest], accumulated)
+       when operator in [:intersection, :difference] do
+    fold_set_operations(rest, {operator, [accumulated, set_b]})
+  end
+
+  defp fold_set_operations([set_b | rest], accumulated) do
+    fold_set_operations(rest, union_ast(accumulated, set_b))
+  end
+
+  # Adjacent plain character classes coalesce into one `:in` list; any other
+  # union becomes an explicit `:union` node for `Operation.reduce/1` to evaluate.
+  defp union_ast({:in, ranges1}, {:in, ranges2}) do
+    {:in, Enum.sort(ranges1 ++ ranges2)}
+  end
+
+  defp union_ast(accumulated, set_b) do
+    {:union, [accumulated, set_b]}
   end
 
   @doc false
@@ -181,20 +192,32 @@ defmodule Unicode.Set.Parser do
   @doc false
   def check_valid_range(rest, [in: [{from, to}]] = args, context, _, _)
       when is_integer(from) and is_integer(to) do
-    {rest, args, context}
+    if from > to do
+      {:error, "Character range starts at #{from} which is after its end #{to}"}
+    else
+      {rest, args, context}
+    end
   end
 
   def check_valid_range(rest, [in: [{from, from}]] = args, context, _, _) do
     {rest, args, context}
   end
 
-  def check_valid_range(rest, [in: [{from, to}]] = args, context, _, _) do
-    if length(from) == 1 or length(to) == 1 do
-      {:error,
-       "String ranges must be longer than one character. Found " <>
-         format_string_range(from, to)}
-    else
-      {rest, args, context}
+  def check_valid_range(rest, [in: [{from, to}]] = args, context, _, _)
+      when is_list(from) and is_list(to) do
+    cond do
+      length(from) == 1 or length(to) == 1 ->
+        {:error,
+         "String ranges must be longer than one character. Found " <>
+           format_string_range(from, to)}
+
+      length(from) != length(to) ->
+        {:error,
+         "String range endpoints must be the same length. Found " <>
+           format_string_range(from, to)}
+
+      true ->
+        {rest, args, context}
     end
   end
 

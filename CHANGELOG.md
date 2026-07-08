@@ -12,6 +12,9 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * A union of complements such as `[[^a][^b]]` now reduces correctly (per De Morgan) and no longer crashes `to_regex_string/1` or the `match?/2` search-tree path.
 * `to_pattern/1` and `compile_pattern/1` return a tagged error for complement (`[^...]`) sets rather than raising; the `!` variants continue to raise.
 * `Unicode.Set.match?/2` and the search tree no longer crash when matched against an empty string, and `generate_matches/2` no longer crashes on a complement set.
+* Set operations now bind strictly left-to-right, including across an implicit-union boundary: `[[a-f]-[b][g]&[g-z]]` is now `{g}` and the README precedence example evaluates as documented. Previously a trailing `&` or `-` bound only to its immediate neighbour.
+* `union/2` merges overlapping and adjacent ranges, so a union feeding a difference or intersection no longer retains codepoints that should have been subtracted; `symmetric_difference/2` is likewise correct for overlapping inputs.
+* Reversed character ranges (`[z-a]`) and mismatched-length string ranges (`[{abc}-{de}]`) are rejected with a clear error instead of being silently accepted.
 
 ### Enhancements
 

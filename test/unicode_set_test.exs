@@ -352,6 +352,26 @@ defmodule UnicodeSetTest do
     codepoint
   end
 
+  defp members(set) do
+    {:in, ranges} = Unicode.Set.parse_and_reduce!(set).parsed
+
+    ranges
+    |> Enum.flat_map(fn
+      {from, to} when is_integer(from) and is_integer(to) -> Enum.to_list(from..to)
+      _string -> []
+    end)
+    |> Enum.map(&<<&1::utf8>>)
+  end
+
+  defp contains?(set, codepoint) do
+    {:in, ranges} = Unicode.Set.parse_and_reduce!(set).parsed
+
+    Enum.any?(ranges, fn
+      {from, to} when is_integer(from) and is_integer(to) -> codepoint in from..to
+      _string -> false
+    end)
+  end
+
   describe "backslash escapes (Phase 2)" do
     test "named control escapes map to control codes" do
       assert cp!("[\\a]") == 0x07
@@ -413,5 +433,30 @@ defmodule UnicodeSetTest do
 
   test "generate_matches/2 does not crash on a complement set" do
     assert {:ok, _} = Unicode.Set.generate_matches("[^abc]", Macro.var(:codepoint, nil))
+  end
+
+  describe "set-operation precedence and correctness (Phase 3)" do
+    test "operators bind left-to-right across a juxtaposition boundary (SOP-1)" do
+      assert members("[[a-f]-[b][g]&[g-z]]") == ["g"]
+      assert members("[[a-f]&[a-e][d-f]-[b]]") == ["a", "c", "d", "e", "f"]
+      assert members("[[c][a-z]&[b]]") == ["b"]
+      assert members("[[a-z]&[b][c]]") == ["b", "c"]
+    end
+
+    test "README precedence example matches its documented result" do
+      require Unicode.Set
+      refute Unicode.Set.match?(0x41, "[[:letter:] - [a-z] [:number:] & [\\u0100-\\u01FF]]")
+      assert Unicode.Set.match?(0x100, "[[:letter:] - [a-z] [:number:] & [\\u0100-\\u01FF]]")
+    end
+
+    test "a bracket-grouped union feeding a difference subtracts correctly (SOC-1)" do
+      refute contains?("[[\\P{L}[0-9]]-[5]]", ?5)
+      refute contains?("[[[:^Lu:][a-z]]-[m]]", ?m)
+    end
+
+    test "reversed and mismatched-length ranges are rejected, not silently accepted" do
+      assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[z-a]")
+      assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[{abc}-{de}]")
+    end
   end
 end

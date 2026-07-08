@@ -284,49 +284,8 @@ defmodule Unicode.Set.Operation do
     (a_list ++ b_list)
     |> Enum.sort()
     |> Enum.uniq()
+    |> Unicode.Utils.compact_ranges()
   end
-
-  # If two heads are the same then keep one and
-  # advance the other list
-
-  # def union([a_head | a_rest], [a_head | b_rest]) do
-  #   union([a_head | a_rest], b_rest)
-  # end
-  #
-  # # When the heads of the two lists are adjacent then
-  # # we insert one new range that is the consolidation
-  # # of them both
-  #
-  # def union([{as, ae} | a_rest], [{bs, be} | _b_rest] = b) when ae + 1 == bs do
-  #   [{as, be} | union(a_rest, b)]
-  # end
-  #
-  # # We've advanced the second list beyond the start of the
-  # # first list so copy the head of the first list over
-  # # and advance the second list
-  #
-  # def union([a_head | a_rest], [b_head | _b_rest] = b) when a_head < b_head do
-  #   [a_head | union(a_rest, b)]
-  # end
-  #
-  # # We've advanced the first list beyond the start of the
-  # # second list so copy the head of the second list over
-  # # and advance the second list
-  #
-  # def union([a_head | _a_rest] = a, [b_head | b_rest]) when a_head > b_head do
-  #   [b_head | union(a, b_rest)]
-  # end
-  #
-  # # And of course if either list is empty there is now
-  # # just one of the lists
-  #
-  # def union([], b_list) do
-  #   b_list
-  # end
-  #
-  # def union(a_list, []) do
-  #   a_list
-  # end
 
   @doc """
   Returns the intersection of two lists of
@@ -335,6 +294,11 @@ defmodule Unicode.Set.Operation do
   The result is a single list of codepoint
   ranges that represents the common codepoints
   in the two lists.
+
+  Both arguments must be sorted and contain no
+  overlapping ranges. Internal callers guarantee
+  this via `compact_ranges/1`; pass compacted
+  lists when calling directly.
 
   """
 
@@ -510,6 +474,11 @@ defmodule Unicode.Set.Operation do
   Returns the first list of codepoint
   ranges minus the codepoints in the second
   list.
+
+  Both arguments must be sorted and contain no
+  overlapping ranges. Internal callers guarantee
+  this via `compact_ranges/1`; pass compacted
+  lists when calling directly.
 
   """
 
@@ -712,6 +681,8 @@ defmodule Unicode.Set.Operation do
 
   """
   def symmetric_difference(this, that) do
+    this = this |> Enum.sort() |> Unicode.Utils.compact_ranges()
+    that = that |> Enum.sort() |> Unicode.Utils.compact_ranges()
     difference(union(this, that), intersect(this, that))
   end
 

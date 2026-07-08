@@ -39,9 +39,11 @@ defmodule Unicode.Set.OperationTest do
   end
 
   describe "union/2" do
-    test "merges, sorts and dedups two lists" do
-      assert Operation.union([{1, 3}, {5, 5}], [{2, 2}, {5, 5}]) ==
-               [{1, 3}, {2, 2}, {5, 5}]
+    test "merges overlapping and adjacent ranges, sorts and dedups" do
+      # {2, 2} is already inside {1, 3}, and {5, 5} is duplicated.
+      assert Operation.union([{1, 3}, {5, 5}], [{2, 2}, {5, 5}]) == [{1, 3}, {5, 5}]
+      # adjacent ranges coalesce
+      assert Operation.union([{1, 3}], [{4, 6}]) == [{1, 6}]
     end
   end
 
