@@ -46,14 +46,6 @@ defmodule Unicode.Set do
     |> eos()
   )
 
-  defparsecp(
-    :parse_many,
-    parsec(:one_set)
-    |> ignore(optional(whitespace()))
-    |> repeat(parsec(:one_set))
-    |> eos()
-  )
-
   @spec parse(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse(unicode_set) do
     case parse_one(unicode_set) do
@@ -67,6 +59,14 @@ defmodule Unicode.Set do
   rescue
     e in Regex.CompileError ->
       {:error, parse_error(unicode_set, e.message, "")}
+
+    # The escape and property productions can still raise for syntax that is
+    # malformed or not yet supported (bad hex, `\u{...}`, `\p{emoji=value}`,
+    # `\N{...}`, etc.). The public contract is a tagged tuple, never a raise,
+    # so any such exception is normalised into a parse error here.
+    _e in [ArgumentError, FunctionClauseError, UndefinedFunctionError] ->
+      {:error,
+       parse_error(unicode_set, "it contains invalid, malformed, or unsupported syntax", "")}
   end
 
   @spec parse!(binary) :: t() | no_return()
@@ -187,13 +187,22 @@ defmodule Unicode.Set do
   @spec to_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def to_pattern(unicode_set) when is_binary(unicode_set) do
     with {:ok, parsed} <- parse(unicode_set) do
-      parsed
-      |> Operation.reduce()
-      # |> IO.inspect(label: "Reduced", structs: false)
-      |> Operation.traverse(&Transform.pattern/3)
-      |> return(:ok)
+      reduced = Operation.reduce(parsed)
+
+      if has_complement?(reduced.parsed) do
+        {:error, complement_pattern_error()}
+      else
+        reduced
+        |> Operation.traverse(&Transform.pattern/3)
+        |> return(:ok)
+      end
     end
   end
+
+  defp has_complement?({:not_in, _ranges}), do: true
+  defp has_complement?({:in, _ranges}), do: false
+  defp has_complement?(terms) when is_list(terms), do: Enum.any?(terms, &has_complement?/1)
+  defp has_complement?(_other), do: false
 
   @doc """
   Transforms a Unicode Set into a pattern
@@ -410,8 +419,8 @@ defmodule Unicode.Set do
 
   ## Example
 
-      iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
-      {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
+      iex> Unicode.Set.to_regex_string("[[abc]-[b]]")
+      {:ok, "[\\x{61}\\x{63}]"}
 
   """
   @spec to_regex_string(binary()) :: {:ok, binary()} | {:error, {module(), binary()}}
@@ -447,8 +456,8 @@ defmodule Unicode.Set do
 
   ## Example
 
-      iex> Unicode.Set.to_regex_string "[[:Zs]-[\s]]"
-      {:ok, "[\\x{3A}\\x{5A}\\x{73}]"}
+      iex> Unicode.Set.to_regex_string!("[[abc]-[b]]")
+      "[\\x{61}\\x{63}]"
 
   """
   @spec to_regex_string!(binary()) :: binary() | no_return()
@@ -523,6 +532,12 @@ defmodule Unicode.Set do
 
   defp expand_string_range({first, first}) do
     List.to_string(first)
+  end
+
+  # An empty set (e.g. `[-]`) matches nothing. Emit a never-matching pattern
+  # rather than the empty, uncompilable character class `[]`.
+  defp form_regex_string({[], []}) do
+    "(?!)"
   end
 
   # Regex strings but no string ranges
@@ -652,6 +667,11 @@ defmodule Unicode.Set do
 
   defp negative_set_error do
     {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}
+  end
+
+  defp complement_pattern_error do
+    {Unicode.Set.ParseError,
+     "complement (inverse) unicode sets like [^...] are not supported for compiled patterns"}
   end
 
   defp return(term, atom) do

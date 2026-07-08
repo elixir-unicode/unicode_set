@@ -59,6 +59,12 @@ defmodule Unicode.Set.Search do
     !member?(codepoint, tree)
   end
 
+  # An empty string has no leading codepoint to test, so it is never a member
+  # of a character set (matching the `[^...]` "one code point" semantics too).
+  def member?("", %__MODULE__{}) do
+    false
+  end
+
   string_match =
     quote do
       <<var!(codepoint)::utf8, _rest::binary>> = var!(string)

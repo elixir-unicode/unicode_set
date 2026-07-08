@@ -2,6 +2,21 @@
 
 As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
+## Unicode Set 1.6.3 (unreleased)
+
+### Bug Fixes
+
+* `Unicode.Set.parse/1` now returns `{:error, _}` for malformed or unsupported escapes (`\u{...}`, `\U...`, `\N{...}`, `\p{emoji=value}`, and backslash-letter escapes) instead of raising, restoring its documented tagged-tuple contract.
+* The empty set `[-]` now reduces to `{:in, []}` and its consumers (`to_pattern/1`, `to_utf8_char/1`, `to_regex_string/1`) return an empty result or a never-matching regex instead of crashing.
+* A union of complements such as `[[^a][^b]]` now reduces correctly (per De Morgan) and no longer crashes `to_regex_string/1` or the `match?/2` search-tree path.
+* `to_pattern/1` and `compile_pattern/1` return a tagged error for complement (`[^...]`) sets rather than raising; the `!` variants continue to raise.
+* `Unicode.Set.match?/2` and the search tree no longer crash when matched against an empty string, and `generate_matches/2` no longer crashes on a complement set.
+
+### Changes
+
+* Corrected README examples: the block name `Sundanese` (was `sudanese`), a working `\p{General_Category=...}` property spelling, the single-dash `print` compatibility definition, and the `to_regex_string/1` doc example.
+* Removed the unused `:parse_many` parser combinator.
+
 ## Unicode Set 1.6.2
 
 This is the changelog for Unicode Set 1.6.2 released on July 8th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

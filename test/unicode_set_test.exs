@@ -264,12 +264,18 @@ defmodule UnicodeSetTest do
                "Unable to parse \"[\\\\p{sdff}]\". The unicode script, category or property \"sdff\" is not known."}}
   end
 
-  test "compile_string/1 raises with negative string classes" do
+  test "compile_pattern/1 returns a tagged error for negative (complement) sets" do
     error_message =
       "complement (inverse) unicode sets like [^...] are not supported for compiled patterns"
 
-    assert_raise ArgumentError, error_message, fn ->
-      Unicode.Set.compile_pattern("[^{ab}]")
+    assert {:error, {Unicode.Set.ParseError, ^error_message}} =
+             Unicode.Set.compile_pattern("[^{ab}]")
+
+    assert {:error, {Unicode.Set.ParseError, ^error_message}} =
+             Unicode.Set.to_pattern("[^abc]")
+
+    assert_raise Unicode.Set.ParseError, error_message, fn ->
+      Unicode.Set.compile_pattern!("[^abc]")
     end
   end
 
@@ -311,5 +317,65 @@ defmodule UnicodeSetTest do
     assert Unicode.Regex.compile!("\\P{Is Basic_Latin}").source == basic_latin.source
     assert Unicode.Regex.compile!("\\P{Is Basic Latin}").source == basic_latin.source
     assert Unicode.Regex.compile!("\\P{is basic latin}").source == basic_latin.source
+  end
+
+  # --- Phase 1: contract boundary / crash-stopping regressions ---
+
+  describe "empty set [-]" do
+    test "reduces to an empty :in set" do
+      assert Unicode.Set.parse_and_reduce!("[-]").parsed == {:in, []}
+    end
+
+    test "produces empty pattern / utf8 lists and a never-matching regex" do
+      assert Unicode.Set.to_pattern("[-]") == {:ok, []}
+      assert Unicode.Set.to_utf8_char("[-]") == {:ok, []}
+      assert Unicode.Set.to_regex_string("[-]") == {:ok, "(?!)"}
+      assert Regex.match?(Unicode.Regex.compile!("(?!)"), "x") == false
+    end
+  end
+
+  describe "parse/1 tagged-tuple contract (never raises)" do
+    for set <- [
+          "[\\u{1F600}]",
+          "[\\x{1F600}]",
+          "[\\U0001F600]",
+          "[\\w]",
+          "[\\g]",
+          "[\\N{BULLET}]",
+          "\\p{emoji=yes}"
+        ] do
+      test "returns {:error, _} for #{set}" do
+        assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse(unquote(set))
+      end
+    end
+  end
+
+  describe "union of complements" do
+    test "reduces without crashing and is semantically correct (De Morgan)" do
+      # ¬a ∪ ¬b == ¬(a ∩ b) == everything, since {a} and {b} are disjoint.
+      set = Unicode.Set.parse_and_reduce!("[[^a][^b]]")
+      assert {:in, ranges} = set.parsed
+      refute ranges == []
+
+      tree = Unicode.Set.Search.build_search_tree(set)
+      assert Unicode.Set.Search.member?(?a, tree)
+      assert Unicode.Set.Search.member?(?b, tree)
+      assert Unicode.Set.Search.member?(?z, tree)
+    end
+
+    test "emits a valid regex" do
+      assert {:ok, regex_string} = Unicode.Set.to_regex_string("[[^a][^b][^c]]")
+      assert {:ok, _} = Regex.compile(regex_string, "u")
+    end
+  end
+
+  test "match? does not crash on an empty string" do
+    reduced = Unicode.Set.parse_and_reduce!("[abc]")
+    tree = Unicode.Set.Search.build_search_tree(reduced)
+    refute Unicode.Set.Search.member?("", tree)
+  end
+
+  test "generate_matches/2 does not crash on a complement set" do
+    assert {:ok, _} = Unicode.Set.generate_matches("[^abc]", Macro.var(:codepoint, nil))
   end
 end

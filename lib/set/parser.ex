@@ -29,6 +29,7 @@ defmodule Unicode.Set.Parser do
   @doc false
   def empty_set do
     string("[-]")
+    |> replace({:in, []})
     |> label("empty set")
   end
 

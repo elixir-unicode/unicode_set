@@ -114,7 +114,7 @@ As much work as possible is done at compile time in order to deliver good perfor
 This version of `Unicode Set` supports the following enumerable unicode properties in unicode sets:
 
 * `script` such as `[:script=arabic:]`, `\p{script=arabic}` or `[:arabic:]`
-* `block` such as `[:block=sudanese:]`, `\p{block=sudanese}`, `\p{IsSudanese}` or `[:IsSudanese:]`
+* `block` such as `[:block=sundanese:]`, `\p{block=sundanese}`, `\p{IsSundanese}` or `[:IsSundanese:]`
 * `general category` such as `[:Lu:]`, `\p{Lu}`, `[:gc=Lu:]` or `[:general category=Lu:]`
 * `combining class` such as `[:ccc=230:]`
 
@@ -202,7 +202,7 @@ space     |	`\p{Whitespace}`	|
 blank	    | `\p{gc=Space_Separator} \N{CHARACTER TABULATION}`	| "horizontal" whitespace: space separators plus U+0009 tab.
 cntrl	    | `\p{gc=Control} `            | The characters in \p{gc=Format} share some, but not all aspects of control characters. Many format characters are required in the representation of plain text.
 graph	    | `[^\p{space} \p{gc=Control} \p{gc=Surrogate} \p{gc=Unassigned}]`	| Warning: the set shown here is defined by excluding space, controls, and so on with ^.
-print	    | `\p{graph} \p{blank} -- \p{cntrl}`	| Includes graph and space-like characters.
+print	    | `\p{graph} \p{blank} - \p{cntrl}`	| Includes graph and space-like characters.
 word      | `\p{alpha} \p{gc=Mark} \p{digit} \p{gc=Connector_Punctuation} \p{Join_Control}`	|	This is only an approximation to Word Boundaries. The Connector Punctuation is added in for programming language identifiers, thus adding `_` and similar characters.
 
 ## Additional Derived properties
@@ -351,9 +351,9 @@ long	    | General_Category=Uppercase_Letter | uses a full type and value
 If the type or value is omitted, then the equals sign is also omitted. The short style is only
 used for Category and Script properties because these properties are very common and their omission is unambiguous.
 
-In actual practice, you can mix type names and values that are omitted, abbreviated, or full. For example, if Category=Unassigned you could use what is in the table explicitly, `\p{gc=Unassigned}`, `\p{Category=Cn}`, or `\p{Unassigned}`.
+In actual practice, you can mix type names and values that are omitted, abbreviated, or full. For example, if General_Category=Unassigned you could use what is in the table explicitly, `\p{gc=Unassigned}`, `\p{General_Category=Cn}`, or `\p{Unassigned}`.
 
-When these are processed, case and whitespace are ignored so you may use them for clarity, if desired. For example, `\p{Category = Uppercase Letter}` or `\p{Category = uppercase letter}`.
+When these are processed, case is ignored and whitespace within a name or value is treated as an underscore, so you may use them for clarity, if desired. For example, `\p{General_Category=Uppercase Letter}` or `\p{gc=uppercase letter}`.
 
 <!-- MDOC -->
 

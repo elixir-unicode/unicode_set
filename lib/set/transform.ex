@@ -58,6 +58,10 @@ defmodule Unicode.Set.Transform do
     []
   end
 
+  def reject_string_range(:not_in, ranges, _var) do
+    {:not_in, ranges}
+  end
+
   # def reject_string_range({first, last}, nil, _var) do
   #   {first, last}
   # end
