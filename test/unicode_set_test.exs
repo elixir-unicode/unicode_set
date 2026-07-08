@@ -378,6 +378,10 @@ defmodule UnicodeSetTest do
     regex
   end
 
+  defp same?(set_a, set_b) do
+    Unicode.Set.parse_and_reduce!(set_a).parsed == Unicode.Set.parse_and_reduce!(set_b).parsed
+  end
+
   describe "backslash escapes (Phase 2)" do
     test "named control escapes map to control codes" do
       assert cp!("[\\a]") == 0x07
@@ -501,6 +505,39 @@ defmodule UnicodeSetTest do
 
     test "a class containing an escaped backslash is split correctly (RS-2)" do
       assert Unicode.Regex.split_character_classes("[a\\\\]xyz") == ["", "[a\\\\]", "xyz"]
+    end
+  end
+
+  describe "property name resolution (Phase 5)" do
+    test "hyphens in property names are ignored (PS-1)" do
+      assert same?("[\\p{White-Space}]", "[\\p{Whitespace}]")
+      assert {:ok, _} = Unicode.Set.parse("[[:Quotation-Mark:]]")
+    end
+
+    test "Is<name> resolves as script/category/property before block (GAP-ISPREFIX)" do
+      assert same?("[\\p{IsAlphabetic}]", "[\\p{Alphabetic}]")
+      assert same?("[[:IsLowercase:]]", "[\\p{Lowercase}]")
+      assert same?("[\\p{IsLatin}]", "[\\p{Latin}]")
+      assert same?("[\\p{IsGreek}]", "[\\p{Greek}]")
+    end
+
+    test "Is<Block> still resolves to a block when the name is not a script/category/property" do
+      assert same?("[\\p{IsBasicLatin}]", "[\\p{block=BasicLatin}]")
+
+      assert Unicode.Regex.compile!("[[:^IsBasicLatin:]]").source ==
+               Unicode.Regex.compile!("[[:^block=BasicLatin:]]").source
+    end
+
+    test "digit-bearing block names resolve (PS-7 workaround)" do
+      assert {:in, [{128, 255}]} =
+               Unicode.Set.parse_and_reduce!("[\\p{block=Latin-1 Supplement}]").parsed
+
+      assert same?("[\\p{IsLatin1Supplement}]", "[\\p{block=Latin-1 Supplement}]")
+    end
+
+    test "Java-style In<Block> prefix resolves as a block, leaving In... names alone (PS-8)" do
+      assert same?("[\\p{InBasicLatin}]", "[\\p{block=BasicLatin}]")
+      assert {:ok, _} = Unicode.Set.parse("[\\p{Inherited}]")
     end
   end
 end

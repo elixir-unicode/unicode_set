@@ -271,6 +271,33 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  # `\p{Is<name>}` / `[:Is<name>:]`: per UTS#18 / Java semantics, resolve the
+  # name as a script, general category or binary property FIRST, and only fall
+  # back to a block when it is none of those. This lets `\p{IsAlphabetic}`,
+  # `\p{IsLatin}` and `[:IsLowercase:]` resolve to the property/script while
+  # `\p{IsBasicLatin}` (not a script/category/property) still resolves as a block.
+  def reduce_property(rest, [value, "is_prefix"], context, _line, _offset) do
+    tracer(0, [value, :is_prefix])
+
+    case fetch_script_category_or_block(value) do
+      %{parsed: [{:not_in, parsed}]} -> {rest, [{:not_in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {rest, [{:in, parsed}], context}
+      %{parsed: parsed} -> {rest, parsed, context}
+      ranges -> {rest, [{:in, ranges}], context}
+    end
+  end
+
+  def reduce_property(rest, [value, "is_prefix", :not], context, _line, _offset) do
+    tracer(0, [value, :is_prefix, :not])
+
+    case fetch_script_category_or_block(value) do
+      %{parsed: [{:not_in, parsed}]} -> {rest, [{:in, parsed}], context}
+      %{parsed: [{:in, parsed}]} -> {rest, [{:not_in, parsed}], context}
+      %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
+      ranges -> {rest, [{:not_in, ranges}], context}
+    end
+  end
+
   def reduce_property(rest, [value, "block" = property], context, _line, _offset) do
     tracer(0, [value, :in, property])
 
@@ -320,7 +347,7 @@ defmodule Unicode.Set.Parser do
   def reduce_property(rest, [value, :not], context, _line, _offset) do
     tracer(5, [value, :not])
 
-    case fetch_property!(:script_or_category, value) do
+    case fetch_script_category_or_in_block(value) do
       %{parsed: [{:not_in, parsed}]} -> {rest, [{:in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {rest, [{:not_in, parsed}], context}
       %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
@@ -331,7 +358,7 @@ defmodule Unicode.Set.Parser do
   def reduce_property(rest, [value], context, _line, _offset) do
     tracer(6, [value])
 
-    case fetch_property!(:script_or_category, value) do
+    case fetch_script_category_or_in_block(value) do
       %{parsed: [{:not_in, parsed}]} -> {rest, [{:not_in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {rest, [{:in, parsed}], context}
       %{parsed: parsed} -> {rest, parsed, context}
@@ -342,10 +369,10 @@ defmodule Unicode.Set.Parser do
   @doc false
   def block_prefix do
     choice([
-      string("is") |> replace("block"),
-      string("Is") |> replace("block"),
-      string("iS") |> replace("block"),
-      string("IS") |> replace("block")
+      string("is") |> replace("is_prefix"),
+      string("Is") |> replace("is_prefix"),
+      string("iS") |> replace("is_prefix"),
+      string("IS") |> replace("is_prefix")
     ])
     |> label("property name")
   end
@@ -354,7 +381,7 @@ defmodule Unicode.Set.Parser do
   @alphanumeric [?a..?z, ?A..?Z, ?0..?9]
   def property_name do
     ascii_char(@alphanumeric)
-    |> repeat(ascii_char(@alphanumeric ++ [?_, ?\s]))
+    |> repeat(ascii_char(@alphanumeric ++ [?_, ?\s, ?-]))
     |> ignore(optional(whitespace()))
     |> reduce(:to_lower_string)
     |> label("property name")

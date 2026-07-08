@@ -19,11 +19,15 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * Sets of multiple string members no longer emit a bogus empty `[[][]]` class, and string-range alternations are wrapped in `(?:...)` so they compose correctly when embedded in a larger regex (SR-1, RE-4).
 * Character ranges with a surrogate endpoint are clipped rather than emitting a dangling `-` or dropping codepoints, and a surrogate-only set emits a never-matching `(?!)` instead of the uncompilable `[]` (RE-2, RE-5).
 * The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2).
+* The `Is<name>` prefix now resolves as a script, general category or binary property before falling back to a block, so `\p{IsAlphabetic}`, `\p{IsLatin}` and `[:IsLowercase:]` resolve instead of erroring; `Is<Block>` names such as `\p{IsBasicLatin}` still resolve to their block (GAP-ISPREFIX).
+* Digit-bearing block names such as `\p{block=Latin-1 Supplement}` now resolve, working around a `Unicode.Block.fetch/1` bug present in the `unicode` dependency (PS-7).
 
 ### Enhancements
 
 * Added the `\UHHHHHHHH` (8 hex digit) escape, the single-digit `\xH` escape, and single-codepoint bracketed `\u{...}` / `\x{...}` escapes (including astral codepoints such as `\u{1F600}`).
 * Whitespace immediately after `[` or `[^` is now ignored, consistent with whitespace elsewhere in a set.
+* Hyphens are now accepted and ignored in property names per UAX44-LM3, so `\p{White-Space}` and `[:Quotation-Mark:]` resolve (PS-1).
+* Accept the Java-style `In<Block>` prefix, so `\p{InBasicLatin}` resolves to the block while genuine `In...` names such as `\p{Inherited}` are unaffected (PS-8).
 
 ### Changes
 

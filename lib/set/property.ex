@@ -1,6 +1,19 @@
 defmodule Unicode.Set.Property do
   @moduledoc false
 
+  # Canonical block lookup keyed by the fully normalized (downcased, separator
+  # stripped) block name. `Unicode.Block.fetch/1` cannot resolve some blocks
+  # whose canonical alias is absent from the dependency's alias table (e.g.
+  # digit-bearing names such as "Latin-1 Supplement" -> "latin1supplement"),
+  # because on an alias miss it looks the still-string name up against the
+  # atom-keyed block map and fails. We rebuild a canonical name -> atom key map
+  # directly from `Unicode.Block.blocks/0` so every real block resolves.
+  @block_by_canonical_name Unicode.Block.blocks()
+                           |> Map.keys()
+                           |> Map.new(fn key ->
+                             {Unicode.Utils.downcase_and_remove_whitespace(key), key}
+                           end)
+
   # Of this list, only the following are unknown to Unicode
   # * xdigit
   # * word
@@ -79,6 +92,25 @@ defmodule Unicode.Set.Property do
   end
 
   @doc false
+  def fetch_property("block" = property, value) do
+    case Unicode.Block.fetch(value) do
+      {:ok, range_list} ->
+        {:ok, range_list}
+
+      :error ->
+        normalized = Unicode.Utils.downcase_and_remove_whitespace(value)
+
+        case Map.fetch(@block_by_canonical_name, normalized) do
+          {:ok, block_key} ->
+            Unicode.Block.fetch(block_key)
+
+          :error ->
+            {:error,
+             "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
+        end
+    end
+  end
+
   def fetch_property(property, value) do
     with {:ok, module} <- Unicode.fetch_property(property),
          {:ok, range_list} <- module.fetch(value) do
@@ -94,6 +126,42 @@ defmodule Unicode.Set.Property do
     case fetch_property(property, value) do
       {:ok, range_list} -> range_list
       {:error, reason} -> raise Regex.CompileError, reason
+    end
+  end
+
+  @doc false
+  # Resolution for the `Is<name>` prefix: try the name as a script, general
+  # category or binary property first, and only fall back to a block. Raises a
+  # `Regex.CompileError` if the name matches none of them.
+  def fetch_script_category_or_block(value) do
+    case fetch_property(:script_or_category, value) do
+      {:ok, result} -> result
+      {:error, _reason} -> fetch_property!("block", value)
+    end
+  end
+
+  @doc false
+  # Resolution for a bare `\p{name}` / `[:name:]`. Tries the name as a script,
+  # category or binary property; if that fails and the name has a Java-style
+  # `In` prefix, tries the remainder as a block (so `\p{InBasicLatin}` resolves)
+  # while leaving genuine `In...` scripts/properties (e.g. `Inherited`) alone,
+  # since those already resolve at the script/category/property step.
+  def fetch_script_category_or_in_block(value) do
+    case fetch_property(:script_or_category, value) do
+      {:ok, result} ->
+        result
+
+      {:error, reason} ->
+        case value do
+          "in" <> block when block != "" ->
+            case fetch_property("block", block) do
+              {:ok, ranges} -> ranges
+              {:error, _} -> raise Regex.CompileError, reason
+            end
+
+          _ ->
+            raise Regex.CompileError, reason
+        end
     end
   end
 end
