@@ -49,7 +49,7 @@ defmodule Unicode.Set.Parser do
   end
 
   # Fails the Elixir 1.18 type checker for now.
-  # TODO revisit by Elixir 1.19
+  # Revisit by Elixir 1.19.
 
   # @debug_functions []
   #
@@ -240,7 +240,7 @@ defmodule Unicode.Set.Parser do
   def property_expression(combinator \\ empty(), fence) do
     combinator
     |> choice([
-      is_block()
+      block_prefix()
       |> ignore(optional(whitespace()))
       |> concat(value(fence)),
       property_name()
@@ -251,6 +251,7 @@ defmodule Unicode.Set.Parser do
   @doc false
   def reduce_property(rest, [value, "block" = property], context, _line, _offset) do
     tracer(0, [value, :in, property])
+
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {rest, [{:in, parsed}], context}
       ranges -> {rest, [{:in, ranges}], context}
@@ -259,6 +260,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(rest, [value, "block" = property, :not], context, _line, _offset) do
     tracer(1, [value, :in, property, :not])
+
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
       ranges -> {rest, [{:not_in, ranges}], context}
@@ -267,6 +269,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(rest, [value, :in, property, :not], context, _line, _offset) do
     tracer(2, [value, :in, property, :not])
+
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
       ranges -> {rest, [{:not_in, ranges}], context}
@@ -275,6 +278,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(rest, [value, :not_in, property, :not], context, _line, _offset) do
     tracer(3, [value, :not_in, property, :not])
+
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {rest, parsed, context}
       ranges -> {rest, [{:in, ranges}], context}
@@ -284,6 +288,7 @@ defmodule Unicode.Set.Parser do
   def reduce_property(rest, [value, operator, property], context, _line, _offset)
       when operator in [:in, :not_in] do
     tracer(4, [value, operator, property])
+
     case fetch_property!(property, value) do
       %{parsed: parsed} -> {rest, [{operator, parsed}], context}
       ranges -> {rest, [{operator, ranges}], context}
@@ -292,7 +297,8 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(rest, [value, :not], context, _line, _offset) do
     tracer(5, [value, :not])
-    case fetch_property!(:script_or_category, value)  do
+
+    case fetch_property!(:script_or_category, value) do
       %{parsed: [{:not_in, parsed}]} -> {rest, [{:in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {rest, [{:not_in, parsed}], context}
       %{parsed: parsed} -> {rest, [{:not_in, parsed}], context}
@@ -302,6 +308,7 @@ defmodule Unicode.Set.Parser do
 
   def reduce_property(rest, [value], context, _line, _offset) do
     tracer(6, [value])
+
     case fetch_property!(:script_or_category, value) do
       %{parsed: [{:not_in, parsed}]} -> {rest, [{:not_in, parsed}], context}
       %{parsed: [{:in, parsed}]} -> {rest, [{:in, parsed}], context}
@@ -311,7 +318,7 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  def is_block do
+  def block_prefix do
     choice([
       string("is") |> replace("block"),
       string("Is") |> replace("block"),

@@ -1,7 +1,7 @@
 defmodule Unicode.Set.ParseError do
   @moduledoc """
-  Exception raised when an a Unicode Set cannot
-  be parsed
+  Exception raised when a Unicode Set cannot be parsed.
+
   """
   defexception [:message]
 

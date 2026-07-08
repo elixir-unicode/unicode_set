@@ -1,6 +1,6 @@
 defmodule UnicodeSetTest do
   use ExUnit.Case
-  alias Unicode.Set.{Operation, Transform, Property, Parser, Sigil}
+  alias Unicode.Set.{Operation, Parser, Property, Sigil, Transform}
   doctest Operation
   doctest Transform
   doctest Property
@@ -9,8 +9,8 @@ defmodule UnicodeSetTest do
   doctest Unicode.Regex
 
   test "basic character range" do
-    assert Unicode.Regex.compile!("[-\\ ]").source ==  "[-\\ ]"
-    assert Unicode.Regex.compile!("[-\\ ]").opts ==  [:unicode, :ucp]
+    assert Unicode.Regex.compile!("[-\\ ]").source == "[-\\ ]"
+    assert Unicode.Regex.compile!("[-\\ ]").opts == [:unicode, :ucp]
   end
 
   test "set intersection when one list is a true subset of another" do
@@ -259,13 +259,14 @@ defmodule UnicodeSetTest do
 
   test "parse nested set with invalid property" do
     assert Unicode.Set.parse("[\\p{sdff}]") ==
-    {:error,
-     {Unicode.Set.ParseError,
-      "Unable to parse \"[\\\\p{sdff}]\". The unicode script, category or property \"sdff\" is not known."}}
+             {:error,
+              {Unicode.Set.ParseError,
+               "Unable to parse \"[\\\\p{sdff}]\". The unicode script, category or property \"sdff\" is not known."}}
   end
 
   test "compile_string/1 raises with negative string classes" do
-    error_message = "complement (inverse) unicode sets like [^...] are not supported for compiled patterns"
+    error_message =
+      "complement (inverse) unicode sets like [^...] are not supported for compiled patterns"
 
     assert_raise ArgumentError, error_message, fn ->
       Unicode.Set.compile_pattern("[^{ab}]")

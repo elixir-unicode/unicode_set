@@ -137,7 +137,6 @@ defmodule Unicode.Regex do
     Regex.match?(regex, string)
   end
 
-
   @doc """
   Expand a Unicode Set regex string into a regex string
   supported OTP's `:re` module.

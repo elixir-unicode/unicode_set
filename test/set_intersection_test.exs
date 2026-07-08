@@ -13,8 +13,8 @@ defmodule Unicode.Set.IntersectionTest do
       set = "[:#{cat}:]"
       difference = "[[:#{cat}:]-[:^#{cat}:]]"
 
-      difference = Unicode.Set.parse!(difference) |> Unicode.Set.Operation.expand
-      set = Unicode.Set.parse!(set) |> Unicode.Set.Operation.expand
+      difference = Unicode.Set.parse!(difference) |> Unicode.Set.Operation.expand()
+      set = Unicode.Set.parse!(set) |> Unicode.Set.Operation.expand()
 
       assert difference.parsed == set.parsed
     end

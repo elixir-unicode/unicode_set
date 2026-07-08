@@ -87,8 +87,8 @@ defmodule Unicode.Set.Transform do
 
   def pattern(:not_in, _ranges, _var) do
     raise ArgumentError,
-      "complement (inverse) unicode sets like [^...] " <>
-      "are not supported for compiled patterns"
+          "complement (inverse) unicode sets like [^...] " <>
+            "are not supported for compiled patterns"
   end
 
   def pattern(range_1, range_2, _var) do
@@ -135,7 +135,7 @@ defmodule Unicode.Set.Transform do
     "\\x{" <> Integer.to_string(integer, 16) <> "}"
   end
 
-  @spec to_binary(integer, integer ) :: String.t()
+  @spec to_binary(integer, integer) :: String.t()
   @spec to_binary(charlist, charlist) :: String.t()
 
   defp to_binary(first, first) when is_integer(first) do

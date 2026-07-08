@@ -10,7 +10,7 @@ defmodule Unicode.Set.Property do
 
   @doc false
   def fetch_property(:script_or_category, "alpha") do
-   {:ok,  Unicode.Set.parse!("\\p{Alphabetic}")}
+    {:ok, Unicode.Set.parse!("\\p{Alphabetic}")}
   end
 
   def fetch_property(:script_or_category, "lower") do
@@ -54,11 +54,15 @@ defmodule Unicode.Set.Property do
   end
 
   def fetch_property(:script_or_category, "word") do
-    {:ok, Unicode.Set.parse!("[\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}]")}
+    {:ok,
+     Unicode.Set.parse!(
+       "[\\p{alpha}\\p{gc=Mark}\\p{digit}\\p{gc=Connector_Punctuation}\\p{Join_Control}]"
+     )}
   end
 
   def fetch_property(:script_or_category, "graph") do
-    {:ok, Unicode.Set.parse!("[^\\p{Whitespace}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")}
+    {:ok,
+     Unicode.Set.parse!("[^\\p{Whitespace}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")}
   end
 
   def fetch_property(:script_or_category, value) do
@@ -92,5 +96,4 @@ defmodule Unicode.Set.Property do
       {:error, reason} -> raise Regex.CompileError, reason
     end
   end
-
 end

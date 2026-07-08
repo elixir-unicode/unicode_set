@@ -1,4 +1,6 @@
 defmodule Unicode.Set.Search do
+  @moduledoc false
+
   defstruct [:binary_tree, :string_ranges, :operation]
 
   def build_search_tree(%Unicode.Set{parsed: {operation, tuple_list}, state: :reduced}) do
@@ -40,8 +42,8 @@ defmodule Unicode.Set.Search do
 
   defp tag_string_ranges({ranges, string_ranges}) do
     string_patterns =
-      Enum.map(string_ranges, fn [hd | _rest] = range ->
-        [String.length(hd) | range]
+      Enum.map(string_ranges, fn string when is_binary(string) ->
+        [byte_size(string), string]
       end)
 
     {ranges, string_patterns}
@@ -104,13 +106,14 @@ defmodule Unicode.Set.Search do
   end
 
   def string_member?(string, strings) do
-    Enum.reduce_while(strings, false, fn [len | pattern], acc ->
-      pattern = :binary.compile_pattern(pattern)
+    Enum.reduce_while(strings, false, fn [len, pattern], acc ->
+      compiled_pattern = :binary.compile_pattern(pattern)
 
-      if :binary.match(string, pattern, scope: {0, len}) == :nomatch do
-        {:cont, acc}
-      else
+      if byte_size(string) >= len and
+           :binary.match(string, compiled_pattern, scope: {0, len}) != :nomatch do
         {:halt, true}
+      else
+        {:cont, acc}
       end
     end)
   end

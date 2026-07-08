@@ -57,7 +57,7 @@ defmodule Unicode.Set.Operation do
   can be preserved.
 
   When intersections and differences are required,
-  the rnages must be both reduced and expanded in
+  the ranges must be both reduced and expanded in
   order for this set operations to complete.
 
   """
@@ -512,7 +512,7 @@ defmodule Unicode.Set.Operation do
     difference(a_rest, b_rest)
   end
 
-  def difference([a_head | a_rest] = a, a_head = b) do
+  def difference([a_head | a_rest] = a, b) when b == a_head do
     debug("1b", a, b)
     a_rest
   end

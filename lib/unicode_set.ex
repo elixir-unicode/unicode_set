@@ -6,7 +6,7 @@ defmodule Unicode.Set do
   import NimbleParsec
   import Unicode.Set.Parser
 
-  alias Unicode.Set.{Operation, Transform, Search}
+  alias Unicode.Set.{Operation, Search, Transform}
 
   @keys [:set, :parsed, :state]
   @enforce_keys @keys
@@ -58,7 +58,7 @@ defmodule Unicode.Set do
   def parse(unicode_set) do
     case parse_one(unicode_set) do
       {:ok, parsed, "", _, _, _} ->
-        set = struct(__MODULE__, [set: unicode_set, parsed: parsed, state: :parsed])
+        set = struct(__MODULE__, set: unicode_set, parsed: parsed, state: :parsed)
         {:ok, set}
 
       {:error, message, rest, _, _, _} ->
@@ -309,7 +309,7 @@ defmodule Unicode.Set do
   codepoints that can be used with
   [nimble_parsec](https://hex.pm/packages/nimble_parsec).
 
-  THe list of codepoints can be used as an
+  The list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
   ## Arguments
@@ -319,7 +319,7 @@ defmodule Unicode.Set do
 
   ## Returns
 
-  * `{:ok, list_of_codepints}` or
+  * `{:ok, list_of_codepoints}` or
 
   * `{:error, {exception, reason}}`
 
@@ -353,7 +353,7 @@ defmodule Unicode.Set do
   codepoints that can be used with
   [nimble_parsec](https://hex.pm/packages/nimble_parsec).
 
-  THe list of codepoints can be used as an
+  The list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
   ## Arguments
@@ -363,7 +363,7 @@ defmodule Unicode.Set do
 
   ## Returns
 
-  * `list_of_codepints` or
+  * `list_of_codepoints` or
 
   * raises an exception
 
@@ -580,7 +580,8 @@ defmodule Unicode.Set do
   # use regexs. The library `unicode_transform` uses
   # this function for that purpose.
 
-  @spec generate_matches(binary(), any()) :: {:ok, generated_match()} | {:error, {module(), binary()}}
+  @spec generate_matches(binary(), any()) ::
+          {:ok, generated_match()} | {:error, {module(), binary()}}
   def generate_matches(unicode_set, var) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
          {:ok, set} <- not_in_has_no_string_ranges(set) do
@@ -624,13 +625,16 @@ defmodule Unicode.Set do
     case unicode_set do
       unicode_set when is_binary(unicode_set) ->
         unicode_set
+
       {:%, _, [{:__aliases__, _, [:UnicodeSet]}, {:%{}, _, fields}]} ->
         Keyword.fetch!(fields, :set) |> assert_binary_parameter!
+
       {:%, _, [{:__aliases__, _, [:Unicode, :Set]}, {:%{}, _, fields}]} ->
         Keyword.fetch!(fields, :set) |> assert_binary_parameter!
-      true ->
+
+      _ ->
         raise ArgumentError,
-            "unicode_set must be a compile-time binary. Found #{inspect(unicode_set)}"
+              "unicode_set must be a compile-time binary. Found #{inspect(unicode_set)}"
     end
   end
 
@@ -646,7 +650,7 @@ defmodule Unicode.Set do
        "#{message}. Detected at #{inspect(rest)}."}
   end
 
-  defp negative_set_error() do
+  defp negative_set_error do
     {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}
   end
 

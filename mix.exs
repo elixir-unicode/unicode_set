@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.6.1"
+  @version "1.6.2"
 
   def project do
     [
@@ -17,10 +17,22 @@ defmodule UnicodeSet.MixProject do
       description: description(),
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
+      test_coverage: [
+        summary: [threshold: 90],
+        ignore_modules: coverage_ignore_modules()
+      ],
       dialyzer: [
         plt_add_apps: ~w(mix inets nimble_parsec)a,
         ignore_warnings: ".dialyzer_ignore_warnings"
       ]
+    ]
+  end
+
+  # Modules excluded from `mix test --cover` so the coverage number reflects
+  # the runtime library, not build tooling or generated parsers.
+  defp coverage_ignore_modules do
+    [
+      ~r/^Mix\.Tasks\./
     ]
   end
 
@@ -57,10 +69,11 @@ defmodule UnicodeSet.MixProject do
 
   defp deps do
     [
-      {:unicode, "~> 1.21"},
+      {:unicode, "~> 1.21 or ~> 2.0"},
       {:nimble_parsec, "~> 1.2.2 or ~> 1.3", runtime: false},
       # {:benchee, "~> 1.0", only: :dev, optional: true},
       {:ex_doc, "~> 0.24", only: [:dev, :release], runtime: false, optional: true},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false, optional: true},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false, optional: true}
     ]
   end
