@@ -34,6 +34,16 @@ defmodule Unicode.Set.Property do
     {:ok, Unicode.Set.parse!("\\p{Uppercase}")}
   end
 
+  # `punct` uses the UTS #18 Annex C "POSIX-compatible" definition
+  # (`gc=Punctuation` + `gc=Symbol` - `alpha`, ~9,300 codepoints), which matches
+  # ICU's POSIX `[:punct:]` and the behaviour most POSIX tooling expects.
+  #
+  # Tradeoff: this deliberately deviates from the UTS #18 *Standard* recommendation,
+  # which is just `gc=Punctuation` (~850 codepoints). The POSIX definition includes
+  # symbols such as `+ $ < = > ^ | ~` \`` that the Standard definition excludes.
+  # We keep POSIX behaviour for ICU/POSIX compatibility; callers wanting the
+  # Standard set should use `\p{gc=Punctuation}` explicitly. See the README
+  # "Compatibility Property Names" section.
   def fetch_property(:script_or_category, "punct") do
     {:ok, Unicode.Set.parse!("[\\p{gc=Punctuation}\\p{gc=Symbol}-\\p{alpha}]")}
   end

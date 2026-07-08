@@ -18,15 +18,32 @@ defmodule Unicode.Set.Parser do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?^]) |> replace(:not))
     |> ignore(optional(whitespace()))
+    |> optional(literal_hyphen())
     |> times(sequence(), min: 1)
+    |> optional(literal_hyphen())
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)
     |> label("set")
   end
 
   @doc false
+  # A `-` immediately after `[`/`[^` or immediately before `]` has no operand to
+  # its left/right, so it is a literal hyphen rather than a range or difference
+  # operator (matching ICU): `[-a]`, `[a-]`, `[a-z-]`. (`[-]` alone is the empty
+  # set, handled by `empty_set/0` which is tried first.)
+  def literal_hyphen do
+    ascii_char([?-])
+    |> replace({:in, [{?-, ?-}]})
+    |> ignore(optional(whitespace()))
+  end
+
+  @doc false
+  # `[]` is the empty set (TR61). `[-]` is also treated as the empty set; this
+  # is a deliberate tailoring — a lone hyphen elsewhere (`[-a]`, `[a-]`) is a
+  # literal hyphen (see `literal_hyphen/0`), but `[-]` alone stays empty for
+  # backwards compatibility with earlier versions of this library.
   def empty_set do
-    string("[-]")
+    choice([string("[-]"), string("[]")])
     |> replace({:in, []})
     |> label("empty set")
   end

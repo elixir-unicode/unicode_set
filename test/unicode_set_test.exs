@@ -9,8 +9,14 @@ defmodule UnicodeSetTest do
   doctest Unicode.Regex
 
   test "basic character range" do
-    assert Unicode.Regex.compile!("[-\\ ]").source == "[-\\ ]"
-    assert Unicode.Regex.compile!("[-\\ ]").opts == [:unicode, :ucp]
+    # `[-\ ]` is the set of a literal (leading) hyphen and an escaped space; it
+    # now parses as a Unicode set and expands to those two codepoints.
+    regex = Unicode.Regex.compile!("[-\\ ]")
+    assert regex.source == "[\\x{20}\\x{2D}]"
+    assert regex.opts == [:unicode, :ucp]
+    assert Regex.match?(regex, "-")
+    assert Regex.match?(regex, " ")
+    refute Regex.match?(regex, "x")
   end
 
   test "set intersection when one list is a true subset of another" do
@@ -538,6 +544,30 @@ defmodule UnicodeSetTest do
     test "Java-style In<Block> prefix resolves as a block, leaving In... names alone (PS-8)" do
       assert same?("[\\p{InBasicLatin}]", "[\\p{block=BasicLatin}]")
       assert {:ok, _} = Unicode.Set.parse("[\\p{Inherited}]")
+    end
+  end
+
+  describe "empty set and boundary hyphens (Phase 6)" do
+    test "[] and [-] are the empty set" do
+      assert Unicode.Set.parse_and_reduce!("[]").parsed == {:in, []}
+      assert Unicode.Set.parse_and_reduce!("[-]").parsed == {:in, []}
+    end
+
+    test "a hyphen at the start or end of a set is a literal hyphen" do
+      assert members("[-a]") == ["-", "a"]
+      assert members("[a-]") == ["-", "a"]
+      assert members("[-abc]") == ["-", "a", "b", "c"]
+      assert members("[a-z-]") == ["-" | Enum.map(?a..?z, &<<&1::utf8>>)]
+    end
+
+    test "a leading hyphen is honoured under negation" do
+      assert Unicode.Set.parse_and_reduce!("[^-a]").parsed == {:not_in, [{?-, ?-}, {?a, ?a}]}
+    end
+
+    test "the range and difference operators are unaffected" do
+      assert members("[a-c]") == ["a", "b", "c"]
+      refute "-" in members("[a-c]")
+      assert members("[[a-f][d-k]-[c-g]]") == ["a", "b", "h", "i", "j", "k"]
     end
   end
 end

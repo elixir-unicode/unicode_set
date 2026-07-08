@@ -28,12 +28,14 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * Whitespace immediately after `[` or `[^` is now ignored, consistent with whitespace elsewhere in a set.
 * Hyphens are now accepted and ignored in property names per UAX44-LM3, so `\p{White-Space}` and `[:Quotation-Mark:]` resolve (PS-1).
 * Accept the Java-style `In<Block>` prefix, so `\p{InBasicLatin}` resolves to the block while genuine `In...` names such as `\p{Inherited}` are unaffected (PS-8).
+* The empty set is now written `[]` as well as `[-]`, and a hyphen at the start or end of a set (`[-a]`, `[a-]`, `[a-z-]`) is treated as a literal hyphen, matching ICU.
 
 ### Changes
 
 * Corrected README examples: the block name `Sundanese` (was `sudanese`), a working `\p{General_Category=...}` property spelling, the single-dash `print` compatibility definition, and the `to_regex_string/1` doc example.
 * Removed the unused `:parse_many` parser combinator.
 * Moved the Dialyzer ignore list to the term-format `.dialyzer_ignore.exs`.
+* Added a "Conformance" section to the README documenting supported syntax, deliberate tailorings, and current limitations, and a note explaining the POSIX-compatible `[:punct:]` definition.
 
 ## Unicode Set 1.6.2
 
