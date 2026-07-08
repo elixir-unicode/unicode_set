@@ -83,9 +83,14 @@ defmodule Unicode.Set.CoverageEdgesTest do
 
     test "an invalid perl set is left intact rather than expanded" do
       # to_regex_string fails for an unknown property, so the original
-      # perl-set fragment is passed through to Regex.compile unchanged.
-      assert {:ok, regex} = Unicode.Regex.compile("\\p{zzzz}")
-      assert Regex.source(regex) == "\\p{zzzz}"
+      # perl-set fragment is passed through to Regex.compile unchanged. Whether
+      # the regex engine then accepts or rejects `\p{zzzz}` depends on its PCRE
+      # version (OTP 27 rejects it, later OTP accepts it), so both outcomes are
+      # valid — the point is that Unicode.Regex passes it through untouched.
+      case Unicode.Regex.compile("\\p{zzzz}") do
+        {:ok, regex} -> assert Regex.source(regex) == "\\p{zzzz}"
+        {:error, {reason, _offset}} -> assert to_string(reason) =~ "unknown property"
+      end
     end
 
     test "forces the unicode option for string options" do
