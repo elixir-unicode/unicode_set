@@ -23,7 +23,7 @@ defmodule UnicodeSet.MixProject do
       ],
       dialyzer: [
         plt_add_apps: ~w(mix inets nimble_parsec)a,
-        ignore_warnings: ".dialyzer_ignore_warnings"
+        ignore_warnings: ".dialyzer_ignore.exs"
       ]
     ]
   end

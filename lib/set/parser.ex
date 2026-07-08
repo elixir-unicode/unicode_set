@@ -5,9 +5,6 @@ defmodule Unicode.Set.Parser do
   import Unicode.Set.Property
 
   @doc false
-  defguard is_hex_digit(c) when c in ?0..?9 or c in ?a..?z or c in ?A..?Z
-
-  @doc false
   def unicode_set do
     choice([
       property(),
@@ -20,6 +17,7 @@ defmodule Unicode.Set.Parser do
   def basic_set do
     ignore(ascii_char([?[]))
     |> optional(ascii_char([?^]) |> replace(:not))
+    |> ignore(optional(whitespace()))
     |> times(sequence(), min: 1)
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)
@@ -390,19 +388,34 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  # Each backslash escape resolves to a single codepoint. The form is
+  # disambiguated by the grammar (not after the fact) so that, for example,
+  # `\f` (FORM FEED) and `\xf` (U+000F) do not collide:
+  #
+  #   \uHHHH        exactly 4 hex digits
+  #   \u{H...}      1-6 hex digits, braced (multiple space-separated is rejected)
+  #   \UHHHHHHHH    exactly 8 hex digits
+  #   \xH / \xHH    1-2 hex digits
+  #   \x{H...}      braced, as for \u{...}
+  #   \a \b \e \f \n \r \t \v   named control escapes
+  #   \N{NAME}      named codepoint (not supported -> clean error)
+  #   \<other>      the character itself (e.g. `\-` -> `-`, `\g` -> `g`)
   def quoted do
     choice([
+      ignore(ascii_char([?u])) |> concat(bracketed_hex()),
+      ignore(ascii_char([?u])) |> times(hex(), 4) |> reduce(:hex_digits_to_codepoint),
+      ignore(ascii_char([?U])) |> times(hex(), 8) |> reduce(:hex_digits_to_codepoint),
+      ignore(ascii_char([?x])) |> concat(bracketed_hex()),
       ignore(ascii_char([?x]))
-      |> choice([
-        ascii_char([?0]) |> times(hex(), 5),
-        ascii_char([?1]) |> ascii_char([?0]) |> times(hex(), 4)
-      ]),
-      string("N{") |> concat(property_name()) |> ascii_char([?}]),
-      ignore(ascii_char([?u])) |> choice([times(hex(), 4), bracketed_hex()]),
-      ignore(ascii_char([?x])) |> choice([times(hex(), 2), bracketed_hex()]),
+      |> times(hex(), min: 1, max: 2)
+      |> reduce(:hex_digits_to_codepoint),
+      string("N{")
+      |> concat(property_name())
+      |> ignore(ascii_char([?}]))
+      |> post_traverse(:reject_named_codepoint),
+      ascii_char([?a, ?b, ?e, ?f, ?n, ?r, ?t, ?v]) |> reduce(:control_escape),
       utf8_char([0x0..0x10FFFF])
     ])
-    |> reduce(:hex_to_codepoint)
     |> label("quoted character")
   end
 
@@ -411,20 +424,17 @@ defmodule Unicode.Set.Parser do
     ignore(ascii_char([?{]))
     |> ignore(optional(whitespace()))
     |> concat(hex_codepoint())
-    |> repeat(ignore(optional(whitespace())) |> concat(hex_codepoint()))
+    |> repeat(ignore(whitespace()) |> concat(hex_codepoint()))
     |> ignore(optional(whitespace()))
     |> ignore(ascii_char([?}]))
-    |> wrap
+    |> reduce(:bracketed_hex_to_codepoint)
     |> label("bracketed hex")
   end
 
   @doc false
   def hex_codepoint do
-    choice([
-      times(hex(), min: 1, max: 5),
-      ascii_char([?1]) |> ascii_char([?0]) |> times(hex(), 4)
-    ])
-    |> wrap
+    times(hex(), min: 1, max: 6)
+    |> reduce(:hex_digits_to_codepoint)
     |> label("hex codepoint")
   end
 
@@ -435,21 +445,35 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  # Its just an escaped char
-  def hex_to_codepoint([?t]), do: ?\t
-  def hex_to_codepoint([?n]), do: ?\n
-  def hex_to_codepoint([?r]), do: ?\r
-  def hex_to_codepoint([c]) when not is_hex_digit(c), do: c
-
-  # Actual hex-encoded codepoints
-  def hex_to_codepoint([arg | _rest] = args) when is_list(arg) do
-    Enum.map(args, &hex_to_codepoint/1)
-  end
-
-  def hex_to_codepoint(args) do
-    args
+  def hex_digits_to_codepoint(hex_digits) do
+    hex_digits
     |> List.to_string()
     |> String.to_integer(16)
+  end
+
+  @doc false
+  def bracketed_hex_to_codepoint([codepoint]) when is_integer(codepoint) do
+    codepoint
+  end
+
+  def bracketed_hex_to_codepoint(codepoints) when is_list(codepoints) do
+    raise Regex.CompileError,
+          "multi-codepoint bracketed escapes like \\u{41 42 43} are not supported"
+  end
+
+  @doc false
+  def control_escape([?a]), do: ?\a
+  def control_escape([?b]), do: ?\b
+  def control_escape([?e]), do: ?\e
+  def control_escape([?f]), do: ?\f
+  def control_escape([?n]), do: ?\n
+  def control_escape([?r]), do: ?\r
+  def control_escape([?t]), do: ?\t
+  def control_escape([?v]), do: ?\v
+
+  @doc false
+  def reject_named_codepoint(_rest, _args, _context, _line, _offset) do
+    {:error, "named codepoints (\\N{...}) are not supported"}
   end
 
   @doc false

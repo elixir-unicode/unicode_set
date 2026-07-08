@@ -6,16 +6,23 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
 ### Bug Fixes
 
-* `Unicode.Set.parse/1` now returns `{:error, _}` for malformed or unsupported escapes (`\u{...}`, `\U...`, `\N{...}`, `\p{emoji=value}`, and backslash-letter escapes) instead of raising, restoring its documented tagged-tuple contract.
+* Backslash-letter escapes are decoded correctly: `\a \b \e \f \v \t \n \r` map to their control codes, and any other `\<char>` maps to that literal character. Previously `\a`–`\f` silently decoded to the wrong codepoint and `\g`–`\z` / `\U` / `\w` raised.
+* `Unicode.Set.parse/1` returns `{:error, _}` for genuinely unsupported syntax (`\N{...}`, `\p{emoji=value}`, multi-codepoint `\u{...}`) instead of raising, restoring its documented tagged-tuple contract.
 * The empty set `[-]` now reduces to `{:in, []}` and its consumers (`to_pattern/1`, `to_utf8_char/1`, `to_regex_string/1`) return an empty result or a never-matching regex instead of crashing.
 * A union of complements such as `[[^a][^b]]` now reduces correctly (per De Morgan) and no longer crashes `to_regex_string/1` or the `match?/2` search-tree path.
 * `to_pattern/1` and `compile_pattern/1` return a tagged error for complement (`[^...]`) sets rather than raising; the `!` variants continue to raise.
 * `Unicode.Set.match?/2` and the search tree no longer crash when matched against an empty string, and `generate_matches/2` no longer crashes on a complement set.
 
+### Enhancements
+
+* Added the `\UHHHHHHHH` (8 hex digit) escape, the single-digit `\xH` escape, and single-codepoint bracketed `\u{...}` / `\x{...}` escapes (including astral codepoints such as `\u{1F600}`).
+* Whitespace immediately after `[` or `[^` is now ignored, consistent with whitespace elsewhere in a set.
+
 ### Changes
 
 * Corrected README examples: the block name `Sundanese` (was `sudanese`), a working `\p{General_Category=...}` property spelling, the single-dash `print` compatibility definition, and the `to_regex_string/1` doc example.
 * Removed the unused `:parse_many` parser combinator.
+* Moved the Dialyzer ignore list to the term-format `.dialyzer_ignore.exs`.
 
 ## Unicode Set 1.6.2
 

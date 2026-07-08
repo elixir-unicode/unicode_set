@@ -67,23 +67,30 @@ defmodule Unicode.Set.ParserGrammarTest do
     end
   end
 
-  describe "hex_to_codepoint/1" do
-    test "escaped control characters" do
-      assert Parser.hex_to_codepoint([?t]) == ?\t
-      assert Parser.hex_to_codepoint([?n]) == ?\n
-      assert Parser.hex_to_codepoint([?r]) == ?\r
-    end
-
-    test "a non-hex escaped character passes through" do
-      assert Parser.hex_to_codepoint([?%]) == ?%
+  describe "escape decoding" do
+    test "named control escapes" do
+      assert Parser.control_escape([?a]) == ?\a
+      assert Parser.control_escape([?b]) == ?\b
+      assert Parser.control_escape([?e]) == ?\e
+      assert Parser.control_escape([?f]) == ?\f
+      assert Parser.control_escape([?n]) == ?\n
+      assert Parser.control_escape([?r]) == ?\r
+      assert Parser.control_escape([?t]) == ?\t
+      assert Parser.control_escape([?v]) == ?\v
     end
 
     test "hex digits are decoded" do
-      assert Parser.hex_to_codepoint(~c"41") == ?A
+      assert Parser.hex_digits_to_codepoint(~c"41") == ?A
+      assert Parser.hex_digits_to_codepoint(~c"1F600") == 0x1F600
     end
 
-    test "a list of hex codepoints is mapped" do
-      assert Parser.hex_to_codepoint([~c"41", ~c"42"]) == [?A, ?B]
+    test "a single bracketed codepoint is returned bare" do
+      assert Parser.bracketed_hex_to_codepoint([0x1F600]) == 0x1F600
+    end
+
+    test "a non-escape character passes through as itself" do
+      assert {:ok, %{parsed: [in: [{?%, ?%}]]}} = Unicode.Set.parse("[\\%]")
+      assert {:ok, %{parsed: [in: [{?g, ?g}]]}} = Unicode.Set.parse("[\\g]")
     end
   end
 

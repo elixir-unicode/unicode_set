@@ -335,18 +335,54 @@ defmodule UnicodeSetTest do
   end
 
   describe "parse/1 tagged-tuple contract (never raises)" do
+    # Genuinely unsupported syntax must return a tagged error, never raise.
     for set <- [
-          "[\\u{1F600}]",
-          "[\\x{1F600}]",
-          "[\\U0001F600]",
-          "[\\w]",
-          "[\\g]",
           "[\\N{BULLET}]",
-          "\\p{emoji=yes}"
+          "\\p{emoji=yes}",
+          "[\\u{41 42 43}]"
         ] do
       test "returns {:error, _} for #{set}" do
         assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse(unquote(set))
       end
+    end
+  end
+
+  defp cp!(set) do
+    assert {:ok, %{parsed: [in: [{codepoint, codepoint}]]}} = Unicode.Set.parse(set)
+    codepoint
+  end
+
+  describe "backslash escapes (Phase 2)" do
+    test "named control escapes map to control codes" do
+      assert cp!("[\\a]") == 0x07
+      assert cp!("[\\b]") == 0x08
+      assert cp!("[\\e]") == 0x1B
+      assert cp!("[\\f]") == 0x0C
+      assert cp!("[\\v]") == 0x0B
+      assert cp!("[\\t]") == 0x09
+      assert cp!("[\\n]") == 0x0A
+      assert cp!("[\\r]") == 0x0D
+    end
+
+    test "a backslash before a non-escape character yields that character" do
+      assert cp!("[\\c]") == ?c
+      assert cp!("[\\d]") == ?d
+      assert cp!("[\\g]") == ?g
+      assert cp!("[\\w]") == ?w
+    end
+
+    test "hex escapes decode to codepoints" do
+      assert cp!("[\\x41]") == 0x41
+      assert cp!("[\\x9]") == 0x09
+      assert cp!("[\\u0041]") == 0x41
+      assert cp!("[\\U0001F600]") == 0x1F600
+      assert cp!("[\\u{1F600}]") == 0x1F600
+      assert cp!("[\\x{1F600}]") == 0x1F600
+    end
+
+    test "leading whitespace after [ or [^ is ignored" do
+      assert {:ok, %{parsed: [in: [{?a, ?a}, {?b, ?b}]]}} = Unicode.Set.parse("[ ab]")
+      assert {:ok, %{parsed: [not_in: [{?a, ?a}, {?b, ?b}]]}} = Unicode.Set.parse("[^ ab]")
     end
   end
 

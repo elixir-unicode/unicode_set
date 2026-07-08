@@ -49,7 +49,11 @@ defmodule Unicode.Set.ParserTest do
     end
 
     test "bracketed \\u{...} hex" do
-      assert {:ok, %Unicode.Set{}} = parse("[\\u{41 42}]")
+      assert {:ok, set} = reduce("[\\u{1F600}]")
+      assert {:in, [{0x1F600, 0x1F600}]} = set.parsed
+
+      # multi-codepoint bracketed escapes are not (yet) supported
+      assert {:error, _} = parse("[\\u{41 42}]")
     end
   end
 
