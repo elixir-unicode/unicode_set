@@ -252,9 +252,12 @@ defmodule UnicodeSetTest do
   test "to_regex_string/1 with negative sets" do
     assert Unicode.Set.to_regex_string("[[^dfd]]") == {:ok, "[^\\x{64}\\x{66}]"}
 
+    # A string member inside a negated set (`{ac}` in `[^abc{ac}]`) cannot match a
+    # single-codepoint position under negation, so it is dropped and the code-point
+    # ranges are kept, rather than rejecting the whole set. The `{gg}` member of the
+    # non-negated `[xyz{gg}]` is retained as an alternate.
     assert Unicode.Set.to_regex_string("[[dfd][^abc{ac}][xyz{gg}]]") ==
-             {:error,
-              {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}}
+             {:ok, "(?:gg|[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}])"}
 
     # String members are emitted before the character class so they are not
     # shadowed by a class that contains their first codepoint (here `g` is inside

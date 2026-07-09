@@ -426,7 +426,7 @@ defmodule Unicode.Set do
   @spec to_regex_string(binary()) :: {:ok, binary()} | {:error, {module(), binary()}}
   def to_regex_string(unicode_set) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
-         {:ok, set} <- not_in_has_no_string_ranges(set) do
+         {:ok, set} <- drop_not_in_string_ranges(set) do
       set
       |> maybe_expand_set
       |> Operation.traverse(&Transform.regex/3)
@@ -468,16 +468,35 @@ defmodule Unicode.Set do
     end
   end
 
-  defp not_in_has_no_string_ranges(%{parsed: {:in, _ranges}} = set) do
+  # A negated (`:not_in`) set may contain string members — e.g. `[^abc{de}]` or,
+  # in CLDR transform rules, `[^ $IVowel j ʝ {e̞}]`. A multi-codepoint string can
+  # never match a single-codepoint position under negation, so we drop the string
+  # members and keep the code-point ranges rather than rejecting the whole set,
+  # letting such sets compile to a valid negated code-point class. A negation of
+  # *only* strings (`[^{ab}]`) has no code-point ranges to keep and would negate to
+  # the empty class, so it remains unsupported.
+  defp drop_not_in_string_ranges(%{parsed: {:in, _ranges}} = set) do
     {:ok, set}
   end
 
-  defp not_in_has_no_string_ranges(%{parsed: {:not_in, ranges}} = set) do
-    if Enum.any?(ranges, &string_range?/1), do: {:error, negative_set_error()}, else: {:ok, set}
+  defp drop_not_in_string_ranges(%{parsed: {:not_in, ranges}} = set) do
+    with {:ok, kept} <- keep_negated_code_point_ranges(ranges) do
+      {:ok, %{set | parsed: {:not_in, kept}}}
+    end
   end
 
-  defp not_in_has_no_string_ranges(%{parsed: [{:in, _}, {:not_in, ranges}]} = set) do
-    if Enum.any?(ranges, &string_range?/1), do: {:error, negative_set_error()}, else: {:ok, set}
+  defp drop_not_in_string_ranges(%{parsed: [{:in, in_ranges}, {:not_in, ranges}]} = set) do
+    with {:ok, kept} <- keep_negated_code_point_ranges(ranges) do
+      {:ok, %{set | parsed: [{:in, in_ranges}, {:not_in, kept}]}}
+    end
+  end
+
+  defp keep_negated_code_point_ranges(ranges) do
+    case Enum.split_with(ranges, &string_range?/1) do
+      {[], _code_points} -> {:ok, ranges}
+      {_strings, []} -> {:error, negative_set_error()}
+      {_strings, code_points} -> {:ok, code_points}
+    end
   end
 
   defp string_range?({from, _to}) when is_list(from), do: true
@@ -640,7 +659,7 @@ defmodule Unicode.Set do
           {:ok, generated_match()} | {:error, {module(), binary()}}
   def generate_matches(unicode_set, var) when is_binary(unicode_set) do
     with {:ok, set} <- parse_and_reduce(unicode_set),
-         {:ok, set} <- not_in_has_no_string_ranges(set) do
+         {:ok, set} <- drop_not_in_string_ranges(set) do
       expanded = maybe_expand_set(set)
 
       strings =
