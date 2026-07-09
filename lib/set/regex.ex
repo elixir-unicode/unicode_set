@@ -203,8 +203,21 @@ defmodule Unicode.Regex do
     split_character_classes(rest, ["\\P{" | acc])
   end
 
+  # `\Q...\E` is a literal span; anything inside it (including `[...]`) is passed
+  # through verbatim and must not be treated as a Unicode set.
+  defp split_character_classes(<<"\\Q", rest::binary>>, [head | others]) do
+    {literal, rest} = extract_literal_span(rest)
+    split_character_classes(rest, [head <> "\\Q" <> literal | others])
+  end
+
   defp split_character_classes(<<"\\", char::binary-1, rest::binary>>, [head | others]) do
     split_character_classes(rest, [head <> "\\" <> char | others])
+  end
+
+  # `(?#...)` is a comment group; its contents are passed through verbatim.
+  defp split_character_classes(<<"(?#", rest::binary>>, [head | others]) do
+    {comment, rest} = extract_comment(rest)
+    split_character_classes(rest, [head <> "(?#" <> comment | others])
   end
 
   defp split_character_classes(<<"[", _rest::binary>> = string, acc) do
@@ -228,6 +241,23 @@ defmodule Unicode.Regex do
   defp split_character_classes(<<char::binary-1, rest::binary>>, [head | others]) do
     split_character_classes(rest, [head <> char | others])
   end
+
+  # Consume a `\Q...\E` literal span up to and including `\E` (or the end of the
+  # string if `\E` is absent).
+  defp extract_literal_span(string, acc \\ "")
+  defp extract_literal_span("", acc), do: {acc, ""}
+  defp extract_literal_span(<<"\\E", rest::binary>>, acc), do: {acc <> "\\E", rest}
+
+  defp extract_literal_span(<<char::binary-1, rest::binary>>, acc),
+    do: extract_literal_span(rest, acc <> char)
+
+  # Consume a `(?#...)` comment up to and including the terminating `)`.
+  defp extract_comment(string, acc \\ "")
+  defp extract_comment("", acc), do: {acc, ""}
+  defp extract_comment(<<")", rest::binary>>, acc), do: {acc <> ")", rest}
+
+  defp extract_comment(<<char::binary-1, rest::binary>>, acc),
+    do: extract_comment(rest, acc <> char)
 
   # Extract a character class which may be
   # arbitrarily nested

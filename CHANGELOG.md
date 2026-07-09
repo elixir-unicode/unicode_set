@@ -18,17 +18,21 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * String members and string ranges are PCRE-escaped when emitted as a regex, so `[{a.c}]` matches the literal string and sets containing regex metacharacters no longer produce an uncompilable pattern (RE-1).
 * Sets of multiple string members no longer emit a bogus empty `[[][]]` class, and string-range alternations are wrapped in `(?:...)` so they compose correctly when embedded in a larger regex (SR-1, RE-4).
 * Character ranges with a surrogate endpoint are clipped rather than emitting a dangling `-` or dropping codepoints, and a surrogate-only set emits a never-matching `(?!)` instead of the uncompilable `[]` (RE-2, RE-5).
-* The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2).
+* The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2), and passes `\Q...\E` literal spans and `(?#...)` comments through verbatim rather than expanding any `[...]` inside them (RS-1, RS-4).
 * The `Is<name>` prefix now resolves as a script, general category or binary property before falling back to a block, so `\p{IsAlphabetic}`, `\p{IsLatin}` and `[:IsLowercase:]` resolve instead of erroring; `Is<Block>` names such as `\p{IsBasicLatin}` still resolve to their block (GAP-ISPREFIX).
 * Digit-bearing block names such as `\p{block=Latin-1 Supplement}` now resolve, working around a `Unicode.Block.fetch/1` bug present in the `unicode` dependency (PS-7).
 
 ### Enhancements
 
 * Added the `\UHHHHHHHH` (8 hex digit) escape, the single-digit `\xH` escape, and single-codepoint bracketed `\u{...}` / `\x{...}` escapes (including astral codepoints such as `\u{1F600}`).
+* Added octal `\0ooo` escapes and `\cX` control escapes.
+* Multi-codepoint bracketed escapes such as `\u{41 42 43}` are now a string member (equivalent to `{ABC}`).
+* Implemented single-quote quoting: text within `'...'` is literal and `''` is a literal quote (CLDR TR35).
+* `\N{NAME}` now resolves to its codepoint when built against `unicode ~> 2.0` (which provides the character-name table); on earlier versions it returns a clean error.
 * Whitespace immediately after `[` or `[^` is now ignored, consistent with whitespace elsewhere in a set.
 * Hyphens are now accepted and ignored in property names per UAX44-LM3, so `\p{White-Space}` and `[:Quotation-Mark:]` resolve (PS-1).
 * Accept the Java-style `In<Block>` prefix, so `\p{InBasicLatin}` resolves to the block while genuine `In...` names such as `\p{Inherited}` are unaffected (PS-8).
-* The empty set is now written `[]` as well as `[-]`, and a hyphen at the start or end of a set (`[-a]`, `[a-]`, `[a-z-]`) is treated as a literal hyphen, matching ICU.
+* The empty set is now written `[]` as well as `[-]`, the empty-string member `[{}]` is supported, and a hyphen at the start or end of a set (`[-a]`, `[a-]`, `[a-z-]`) is treated as a literal hyphen, matching ICU.
 
 ### Changes
 

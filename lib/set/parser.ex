@@ -52,10 +52,40 @@ defmodule Unicode.Set.Parser do
   def sequence do
     choice([
       maybe_repeated_set(),
+      quoted_literal(),
       range()
     ])
     |> ignore(optional(whitespace()))
     |> label("sequence")
+  end
+
+  @doc false
+  # Single-quote quoting (CLDR TR35): text within `'...'` is literal — special
+  # characters lose their meaning — and two adjacent single quotes `''` are one
+  # literal quote (inside or outside a quoted span). An unterminated `'` falls
+  # through to being a literal quote character.
+  def quoted_literal do
+    choice([
+      string("''") |> replace(?'),
+      ignore(ascii_char([?']))
+      |> repeat(quoted_char())
+      |> ignore(ascii_char([?']))
+    ])
+    |> reduce(:quoted_to_set)
+    |> label("quoted literal")
+  end
+
+  @doc false
+  def quoted_char do
+    choice([
+      string("''") |> replace(?'),
+      utf8_char([{:not, ?'}])
+    ])
+  end
+
+  @doc false
+  def quoted_to_set(codepoints) do
+    {:in, codepoints |> Enum.sort() |> Enum.map(&{&1, &1})}
   end
 
   @doc false
@@ -438,7 +468,9 @@ defmodule Unicode.Set.Parser do
   @doc false
   def string do
     ignore(ascii_char([?{]))
-    |> times(ignore(optional(whitespace())) |> concat(char()), min: 1)
+    # `min: 0` so the empty-string member `{}` is accepted (ICU 69+); it reduces
+    # to the empty charlist string member `{~c"", ~c""}`.
+    |> times(ignore(optional(whitespace())) |> concat(char()), min: 0)
     |> ignore(optional(whitespace()))
     |> ignore(ascii_char([?}]))
   end
@@ -465,7 +497,7 @@ defmodule Unicode.Set.Parser do
   #   \xH / \xHH    1-2 hex digits
   #   \x{H...}      braced, as for \u{...}
   #   \a \b \e \f \n \r \t \v   named control escapes
-  #   \N{NAME}      named codepoint (not supported -> clean error)
+  #   \N{NAME}      named codepoint (resolved via `unicode ~> 2.0`)
   #   \<other>      the character itself (e.g. `\-` -> `-`, `\g` -> `g`)
   def quoted do
     choice([
@@ -476,10 +508,18 @@ defmodule Unicode.Set.Parser do
       ignore(ascii_char([?x]))
       |> times(hex(), min: 1, max: 2)
       |> reduce(:hex_digits_to_codepoint),
-      string("N{")
+      ignore(string("N{"))
       |> concat(property_name())
       |> ignore(ascii_char([?}]))
-      |> post_traverse(:reject_named_codepoint),
+      |> post_traverse(:resolve_named_codepoint),
+      # `\0ooo` octal escape: a leading 0 then up to three octal digits.
+      ignore(ascii_char([?0]))
+      |> times(ascii_char([?0..?7]), min: 0, max: 3)
+      |> reduce(:octal_to_codepoint),
+      # `\cX` control escape: Ctrl-<letter>, e.g. `\cH` -> U+0008.
+      ignore(ascii_char([?c]))
+      |> ascii_char([?a..?z, ?A..?Z])
+      |> reduce(:control_char),
       ascii_char([?a, ?b, ?e, ?f, ?n, ?r, ?t, ?v]) |> reduce(:control_escape),
       utf8_char([0x0..0x10FFFF])
     ])
@@ -523,9 +563,22 @@ defmodule Unicode.Set.Parser do
     codepoint
   end
 
+  # Multiple space-separated codepoints (`\u{41 42 43}`) form a string member,
+  # represented as a codepoint list that `reduce_range/1` turns into a string.
   def bracketed_hex_to_codepoint(codepoints) when is_list(codepoints) do
-    raise Regex.CompileError,
-          "multi-codepoint bracketed escapes like \\u{41 42 43} are not supported"
+    codepoints
+  end
+
+  @doc false
+  def octal_to_codepoint([]), do: 0
+  def octal_to_codepoint(digits), do: digits |> List.to_string() |> String.to_integer(8)
+
+  @doc false
+  # `\cX` is Ctrl-<letter>: upper-case the letter and subtract 0x40, giving the
+  # control code in 0x01..0x1A.
+  def control_char([char]) do
+    upper = if char in ?a..?z, do: char - 32, else: char
+    upper - 0x40
   end
 
   @doc false
@@ -539,8 +592,30 @@ defmodule Unicode.Set.Parser do
   def control_escape([?v]), do: ?\v
 
   @doc false
-  def reject_named_codepoint(_rest, _args, _context, _line, _offset) do
-    {:error, "named codepoints (\\N{...}) are not supported"}
+  # Resolve `\N{NAME}` to a codepoint via the `unicode` dependency's character
+  # name table. That table is only available in `unicode ~> 2.0`; on earlier
+  # versions the escape is reported as unsupported rather than crashing.
+  def resolve_named_codepoint(rest, [name], context, _line, _offset) do
+    case named_codepoint(name) do
+      {:ok, codepoint} ->
+        {rest, [codepoint], context}
+
+      :error ->
+        {:error, "the codepoint name #{inspect(name)} is not known"}
+    end
+  end
+
+  defp named_codepoint(name) do
+    # `apply/3` on a module bound to a variable keeps the compiler from
+    # statically resolving `Unicode.CharacterName.to_codepoint/1`, which is
+    # absent when built against `unicode ~> 1.21`.
+    module = Unicode.CharacterName
+
+    if Code.ensure_loaded?(module) and function_exported?(module, :to_codepoint, 1) do
+      apply(module, :to_codepoint, [name])
+    else
+      :error
+    end
   end
 
   @doc false

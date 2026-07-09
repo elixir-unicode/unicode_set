@@ -52,8 +52,9 @@ defmodule Unicode.Set.ParserTest do
       assert {:ok, set} = reduce("[\\u{1F600}]")
       assert {:in, [{0x1F600, 0x1F600}]} = set.parsed
 
-      # multi-codepoint bracketed escapes are not (yet) supported
-      assert {:error, _} = parse("[\\u{41 42}]")
+      # multiple space-separated codepoints form a string member
+      assert {:ok, set} = reduce("[\\u{41 42 43}]")
+      assert {:in, [{~c"ABC", ~c"ABC"}]} = set.parsed
     end
   end
 

@@ -370,8 +370,10 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 * Set operations — union, intersection (`&`), and set difference (`-`) — with equal precedence binding strictly left-to-right, matching TR35. Group with nested `[...]` to override.
 * POSIX (`[:prop:]`, `[:^prop:]`) and Perl (`\p{...}`, `\P{...}`) property syntax, including `type=value`, the `≠` (U+2260) operator, and the `Is`/`In` prefixes. Property and value names are matched loosely (case, whitespace, `_` and `-` are ignored per UAX44-LM3).
 * Properties: general category (including group categories such as `L`), script, block, canonical combining class (numeric and named), and the boolean/enumerated properties provided by the [`unicode`](https://hex.pm/packages/unicode) library (`Word_Break`, `Grapheme_Cluster_Break`, `Line_Break`, `Sentence_Break`, `East_Asian_Width`, `Indic_Syllabic_Category`, `Indic_Conjunct_Break`, the binary properties, and more).
-* String members (`{abc}`) and string ranges (`{ab}-{cd}`).
-* Escapes: `\uHHHH`, `\UHHHHHHHH`, `\xH`/`\xHH`, single-codepoint `\u{...}`/`\x{...}`, and the control escapes `\a \b \e \f \n \r \t \v`. Any other `\<char>` is the literal character.
+* String members (`{abc}`), string ranges (`{ab}-{cd}`), and the empty-string member (`{}`).
+* Single-quote quoting: text within `'...'` is literal and `''` is a literal quote.
+* Escapes: `\uHHHH`, `\UHHHHHHHH`, `\xH`/`\xHH`, single- and multi-codepoint bracketed `\u{...}`/`\x{...}`, octal `\0ooo`, `\cX` control escapes, and the named control escapes `\a \b \e \f \n \r \t \v`. Any other `\<char>` is the literal character.
+* `\N{NAME}` named-codepoint escapes when built against `unicode ~> 2.0` (which provides the character-name table).
 
 ### Tailorings
 
@@ -382,9 +384,9 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 
 ### Current limitations
 
-* `\N{NAME}` named-codepoint escapes are not resolved (they return a clean error). Named escapes require a character-name database not currently available.
+* `\N{NAME}` is only resolved when the `unicode` dependency is version 2.0 or later; on earlier versions it returns a clean error. Names of algorithmically-named characters (CJK ideographs, Hangul syllables) and control characters are not resolvable.
 * The `Script_Extensions` (`scx`), `Age`, `Numeric_Value`, and `Numeric_Type` properties are not resolvable because the underlying `unicode` library does not yet provide their data.
-* Single-quote quoting (`'...'`), octal (`\ooo`), `\cX`, multi-codepoint bracketed escapes (`\u{41 42 43}`), and the empty-string member (`[{}]`) are not yet supported; malformed or unsupported syntax returns `{:error, _}` rather than raising.
+* Malformed or unsupported syntax returns `{:error, _}` rather than raising.
 
 <!-- MDOC -->
 

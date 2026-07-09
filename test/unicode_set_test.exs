@@ -343,12 +343,19 @@ defmodule UnicodeSetTest do
   describe "parse/1 tagged-tuple contract (never raises)" do
     # Genuinely unsupported syntax must return a tagged error, never raise.
     for set <- [
-          "[\\N{BULLET}]",
           "\\p{emoji=yes}",
-          "[\\u{41 42 43}]"
+          "[\\N{NOT A REAL NAME}]"
         ] do
       test "returns {:error, _} for #{set}" do
         assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse(unquote(set))
+      end
+    end
+
+    test "\\N{name} resolves when the unicode dependency provides names, else errors cleanly" do
+      if Code.ensure_loaded?(Unicode.CharacterName) do
+        assert Unicode.Set.parse_and_reduce!("[\\N{BULLET}]").parsed == {:in, [{0x2022, 0x2022}]}
+      else
+        assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[\\N{BULLET}]")
       end
     end
   end
@@ -568,6 +575,44 @@ defmodule UnicodeSetTest do
       assert members("[a-c]") == ["a", "b", "c"]
       refute "-" in members("[a-c]")
       assert members("[[a-f][d-k]-[c-g]]") == ["a", "b", "h", "i", "j", "k"]
+    end
+  end
+
+  describe "additional escapes and quoting (Phase 7)" do
+    test "octal \\0ooo escapes" do
+      assert cp!("[\\0]") == 0x00
+      assert cp!("[\\010]") == 0x08
+      assert cp!("[\\0101]") == ?A
+    end
+
+    test "\\cX control escapes" do
+      assert cp!("[\\cH]") == 0x08
+      assert cp!("[\\ca]") == 0x01
+      assert cp!("[\\cZ]") == 0x1A
+    end
+
+    test "single-quote quoting makes the enclosed text literal" do
+      assert members("['a-z']") == ["-", "a", "z"]
+      assert members("['']") == ["'"]
+      assert members("['[]']") == ["[", "]"]
+    end
+
+    test "the empty-string member [{}] is supported" do
+      assert Unicode.Set.parse_and_reduce!("[{}]").parsed == {:in, [{~c"", ~c""}]}
+    end
+
+    test "multi-codepoint bracketed hex is a string member" do
+      assert Unicode.Set.parse_and_reduce!("[\\u{41 42 43}]").parsed ==
+               {:in, [{~c"ABC", ~c"ABC"}]}
+    end
+
+    test "\\Q..\\E literal spans are not expanded by the regex splitter" do
+      assert Unicode.Regex.expand_regex("^\\Qa[b]c\\E$") == "^\\Qa[b]c\\E$"
+      assert Regex.match?(Unicode.Regex.compile!("^\\Qa[b]c\\E$"), "a[b]c")
+    end
+
+    test "(?#..) comments are not expanded by the regex splitter" do
+      assert Unicode.Regex.expand_regex("x(?#a[:L:]b)y") == "x(?#a[:L:]b)y"
     end
   end
 end
