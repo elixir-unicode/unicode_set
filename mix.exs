@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.6.2"
+  @version "1.7.0"
 
   def project do
     [
@@ -69,8 +69,8 @@ defmodule UnicodeSet.MixProject do
 
   defp deps do
     [
-      {:unicode, "~> 1.21 or ~> 2.0"},
-      {:nimble_parsec, "~> 1.2.2 or ~> 1.3", runtime: false},
+      {:unicode, "~> 2.0"},
+      {:nimble_parsec, "~> 1.3", runtime: false},
       # {:benchee, "~> 1.0", only: :dev, optional: true},
       {:ex_doc, "~> 0.24", only: [:dev, :release], runtime: false, optional: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false, optional: true},

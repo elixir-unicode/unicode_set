@@ -2,54 +2,82 @@
 
 As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
-## Unicode Set 1.6.3 (unreleased)
+## Unicode Set 1.7.0
+
+This is the changelog for Unicode Set 1.7.0 released on July 9th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Bug Fixes
 
 * Backslash-letter escapes are decoded correctly: `\a \b \e \f \v \t \n \r` map to their control codes, and any other `\<char>` maps to that literal character. Previously `\a`–`\f` silently decoded to the wrong codepoint and `\g`–`\z` / `\U` / `\w` raised.
+
 * `Unicode.Set.parse/1` returns `{:error, _}` for genuinely unsupported syntax (`\N{...}`, `\p{emoji=value}`, multi-codepoint `\u{...}`) instead of raising, restoring its documented tagged-tuple contract.
+
 * The empty set `[-]` now reduces to `{:in, []}` and its consumers (`to_pattern/1`, `to_utf8_char/1`, `to_regex_string/1`) return an empty result or a never-matching regex instead of crashing.
+
 * A union of complements such as `[[^a][^b]]` now reduces correctly (per De Morgan) and no longer crashes `to_regex_string/1` or the `match?/2` search-tree path.
+
 * `to_pattern/1` and `compile_pattern/1` return a tagged error for complement (`[^...]`) sets rather than raising; the `!` variants continue to raise.
+
 * `Unicode.Set.match?/2` and the search tree no longer crash when matched against an empty string, and `generate_matches/2` no longer crashes on a complement set.
+
 * Set operations now bind strictly left-to-right, including across an implicit-union boundary: `[[a-f]-[b][g]&[g-z]]` is now `{g}` and the README precedence example evaluates as documented. Previously a trailing `&` or `-` bound only to its immediate neighbour.
+
 * `union/2` merges overlapping and adjacent ranges, so a union feeding a difference or intersection no longer retains codepoints that should have been subtracted; `symmetric_difference/2` is likewise correct for overlapping inputs.
+
 * Reversed character ranges (`[z-a]`) and mismatched-length string ranges (`[{abc}-{de}]`) are rejected with a clear error instead of being silently accepted.
+
 * String members and string ranges are PCRE-escaped when emitted as a regex, so `[{a.c}]` matches the literal string and sets containing regex metacharacters no longer produce an uncompilable pattern (RE-1).
+
 * Sets of multiple string members no longer emit a bogus empty `[[][]]` class, and string-range alternations are wrapped in `(?:...)` so they compose correctly when embedded in a larger regex (SR-1, RE-4).
+
 * Character ranges with a surrogate endpoint are clipped rather than emitting a dangling `-` or dropping codepoints, and a surrogate-only set emits a never-matching `(?!)` instead of the uncompilable `[]` (RE-2, RE-5).
+
 * The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2), and passes `\Q...\E` literal spans and `(?#...)` comments through verbatim rather than expanding any `[...]` inside them (RS-1, RS-4).
+
 * The `Is<name>` prefix now resolves as a script, general category or binary property before falling back to a block, so `\p{IsAlphabetic}`, `\p{IsLatin}` and `[:IsLowercase:]` resolve instead of erroring; `Is<Block>` names such as `\p{IsBasicLatin}` still resolve to their block (GAP-ISPREFIX).
+
 * Digit-bearing block names such as `\p{block=Latin-1 Supplement}` now resolve, working around a `Unicode.Block.fetch/1` bug present in the `unicode` dependency (PS-7).
+
 * An empty property value such as `\p{gc=}` now returns a clean error instead of silently mis-parsing as a literal character plus a string member.
+
+* Multi-codepoint string members are emitted before the character class in a set's regex, longest first, so a string such as `i̯` in `[ij{i̯}]` matches as a whole rather than being shadowed by the bare `i` in the class.
+
+* A negated set containing string members such as `[^abc{de}]` now drops the strings (which can never match a single position under negation) and keeps the code-point ranges, instead of returning an "unsupported" error.
 
 ### Enhancements
 
 * Added the `\UHHHHHHHH` (8 hex digit) escape, the single-digit `\xH` escape, and single-codepoint bracketed `\u{...}` / `\x{...}` escapes (including astral codepoints such as `\u{1F600}`).
+
 * Added octal `\0ooo` escapes and `\cX` control escapes.
+
 * Multi-codepoint bracketed escapes such as `\u{41 42 43}` are now a string member (equivalent to `{ABC}`).
+
 * Implemented single-quote quoting: text within `'...'` is literal and `''` is a literal quote (CLDR TR35).
+
 * `\N{NAME}` now resolves to its codepoint when built against `unicode ~> 2.0` (which provides the character-name table); on earlier versions it returns a clean error.
+
 * Whitespace immediately after `[` or `[^` is now ignored, consistent with whitespace elsewhere in a set.
+
 * Hyphens are now accepted and ignored in property names per UAX44-LM3, so `\p{White-Space}` and `[:Quotation-Mark:]` resolve (PS-1).
+
 * Accept the Java-style `In<Block>` prefix, so `\p{InBasicLatin}` resolves to the block while genuine `In...` names such as `\p{Inherited}` are unaffected (PS-8).
+
 * The empty set is now written `[]` as well as `[-]`, the empty-string member `[{}]` is supported, and a hyphen at the start or end of a set (`[-a]`, `[a-]`, `[a-z-]`) is treated as a literal hyphen, matching ICU.
+
 * The `LC` / `Cased_Letter` group general category (`Lu | Ll | Lt`) now resolves, for both `\p{Cased_Letter}` and `\p{gc=LC}`.
 
 ### Changes
 
 * Corrected README examples: the block name `Sundanese` (was `sudanese`), a working `\p{General_Category=...}` property spelling, the single-dash `print` compatibility definition, and the `to_regex_string/1` doc example.
+
 * Removed the unused `:parse_many` parser combinator.
+
 * Moved the Dialyzer ignore list to the term-format `.dialyzer_ignore.exs`.
+
 * Added a "Conformance" section to the README documenting supported syntax, deliberate tailorings, and current limitations, and a note explaining the POSIX-compatible `[:punct:]` definition.
 
-## Unicode Set 1.6.2
-
-This is the changelog for Unicode Set 1.6.2 released on July 8th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
-
-### Changes
-
 * Allow `unicode ~> 2.0`.
+
 * Add Credo, test coverage and CI hardening across the Elixir 1.17 to 1.20 / OTP 27 to 29 matrix.
 
 ## Unicode Set 1.6.1
