@@ -179,20 +179,19 @@ defmodule Unicode.Set.Property do
   # since those already resolve at the script/category/property step.
   def fetch_script_category_or_in_block(value) do
     case fetch_property(:script_or_category, value) do
-      {:ok, result} ->
-        result
-
-      {:error, reason} ->
-        case value do
-          "in" <> block when block != "" ->
-            case fetch_property("block", block) do
-              {:ok, ranges} -> ranges
-              {:error, _} -> raise Regex.CompileError, reason
-            end
-
-          _ ->
-            raise Regex.CompileError, reason
-        end
+      {:ok, result} -> result
+      {:error, reason} -> fetch_in_block_or_raise(value, reason)
     end
+  end
+
+  defp fetch_in_block_or_raise("in" <> block, reason) when block != "" do
+    case fetch_property("block", block) do
+      {:ok, ranges} -> ranges
+      {:error, _} -> raise Regex.CompileError, reason
+    end
+  end
+
+  defp fetch_in_block_or_raise(_value, reason) do
+    raise Regex.CompileError, reason
   end
 end

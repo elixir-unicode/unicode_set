@@ -74,25 +74,30 @@ defmodule Unicode.Set.Operation do
       if has_difference_or_intersection?(ast) do
         {:in, expand(ast)}
       else
-        case combine(ast) do
-          terms when is_list(terms) ->
-            if Enum.all?(terms, &match?({:not_in, _}, &1)) do
-              # A pure union of complements (`[[^a][^b]]`) cannot be kept in the
-              # compact `:not_in` form: per De Morgan `¬a ∪ ¬b == ¬(a ∩ b)`, so
-              # merging the range lists by key (as `compact_ranges/1` would) yields
-              # `¬(a ∪ b)`, the wrong set. Expand to a single positive range list.
-              {:in, expand(ast)}
-            else
-              terms
-            end
-
-          combined ->
-            combined
-        end
+        reduce_combined(ast)
       end
       |> compact_ranges
 
     %{unicode_set | parsed: reduced, state: :reduced}
+  end
+
+  defp reduce_combined(ast) do
+    case combine(ast) do
+      terms when is_list(terms) -> reduce_union_terms(terms, ast)
+      combined -> combined
+    end
+  end
+
+  defp reduce_union_terms(terms, ast) do
+    if Enum.all?(terms, &match?({:not_in, _}, &1)) do
+      # A pure union of complements (`[[^a][^b]]`) cannot be kept in the
+      # compact `:not_in` form: per De Morgan `¬a ∪ ¬b == ¬(a ∩ b)`, so
+      # merging the range lists by key (as `compact_ranges/1` would) yields
+      # `¬(a ∪ b)`, the wrong set. Expand to a single positive range list.
+      {:in, expand(ast)}
+    else
+      terms
+    end
   end
 
   @doc """

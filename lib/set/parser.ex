@@ -609,13 +609,14 @@ defmodule Unicode.Set.Parser do
   end
 
   defp named_codepoint(name) do
-    # `apply/3` on a module bound to a variable keeps the compiler from
-    # statically resolving `Unicode.CharacterName.to_codepoint/1`, which is
-    # absent when built against `unicode ~> 1.21`.
+    # Dispatch through a module bound to a variable so the compiler does not
+    # statically resolve `Unicode.CharacterName.to_codepoint/1`, which is absent
+    # when built against `unicode ~> 1.21`. (A variable-module call rather than
+    # `apply/3`, which Credo flags for a known arity.)
     module = Unicode.CharacterName
 
     if Code.ensure_loaded?(module) and function_exported?(module, :to_codepoint, 1) do
-      apply(module, :to_codepoint, [name])
+      module.to_codepoint(name)
     else
       :error
     end
