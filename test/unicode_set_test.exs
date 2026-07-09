@@ -256,11 +256,35 @@ defmodule UnicodeSetTest do
              {:error,
               {Unicode.Set.ParseError, "Negative sets with string ranges are not supported"}}
 
+    # String members are emitted before the character class so they are not
+    # shadowed by a class that contains their first codepoint (here `g` is inside
+    # the complement class), which would leave the string only partially matched.
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}]]") ==
-             {:ok, "(?:[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|gg)"}
+             {:ok, "(?:gg|[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}])"}
+
+    assert Unicode.Regex.match?("[[dfd][^abc][xyz{gg}]]", "gg")
+    assert Regex.run(Unicode.Regex.compile!("[[dfd][^abc][xyz{gg}]]"), "gg") == ["gg"]
 
     assert Unicode.Set.to_regex_string("[[dfd][^abc][xyz{gg}{hh}]]") ==
-             {:ok, "(?:[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}]|hh|gg)"}
+             {:ok, "(?:hh|gg|[\\x{0}-\\x{60}\\x{64}-\\x{10FFFF}])"}
+  end
+
+  test "to_regex_string/1 orders multi-codepoint string members before the class" do
+    # `i̯` is `i` + U+032F (a single grapheme but two codepoints). The bare `i` in
+    # the class must not shadow it, so the string member is emitted first and the
+    # regex matches the whole two-codepoint string, not just the leading `i`.
+    assert Unicode.Set.to_regex_string("[ij{i̯}]") == {:ok, "(?:i̯|[\\x{69}-\\x{6A}])"}
+
+    regex = Unicode.Regex.compile!("[ij{i̯}]")
+    assert Regex.run(regex, "i̯") == ["i̯"]
+    assert Regex.run(regex, "i") == ["i"]
+    assert Regex.run(regex, "j") == ["j"]
+
+    # Longest string member wins, matching ICU's longest-match semantics.
+    longest = Unicode.Regex.compile!("[a{ab}{abc}]")
+    assert Regex.run(longest, "abc") == ["abc"]
+    assert Regex.run(longest, "ab") == ["ab"]
+    assert Regex.run(longest, "a") == ["a"]
   end
 
   test "parse nested set with invalid property" do

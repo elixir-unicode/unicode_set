@@ -561,7 +561,21 @@ defmodule Unicode.Set do
           {exception, reason} = negative_set_error()
           raise exception, reason
         else
-          ["(?:", form_char_class(class), "|", form_string_ranges(ranges), ")"]
+          # ICU's UnicodeSet matches the *longest* member at a position, but PCRE
+          # alternation is leftmost-wins. A multi-codepoint string member whose
+          # first codepoint is also in the character class (e.g. `i` in `[ij{i̯}]`)
+          # would be shadowed by the class and matched only partially. So emit the
+          # multi-codepoint string members first (longest first), then the
+          # single-codepoint class, then any remaining (empty) members.
+          {before_class, after_class} =
+            Enum.split_with(ranges, &(alternate_length(&1) > 1))
+
+          alternates =
+            order_by_length_desc(before_class) ++
+              [form_char_class(class)] ++
+              order_by_length_desc(after_class)
+
+          ["(?:", Enum.intersperse(alternates, "|"), ")"]
         end
     end
   end
@@ -589,7 +603,25 @@ defmodule Unicode.Set do
   end
 
   defp form_string_ranges(string_ranges) do
-    Enum.intersperse(string_ranges, "|")
+    string_ranges
+    |> order_by_length_desc()
+    |> Enum.intersperse("|")
+  end
+
+  # Order alternation members by descending match length. PCRE alternation is
+  # leftmost-wins, so listing longer members first reproduces ICU's longest-match
+  # semantics for string members (and keeps zero-length members last).
+  defp order_by_length_desc(alternates) do
+    Enum.sort_by(alternates, &alternate_length/1, :desc)
+  end
+
+  # Length, in codepoints, of an alternation member. This must count codepoints,
+  # not graphemes: a string member such as `i̯` (i + U+032F combining mark) is a
+  # single grapheme but matches two codepoints, and must still be ordered ahead of
+  # the single-codepoint character class. Members may be iodata (a nested list
+  # from a string range), so flatten before measuring.
+  defp alternate_length(alternate) do
+    alternate |> IO.iodata_to_binary() |> String.to_charlist() |> length()
   end
 
   @doc false
