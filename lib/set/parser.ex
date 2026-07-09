@@ -436,12 +436,15 @@ defmodule Unicode.Set.Parser do
 
   @doc false
   def value(gate) do
+    # `min: 0` accepts an empty value (e.g. `\p{gc=}`) so it reaches
+    # `reduce_property/6` and is reported as an unknown property rather than
+    # backtracking and being mis-parsed as a literal `p` plus a string member.
     times(
       choice([
         ignore(ascii_char([?\\])) |> concat(quoted()),
         ascii_char(gate)
       ]),
-      min: 1
+      min: 0
     )
     |> reduce(:to_lower_string)
   end

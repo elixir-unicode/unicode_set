@@ -552,6 +552,18 @@ defmodule UnicodeSetTest do
       assert same?("[\\p{InBasicLatin}]", "[\\p{block=BasicLatin}]")
       assert {:ok, _} = Unicode.Set.parse("[\\p{Inherited}]")
     end
+
+    test "the LC / Cased_Letter group category resolves to Lu|Ll|Lt (GAP-LC)" do
+      assert same?("[\\p{Cased_Letter}]", "[\\p{Lu}\\p{Ll}\\p{Lt}]")
+      assert same?("[\\p{gc=LC}]", "[\\p{Lu}\\p{Ll}\\p{Lt}]")
+      assert same?("[\\p{gc=Cased_Letter}]", "[\\p{gc=LC}]")
+      assert {:ok, _} = Unicode.Set.parse("[[:gc=LC:]]")
+    end
+
+    test "an empty property value errors instead of silently mis-parsing (GAP-PROPEXPR-SET)" do
+      assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[\\p{gc=}]")
+      assert {:error, {Unicode.Set.ParseError, _}} = Unicode.Set.parse("[\\p{scx=}]")
+    end
   end
 
   describe "empty set and boundary hyphens (Phase 6)" do

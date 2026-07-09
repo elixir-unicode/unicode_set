@@ -21,6 +21,7 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * The regex splitter correctly handles a character class containing an escaped backslash such as `[\\]` (RS-2), and passes `\Q...\E` literal spans and `(?#...)` comments through verbatim rather than expanding any `[...]` inside them (RS-1, RS-4).
 * The `Is<name>` prefix now resolves as a script, general category or binary property before falling back to a block, so `\p{IsAlphabetic}`, `\p{IsLatin}` and `[:IsLowercase:]` resolve instead of erroring; `Is<Block>` names such as `\p{IsBasicLatin}` still resolve to their block (GAP-ISPREFIX).
 * Digit-bearing block names such as `\p{block=Latin-1 Supplement}` now resolve, working around a `Unicode.Block.fetch/1` bug present in the `unicode` dependency (PS-7).
+* An empty property value such as `\p{gc=}` now returns a clean error instead of silently mis-parsing as a literal character plus a string member.
 
 ### Enhancements
 
@@ -33,6 +34,7 @@ As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 * Hyphens are now accepted and ignored in property names per UAX44-LM3, so `\p{White-Space}` and `[:Quotation-Mark:]` resolve (PS-1).
 * Accept the Java-style `In<Block>` prefix, so `\p{InBasicLatin}` resolves to the block while genuine `In...` names such as `\p{Inherited}` are unaffected (PS-8).
 * The empty set is now written `[]` as well as `[-]`, the empty-string member `[{}]` is supported, and a hyphen at the start or end of a set (`[-a]`, `[a-]`, `[a-z-]`) is treated as a literal hyphen, matching ICU.
+* The `LC` / `Cased_Letter` group general category (`Lu | Ll | Lt`) now resolves, for both `\p{Cased_Letter}` and `\p{gc=LC}`.
 
 ### Changes
 

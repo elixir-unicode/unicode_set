@@ -88,6 +88,15 @@ defmodule Unicode.Set.Property do
      Unicode.Set.parse!("[^\\p{Whitespace}\\p{gc=Control}\\p{gc=Surrogate}\\p{gc=Unassigned}]")}
   end
 
+  # `LC` / `Cased_Letter` is the derived general-category group `Lu | Ll | Lt`.
+  # The `unicode` library only derives the single-letter super-categories
+  # (`L`, `C`, ...), so resolve this one here for both `\p{Cased_Letter}` and
+  # `\p{gc=LC}`. Returns a flat range list (not a set) so both the bare and the
+  # `gc=` reduction paths wrap it correctly.
+  def fetch_property(:script_or_category, value) when value in ["lc", "cased_letter"] do
+    {:ok, cased_letter_ranges()}
+  end
+
   def fetch_property(:script_or_category, value) do
     range_list =
       Unicode.Script.get(value) ||
@@ -102,6 +111,13 @@ defmodule Unicode.Set.Property do
   end
 
   @doc false
+  # `\p{gc=LC}` / `\p{General_Category=Cased_Letter}` — the `LC` group category
+  # (`Lu | Ll | Lt`), which the `unicode` library does not derive.
+  def fetch_property(property, value)
+      when property in ["gc", "general_category"] and value in ["lc", "cased_letter"] do
+    {:ok, cased_letter_ranges()}
+  end
+
   def fetch_property("block" = property, value) do
     case Unicode.Block.fetch(value) do
       {:ok, range_list} ->
@@ -137,6 +153,11 @@ defmodule Unicode.Set.Property do
       {:ok, range_list} -> range_list
       {:error, reason} -> raise Regex.CompileError, reason
     end
+  end
+
+  defp cased_letter_ranges do
+    {:in, ranges} = Unicode.Set.parse_and_reduce!("[\\p{Lu}\\p{Ll}\\p{Lt}]").parsed
+    ranges
   end
 
   @doc false
