@@ -143,6 +143,31 @@ defmodule Unicode.Set.Property do
       {:ok, range_list}
     else
       :error ->
+        fetch_binary_property(property, value)
+    end
+  end
+
+  # A binary property can be written bare, as `\p{Extended_Pictographic}`, or with
+  # an explicit boolean value, as `\p{Extended_Pictographic=True}`. UTS #18 treats
+  # the two as equivalent, and a false value selects the complement. Binary
+  # properties are served by `Unicode.Property` rather than by a per-property
+  # module, so they do not resolve through `Unicode.fetch_property/1` above.
+
+  @truthy ["true", "t", "yes", "y"]
+  @falsy ["false", "f", "no", "n"]
+
+  defp fetch_binary_property(property, value) do
+    normalized = Unicode.Utils.downcase_and_remove_whitespace(value)
+
+    with true <- normalized in @truthy or normalized in @falsy,
+         {:ok, range_list} <- Unicode.Property.fetch(property) do
+      if normalized in @truthy do
+        {:ok, range_list}
+      else
+        {:ok, Unicode.Utils.difference_ranges([{0x0, 0x10FFFF}], range_list)}
+      end
+    else
+      _other ->
         {:error,
          "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end

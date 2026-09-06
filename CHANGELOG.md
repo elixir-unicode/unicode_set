@@ -2,6 +2,14 @@
 
 As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
 
+## Unicode Set 1.8.0
+
+This is the changelog for Unicode Set 1.8.0 released on _unreleased_. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Enhancements
+
+* Resolve binary properties written with an explicit boolean value, so `[\p{Extended_Pictographic=True}]` matches the bare `[\p{Extended_Pictographic}]` and a false value selects the complement.
+
 ## Unicode Set 1.7.0
 
 This is the changelog for Unicode Set 1.7.0 released on July 9th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
