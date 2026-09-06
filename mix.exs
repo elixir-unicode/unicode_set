@@ -69,7 +69,7 @@ defmodule UnicodeSet.MixProject do
 
   defp deps do
     [
-      {:unicode, "~> 2.0"},
+      {:unicode, github: "elixir-unicode/unicode", branch: "unicode-18"},
       {:nimble_parsec, "~> 1.3", runtime: false},
       # {:benchee, "~> 1.0", only: :dev, optional: true},
       {:ex_doc, "~> 0.24", only: [:dev, :release], runtime: false, optional: true},
