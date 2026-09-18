@@ -4,7 +4,7 @@ As of `unicode_set` version 1.8.0, Elixir 1.17 or later is required.
 
 ## Unicode Set 1.8.0
 
-This is the changelog for Unicode Set 1.8.0 released on _unreleased_. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 1.8.0 released on September 18th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Enhancements
 
