@@ -1,12 +1,20 @@
 # Changelog
 
-As of `unicode_set` version 1.4.0, Elixir 1.12 or later is required.
+As of `unicode_set` version 1.8.0, Elixir 1.17 or later is required.
 
 ## Unicode Set 1.8.0
 
 This is the changelog for Unicode Set 1.8.0 released on _unreleased_. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Enhancements
+
+* Requires `unicode ~> 2.1`, bringing the Unicode 18.0 repertoire — the `Jurchen`, `Proto_Cuneiform` and `Seal` scripts, seven new blocks and ten `Crown_*` joining groups. Elixir 1.17 or later is now required.
+
+* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties now resolve, so `\p{scx=Latin}`, `\p{age=1.1}` and `\p{nt=decimal}` match, backed by the new modules in `unicode` 2.1.
+
+* `\N{...}` now resolves algorithmically-named characters — CJK and Tangut ideographs, Hangul syllables, and the Seal and Jurchen characters.
+
+* `\p{gc=LC}` (`Cased_Letter`) now resolves through `unicode`'s derived `LC` category, so the local workaround was removed.
 
 * Resolve binary properties written with an explicit boolean value, so `[\p{Extended_Pictographic=True}]` matches the bare `[\p{Extended_Pictographic}]` and a false value selects the complement.
 

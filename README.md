@@ -384,8 +384,8 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 
 ### Current limitations
 
-* `\N{NAME}` is only resolved when the `unicode` dependency is version 2.0 or later; on earlier versions it returns a clean error. Names of algorithmically-named characters (CJK ideographs, Hangul syllables) and control characters are not resolvable.
-* The `Script_Extensions` (`scx`), `Age`, `Numeric_Value`, and `Numeric_Type` properties are not resolvable because the underlying `unicode` library does not yet provide their data.
+* `\N{NAME}` resolves character names, including the algorithmically-named characters — CJK and Tangut ideographs, Hangul syllables, and the Seal and Jurchen characters — as of `unicode` 2.1. Control character names (formal aliases such as `NULL`) are not resolvable.
+* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties are resolvable as of `unicode` 2.1. `Numeric_Value` (`nv`) cannot be matched by value — `\p{nv=7}` returns an error — because `unicode` keys numeric values by number rather than by string.
 * Malformed or unsupported syntax returns `{:error, _}` rather than raising.
 
 <!-- MDOC -->
@@ -397,7 +397,7 @@ To install, add the package `unicode_set` to your list of dependencies in `mix.e
 ```elixir
 def deps do
   [
-    {:unicode_set, "~> 1.0"}
+    {:unicode_set, "~> 1.8"}
   ]
 end
 ```

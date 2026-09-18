@@ -1,13 +1,13 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.7.0"
+  @version "1.8.0"
 
   def project do
     [
       app: :unicode_set,
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       build_embedded: Mix.env() == :prod,
       deps: deps(),
@@ -69,7 +69,7 @@ defmodule UnicodeSet.MixProject do
 
   defp deps do
     [
-      {:unicode, github: "elixir-unicode/unicode", branch: "unicode-18"},
+      {:unicode, "~> 2.1"},
       {:nimble_parsec, "~> 1.3", runtime: false},
       # {:benchee, "~> 1.0", only: :dev, optional: true},
       {:ex_doc, "~> 0.24", only: [:dev, :release], runtime: false, optional: true},

@@ -15,5 +15,5 @@
   "makeup_erlang": {:hex, :makeup_erlang, "1.1.0", "835f7e60792e08824cda445639555d7bf1bbbddb1b60b306e33cb6f6db24dc74", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm", "1cd6780fb1dd1a03979abaed0fe82712b0625118fd5257d3ebbf73f960c73c3c"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.2", "8efba0122db06df95bfaa78f791344a89352ba04baedd3849593bfce4d0dc1c6", [:mix], [], "hexpm", "4b21398942dda052b403bbe1da991ccd03a053668d147d53fb8c4e0efe09c973"},
   "statistex": {:hex, :statistex, "1.0.0", "f3dc93f3c0c6c92e5f291704cf62b99b553253d7969e9a5fa713e5481cd858a5", [:mix], [], "hexpm", "ff9d8bee7035028ab4742ff52fc80a2aa35cece833cf5319009b52f1b5a86c27"},
-  "unicode": {:git, "https://github.com/elixir-unicode/unicode.git", "97d71e318b0a3241cce9bfb6822a3aee2123c44c", [branch: "unicode-18"]},
+  "unicode": {:hex, :unicode, "2.1.0", "5048dcd1ca1db307d0aae7c5d99d35613c13675a9982e770bd3a07f89a7248d2", [:mix], [], "hexpm", "347bf1d94975e3bc97e02f941d5a78c92cf601816526789e66ccdeec37b9615c"},
 }
