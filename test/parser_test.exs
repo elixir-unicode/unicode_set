@@ -139,12 +139,12 @@ defmodule Unicode.Set.ParserTest do
 
   describe "errors" do
     test "unknown posix property" do
-      assert {:error, {Unicode.Set.ParseError, message}} = parse("[:zzzz:]")
+      assert {:error, {Unicode.Set.ParseError, message}} = parse("[:nonesuch:]")
       assert message =~ "is not known"
     end
 
     test "unknown perl property" do
-      assert {:error, {Unicode.Set.ParseError, _}} = parse("[\\p{zzzz}]")
+      assert {:error, {Unicode.Set.ParseError, _}} = parse("[\\p{nonesuch}]")
     end
   end
 end

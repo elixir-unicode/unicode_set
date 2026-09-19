@@ -84,11 +84,11 @@ defmodule Unicode.Set.CoverageEdgesTest do
     test "an invalid perl set is left intact rather than expanded" do
       # to_regex_string fails for an unknown property, so the original
       # perl-set fragment is passed through to Regex.compile unchanged. Whether
-      # the regex engine then accepts or rejects `\p{zzzz}` depends on its PCRE
+      # the regex engine then accepts or rejects `\p{nonesuch}` depends on its PCRE
       # version (OTP 27 rejects it, later OTP accepts it), so both outcomes are
       # valid — the point is that Unicode.Regex passes it through untouched.
-      case Unicode.Regex.compile("\\p{zzzz}") do
-        {:ok, regex} -> assert Regex.source(regex) == "\\p{zzzz}"
+      case Unicode.Regex.compile("\\p{nonesuch}") do
+        {:ok, regex} -> assert Regex.source(regex) == "\\p{nonesuch}"
         {:error, {reason, _offset}} -> assert to_string(reason) =~ "unknown property"
       end
     end
@@ -214,7 +214,7 @@ defmodule Unicode.Set.CoverageEdgesTest do
 
     test "raises on an invalid set" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.generate_matches!("[:zzzz:]", quote(do: var))
+        Unicode.Set.generate_matches!("[:nonesuch:]", quote(do: var))
       end
     end
   end

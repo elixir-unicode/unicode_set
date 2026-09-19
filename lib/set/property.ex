@@ -1,19 +1,6 @@
 defmodule Unicode.Set.Property do
   @moduledoc false
 
-  # Canonical block lookup keyed by the fully normalized (downcased, separator
-  # stripped) block name. `Unicode.Block.fetch/1` cannot resolve some blocks
-  # whose canonical alias is absent from the dependency's alias table (e.g.
-  # digit-bearing names such as "Latin-1 Supplement" -> "latin1supplement"),
-  # because on an alias miss it looks the still-string name up against the
-  # atom-keyed block map and fails. We rebuild a canonical name -> atom key map
-  # directly from `Unicode.Block.blocks/0` so every real block resolves.
-  @block_by_canonical_name Unicode.Block.blocks()
-                           |> Map.keys()
-                           |> Map.new(fn key ->
-                             {Unicode.Utils.downcase_and_remove_whitespace(key), key}
-                           end)
-
   # Of this list, only the following are unknown to Unicode
   # * xdigit
   # * word
@@ -107,16 +94,8 @@ defmodule Unicode.Set.Property do
         {:ok, range_list}
 
       :error ->
-        normalized = Unicode.Utils.downcase_and_remove_whitespace(value)
-
-        case Map.fetch(@block_by_canonical_name, normalized) do
-          {:ok, block_key} ->
-            Unicode.Block.fetch(block_key)
-
-          :error ->
-            {:error,
-             "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
-        end
+        {:error,
+         "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end
   end
 
@@ -139,14 +118,122 @@ defmodule Unicode.Set.Property do
     end
   end
 
+  # `Name` (`na`) and `Name_Alias` are served by `Unicode.CharacterName` rather
+  # than by a property module, so they are dispatched here by name.
   def fetch_property(property, value) do
+    case Unicode.Utils.downcase_and_remove_whitespace(property) do
+      name when name in ["name", "na"] -> fetch_name(property, value)
+      alias when alias in ["namealias", "name_alias"] -> fetch_name_alias(property, value)
+      _other -> fetch_enumerated_property(property, value)
+    end
+  end
+
+  defp fetch_enumerated_property(property, value) do
     with {:ok, module} <- Unicode.fetch_property(property),
-         {:ok, range_list} <- module.fetch(value) do
+         {:ok, range_list} <- fetch_value(module, value) do
       {:ok, range_list}
     else
       :error ->
         fetch_binary_property(property, value)
     end
+  end
+
+  # `\p{Name=X}` is the single character whose Name or Name_Alias matches `X`
+  # under UAX44-LM2 (UTS #61 §2.5.3.4). An unknown name is not a valid value,
+  # so the expression is ill-formed.
+  defp fetch_name(property, value) do
+    case Unicode.CharacterName.to_codepoint(value) do
+      {:ok, codepoint} -> {:ok, [{codepoint, codepoint}]}
+      :error -> unknown_value(property, value)
+    end
+  end
+
+  # `\p{Name_Alias=X}` is the single character one of whose Name_Alias values
+  # matches `X`; a value that matches only a Name is not valid.
+  defp fetch_name_alias(property, value) do
+    normalized = Unicode.Utils.downcase_and_remove_whitespace(value)
+
+    with {:ok, codepoint} <- Unicode.CharacterName.to_codepoint(value),
+         true <-
+           Enum.any?(Unicode.CharacterName.aliases(codepoint), &alias_matches?(&1, normalized)) do
+      {:ok, [{codepoint, codepoint}]}
+    else
+      _other -> unknown_value(property, value)
+    end
+  end
+
+  defp alias_matches?({_type, alias}, normalized) do
+    Unicode.Utils.downcase_and_remove_whitespace(alias) == normalized
+  end
+
+  defp unknown_value(property, value) do
+    {:error,
+     "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
+  end
+
+  # `unicode` keys numeric values by number (an integer or a reduced
+  # `{numerator, denominator}` tuple), so a Numeric_Value query is parsed as
+  # UTS #61 §2.5.3.4 specifies before the lookup. Any other property takes the
+  # value as written.
+  defp fetch_value(Unicode.NumericValue, value), do: fetch_numeric_value(value)
+  defp fetch_value(module, value), do: module.fetch(value)
+
+  @rational ~r/^([+-]?\d+)(?:\/(\d*[1-9]\d*))?$/
+  @decimal ~r/^[+-]?\d+\.\d+$/
+
+  # A valid Numeric_Value is `NaN` (the code points with no numeric value), a
+  # rational `[+-]?[0-9]+(/[0-9]*[1-9][0-9]*)?` matched by rational equality, or
+  # a decimal `[+-]?[0-9]+\.[0-9]+` matched by equality of the binary64
+  # roundings. A well-formed value that no character has is the empty set;
+  # only a malformed value is an error.
+  defp fetch_numeric_value(value) do
+    # Not `downcase_and_remove_whitespace/1`, which also strips the `-` that
+    # carries the sign of a negative value.
+    normalized = value |> String.downcase() |> String.replace(~r/\s/u, "")
+
+    cond do
+      normalized == "nan" ->
+        {:ok,
+         Unicode.Utils.difference_ranges(
+           [{0x0, 0x10FFFF}],
+           numeric_value_ranges(fn _ -> true end)
+         )}
+
+      match = Regex.run(@rational, normalized) ->
+        key = rational_key(match)
+        {:ok, numeric_value_ranges(&(&1 == key))}
+
+      Regex.match?(@decimal, normalized) ->
+        float = String.to_float(String.trim_leading(normalized, "+"))
+        {:ok, numeric_value_ranges(&(to_float(&1) == float))}
+
+      true ->
+        :error
+    end
+  end
+
+  defp rational_key([_match, numerator]), do: String.to_integer(numerator)
+
+  defp rational_key([_match, numerator, denominator]) do
+    numerator = String.to_integer(numerator)
+    denominator = String.to_integer(denominator)
+    divisor = Integer.gcd(numerator, denominator)
+
+    case {div(numerator, divisor), div(denominator, divisor)} do
+      {numerator, 1} -> numerator
+      reduced -> reduced
+    end
+  end
+
+  defp to_float({numerator, denominator}), do: numerator / denominator
+  defp to_float(integer), do: integer * 1.0
+
+  defp numeric_value_ranges(selector) do
+    Unicode.NumericValue.numeric_values()
+    |> Enum.filter(fn {key, _ranges} -> selector.(key) end)
+    |> Enum.flat_map(fn {_key, ranges} -> ranges end)
+    |> Enum.sort()
+    |> Unicode.Utils.compact_ranges()
   end
 
   # A binary property can be written bare, as `\p{Extended_Pictographic}`, or with
@@ -175,6 +262,8 @@ defmodule Unicode.Set.Property do
     end
   end
 
+  @version_number ~r/^\d+(\.\d+)*$/
+
   # Resolves an Age value to `{:ok, {major, minor}}`, `{:ok, :unassigned}` or
   # `:error`. Numeric forms are compared field-wise after dropping trailing zero
   # fields, so `6`, `6.0`, `6.0.0` and `06.00.00` all denote Unicode 6.0.
@@ -185,10 +274,10 @@ defmodule Unicode.Set.Property do
       normalized in ["unassigned", "na"] ->
         {:ok, :unassigned}
 
-      Regex.match?(~r/^\d+(\.\d+)*$/, normalized) ->
+      Regex.match?(@version_number, normalized) ->
         fields = version_fields(normalized)
 
-        case Enum.find(Unicode.Age.known_ages(), &(version_fields(Atom.to_string(&1)) == fields)) do
+        case Enum.find(age_versions(), &(version_fields(Atom.to_string(&1)) == fields)) do
           nil -> :error
           age -> {:ok, version_tuple(age)}
         end
@@ -199,6 +288,12 @@ defmodule Unicode.Set.Property do
           :error -> :error
         end
     end
+  end
+
+  # The Age values that are version numbers. `unicode` 2.2 and later also carry
+  # the `Unassigned` default value as a key, which has no version to compare.
+  defp age_versions do
+    Enum.filter(Unicode.Age.known_ages(), &Regex.match?(@version_number, Atom.to_string(&1)))
   end
 
   # The integer fields of a dotted version number with trailing zero fields
@@ -222,8 +317,12 @@ defmodule Unicode.Set.Property do
   # The union of the ranges of every known age less than or equal to `version`,
   # or of every known age when `version` is `:all`.
   defp ages_up_to(version) do
+    versions = age_versions()
+
     Unicode.Age.ages()
-    |> Enum.filter(fn {age, _ranges} -> version == :all or version_tuple(age) <= version end)
+    |> Enum.filter(fn {age, _ranges} ->
+      age in versions and (version == :all or version_tuple(age) <= version)
+    end)
     |> Enum.flat_map(fn {_age, ranges} -> ranges end)
     |> Enum.sort()
     |> Unicode.Utils.compact_ranges()

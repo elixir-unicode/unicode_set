@@ -220,10 +220,10 @@ defmodule UnicodeSetTest do
   end
 
   test "parsing an invalid unicode set returns the right error" do
-    assert Unicode.Set.parse("[:ZZZZ:]") ==
+    assert Unicode.Set.parse("[:NONESUCH:]") ==
              {:error,
               {Unicode.Set.ParseError,
-               "Unable to parse \"[:ZZZZ:]\". The unicode script, category or property \"zzzz\" is not known."}}
+               "Unable to parse \"[:NONESUCH:]\". The unicode script, category or property \"nonesuch\" is not known."}}
   end
 
   test "parsing a single escaped character" do

@@ -11,19 +11,25 @@ UTS #61 defines two grades of conformance.
 
 ## Summary
 
-| UTS #61 area | Status |
-| --- | --- |
-| §2 Lexical elements, white space | Conformant, except the ignorable-format-control rule |
-| §2.1 Literal elements | Conformant; `^`, `$` and `:` are accepted as literals in positions the standard makes ill-formed |
-| §2.2 Escaped elements | Conformant |
-| §2.3 Named elements | Conformant, all three forms |
-| §2.4 Bracketed elements and strings | Conformant; extended with string ranges |
-| §2.5 Property queries | Conformant for the recommended subset; unary block names and `Is`/`In` prefixes are extensions |
-| §2.5.3.1 Age queries | Conformant (cumulative) |
-| §2.5.3.4 Numeric values | Rejected |
-| §2.5.3.2, §2.5.3.3, §2.5.3.6 | Rejected, as the standard recommends for APIs |
-| §3 Set operations | Conformant; `[a-a]` is accepted as an extension |
-| §4 Conformance | Consistent and syntactically complete |
+The table gives the status of each area of the standard as of version 1.8.1 with `unicode` 2.2. *Conformant* means every valid expression in that area evaluates as the standard specifies. *Extension* means the library additionally accepts expressions the standard makes ill-formed, which the standard permits provided they are declared. *Rejected* means the expressions are refused with an error, which is always consistent.
+
+| UTS #61 area | Status | Notes |
+| --- | --- | --- |
+| §2 White space | Conformant | All Pattern_White_Space characters are ignored between elements. Extension: the ignorable format controls U+200E and U+200F also separate elements that the standard says they may not. Rejected: white space before or after a whole expression. |
+| §2.1 Literal elements | Conformant | `'` is a literal; there is no TR35 quoting. Extension: `^` and `$` are literals mid-set, and `[::]` is a set containing `:`. |
+| §2.2 Escaped elements | Conformant | `\x`, `\u`, `\U`, octal (1–3 digits), `\c` (`@ A-Z [ \ ] ^ _`), named controls, `\N`, and `\` before any other character. Values above U+10FFFF are rejected. Extensions: `\u{...}`, multi-code-point `\x{...}`, `\c` with a lowercase letter, adjacent escaped surrogates. |
+| §2.3 Named elements | Conformant | `\N{NAME}`, `\N{HEX:NAME}` and `\N{HEX:CHAR:NAME}`, matched under UAX44-LM2 against the Name and every Name_Alias type (control, abbreviation, correction, alternate, figment). |
+| §2.4 Bracketed elements and strings | Conformant | Everything but `\` and `}` is literal inside braces; `{}` is the empty string. Extension: string ranges `{ab}-{cd}`, surrogates inside strings. Rejected: mixed range endpoints `[{a}-z]`. |
+| §2.5 Property queries | Conformant | Perl and POSIX forms, `=` and `≠`, single and double negation, UAX44-LM3 matching. Extensions: `Is`/`In` prefixes, POSIX compatibility names, `Any`/`ASCII`/`Assigned`, escapes in any property value. Rejected: leading white space inside the braces. |
+| §2.5.2 Unary queries | Conformant | Binary properties, Script values and General_Category values including groupings. A bare block name is rejected. |
+| §2.5.3 Binary queries | Conformant | Every enumerated, numeric and binary property in the UCD, including `@missing` default values such as `jt=U` and `sc=Zzzz`, plus Name and Name_Alias. Rejected: string-valued properties such as `Lowercase_Mapping`. |
+| §2.5.3.1 Age queries | Conformant | Cumulative; accepts `V6_0`, `6`, `6.0.0`, `06.00.00`, `Unassigned` and `NA`. ICU's non-Unicode versions such as `5.99.99` are rejected. |
+| §2.5.3.4 Name and Name_Alias | Conformant | `\p{Name=X}` matches a name or alias; `\p{Name_Alias=X}` matches an alias only. |
+| §2.5.3.4 Numeric values | Conformant | `NaN`, rationals by rational equality, decimals by binary64 equality. |
+| §2.5.3.2, §2.5.3.3, §2.5.3.6 Comparisons, identity and null queries, regular expressions | Rejected | Marked *not recommended for general-purpose APIs* by the standard. |
+| §2.5 Version qualifiers | Rejected | Marked *not recommended for general-purpose APIs* by the standard. |
+| §3 Set operations | Conformant | Full grammar, including `[-]`, `[--]`, `[ ]` and `[^ ]`. The standard's precedence examples all evaluate as stated. Extension: `[a-a]`. |
+| §4 Conformance | Consistent, syntactically complete | No valid expression evaluates to a different set than the standard specifies. |
 
 ## Section 2: Lexical elements
 
@@ -68,12 +74,15 @@ All three forms are supported and evaluate as specified.
 | `\N{0A:LATIN CAPITAL LETTER A}` | ill-formed (code point does not match) |
 | `\N{41:a:LATIN CAPITAL LETTER A}` | ill-formed (character does not match) |
 | `\N{THIS IS NOT A CHARACTER}` | ill-formed |
-| `\N{PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRAKCET}` | U+FE18, via its correction alias |
+| `\N{PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRAKCET}` | U+FE18 (the misspelling is the character's actual name) |
+| `\N{PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET}` | U+FE18, via its correction alias |
+| `\N{NULL}`, `\N{NUL}`, `\N{0:NULL}` | U+0000, via its control-character name and abbreviation aliases |
+| `\N{BYTE ORDER MARK}` | U+FEFF, via its alternate alias |
 | `\N{Latin small ligature o-e}` | U+0153 (UAX44-LM2 loose matching) |
 
 A named element is an `Element`, so it may be a range endpoint and `[\N{LATIN SMALL LETTER A}-\N{LATIN SMALL LETTER Z}]` is the 26 letters, as the standard's grammar requires. An unbracketed `\N{SPACE}` is not a set, and `[\p{L}-\N{SPACE}]` is ill-formed because the right-hand side of a difference must be a set; both are rejected.
 
-Names are resolved through the character-name table in the `unicode` library, which includes algorithmically-named characters (CJK and Tangut ideographs, Hangul syllables, Seal and Jurchen). Control-character names that exist only as formal aliases, such as `\N{NULL}`, are not currently resolvable.
+Names are resolved through the character-name table in the `unicode` library, which includes algorithmically-named characters (CJK and Tangut ideographs, Hangul syllables, Seal and Jurchen) and, from `unicode` 2.2, every `Name_Alias` value: corrections (`LATIN CAPITAL LETTER GHA`), control-character names (`NULL`, `LINE FEED`), abbreviations (`NUL`, `LF`, `ZWJ`), alternates (`BYTE ORDER MARK`) and figments. This matches the standard, which defines a named element by its Name or Name_Alias, and goes beyond ICU, which the standard notes supports only correction aliases.
 
 ### §2.4 Bracketed elements and strings
 
@@ -109,9 +118,39 @@ The standard says a property value must consist only of literal characters unles
 
 Not supported, and rejected:
 
-* **Name and Name_Alias value queries** (`\p{Name=SPACE}`), and string-valued properties such as `Lowercase_Mapping` and `Simple_Case_Folding`.
-* **Numeric_Value** (`\p{nv=1/6}`, `\p{nv=0.5}`, `\p{nv=NaN}`), because the `unicode` library keys numeric values by number rather than by string.
-* Some short property aliases that `unicode` does not carry, such as `Bidi_M` for `Bidi_Mirrored`; use the long name.
+* **String-valued properties** such as `Lowercase_Mapping` and `Simple_Case_Folding`, which the `unicode` library does not expose as sets.
+
+Values that the UCD supplies only through `@missing` lines, such as `Joining_Type=Non_Joining` (`jt=U`), `Bidi_Paired_Bracket_Type=None` and `Script=Unknown` (`Zzzz`), and separator-bearing binary aliases such as `Bidi_M`, resolve with `unicode` 2.2 or later.
+
+#### Name and Name_Alias (§2.5.3.4, §2.5.3.5)
+
+Conformant. `\p{Name=X}` is the single character whose Name or Name_Alias matches `X` under UAX44-LM2, and `\p{Name_Alias=X}` is the single character one of whose aliases matches `X`. As the standard states, for every formal alias `X` the two queries are the same set.
+
+| Expression | Result |
+| --- | --- |
+| `\p{Name=SPACE}`, `\p{na=latin small letter a}` | U+0020, U+0061 |
+| `\p{Name=NULL}`, `\p{Name_Alias=NULL}`, `\p{Name_Alias=NUL}` | U+0000 |
+| `\p{Name_Alias=SP}` | U+0020 |
+| `\p{Name_Alias=SPACE}` | ill-formed: `SPACE` is a Name, not an alias |
+| `\p{Name=THIS IS NOT A CHARACTER}` | ill-formed |
+| `\P{Name=SPACE}` | every code point but U+0020 |
+
+#### Numeric values (§2.5.3.4)
+
+Conformant. A `Numeric_Value` query accepts the three forms the standard defines and resolves them as it specifies.
+
+| Expression | Result |
+| --- | --- |
+| `\p{nv=NaN}` | every code point with no numeric value |
+| `\p{nv=1/6}`, `\p{nv=2/12}` | the same set, by rational equality: U+2159 ⅙ and its companions |
+| `\p{nv=-1/2}` | U+0F33 TIBETAN DIGIT HALF ZERO |
+| `\p{nv=0.5}`, `\p{nv=1/2}` | the same set |
+| `\p{nv=0.16666666666666667}` | contains U+2159, since it rounds to the same binary64 as 1/6 |
+| `\p{nv=0.16666667}` | empty, as the standard notes: the rounded value in `DerivedNumericValues.txt` does not round to 1/6 |
+| `\p{nv=16666666666666667/100000000000000000}` | empty, since the rational is not 1/6 |
+| `\p{nv=seven}`, `\p{nv=1/0}`, `\p{nv=1e3}` | ill-formed |
+
+A well-formed value that no character carries is the empty set, not an error. Regular-expression matching on numeric properties is undefined by the standard and rejected here.
 
 #### Age queries (§2.5.3.1)
 
@@ -162,7 +201,7 @@ Everything else the standard defines is either evaluated as specified or rejecte
 
 ## Checking conformance
 
-The behaviours described in this guide are exercised by `test/tr61_conformance_test.exs` and `test/parser_grammar_test.exs`. To check a single expression against your reading of the standard:
+The behaviours described in this guide are exercised by `test/tr61_conformance_test.exs` and `test/parser_grammar_test.exs`. The review behind this guide ran a matrix of 242 expressions taken from the standard's own examples and grammar. 194 evaluate as the standard specifies or as a declared extension, 48 are rejected with an error, and none raise. Every rejection is either an expression the standard makes ill-formed or one of the consistent rejections listed above. To check a single expression against your reading of the standard:
 
 ```elixir
 iex> Unicode.Set.parse_and_reduce!("[[a-z]-[c]&[d]]").parsed

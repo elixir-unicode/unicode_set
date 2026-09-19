@@ -8,6 +8,14 @@ This is the changelog for Unicode Set 1.8.1 released on September 20th, 2026. Fo
 
 ### Enhancements
 
+* Requires `unicode ~> 2.2`, so every UCD property value resolves, including the `@missing` defaults (`\p{jt=U}`, `\p{bpt=None}`, `\p{sc=Unknown}`) separator-bearing aliases such as `\p{Bidi_M}`, and every character name alias, so `\N{NULL}`, `\N{LF}` and `\N{BYTE ORDER MARK}` resolve. Note that `Zzzz` is now a valid script, so `\p{zzzz}` is the Unknown script rather than an error.
+
+* Removes the local workaround for digit-bearing block names such as `\p{block=Latin-1 Supplement}`, which `unicode` 2.2 resolves directly.
+
+* `\p{Numeric_Value=...}` (`nv`) resolves per UTS #61: `NaN`, a rational such as `1/6` or `2/12` matched by rational equality, or a decimal such as `0.5` matched by binary64 equality. Previously every numeric value was an error.
+
+* `\p{Name=...}` (`na`) and `\p{Name_Alias=...}` resolve the single character whose name or alias matches under UAX44-LM2, so `\p{Name=SPACE}` and `\p{Name_Alias=NUL}` answer as UTS #61 specifies.
+
 * Adds the [UTS #61 conformance guide](guides/tr61_conformance.md), which records how this library's syntax and semantics relate to the draft Unicode Set Notation standard, including every known divergence and extension.
 
 * `\N{HEX:NAME}` and `\N{HEX:CHAR:NAME}` named elements (UTS #61 §2.3) are now supported, and the hex digits and character must agree with the named character.

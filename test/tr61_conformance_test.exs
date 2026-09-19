@@ -66,6 +66,31 @@ defmodule Unicode.Set.TR61ConformanceTest do
       assert ranges("[\\N{41:A:LATIN CAPITAL LETTER A}]") == [{65, 65}]
     end
 
+    test "name aliases of every type resolve (unicode 2.2)" do
+      # control
+      assert ranges("[\\N{NULL}]") == [{0, 0}]
+      assert ranges("[\\N{LINE FEED}]") == [{10, 10}]
+      # abbreviation
+      assert ranges("[\\N{NUL}]") == [{0, 0}]
+      assert ranges("[\\N{ZWJ}]") == [{0x200D, 0x200D}]
+      # correction, in both the published and the corrected spelling
+      assert ranges("[\\N{LATIN CAPITAL LETTER GHA}]") == [{0x01A2, 0x01A2}]
+
+      assert ranges("[\\N{PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET}]") == [
+               {0xFE18, 0xFE18}
+             ]
+
+      assert ranges("[\\N{PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRAKCET}]") == [
+               {0xFE18, 0xFE18}
+             ]
+
+      # alternate
+      assert ranges("[\\N{BYTE ORDER MARK}]") == [{0xFEFF, 0xFEFF}]
+      # with the hex and character checks
+      assert ranges("[\\N{0:NULL}]") == [{0, 0}]
+      assert ranges("[\\N{FEFF:\uFEFF:BYTE ORDER MARK}]") == [{0xFEFF, 0xFEFF}]
+    end
+
     test "a named element is a range endpoint" do
       assert ranges("[\\N{LATIN SMALL LETTER A}-\\N{LATIN SMALL LETTER Z}]") == [{97, 122}]
     end
@@ -216,6 +241,112 @@ defmodule Unicode.Set.TR61ConformanceTest do
     test "the last code point is still accepted" do
       assert ranges("[\\x{10FFFF}]") == [{0x10FFFF, 0x10FFFF}]
       assert ranges("[\\U0010FFFF]") == [{0x10FFFF, 0x10FFFF}]
+    end
+  end
+
+  describe "UCD default values and separator aliases (unicode 2.2)" do
+    test "@missing default values resolve" do
+      assert ranges("\\p{jt=U}") == ranges("\\p{Joining_Type=Non_Joining}")
+      assert count("[\\p{jt=U}\\p{jt=T}\\p{jt=C}\\p{jt=D}\\p{jt=L}\\p{jt=R}]") == 0x110000
+      assert ranges("\\p{bpt=None}") == ranges("\\p{Bidi_Paired_Bracket_Type=None}")
+      assert ranges("\\p{sc=Unknown}") == ranges("\\p{Zzzz}")
+      assert ranges("[:zzzz:]") == ranges("\\p{Script=Zzzz}")
+    end
+
+    test "separator-bearing binary aliases resolve" do
+      assert ranges("\\p{Bidi_M}") == ranges("\\p{Bidi_Mirrored}")
+      assert ranges("\\p{Bidi_M=Y}") == ranges("\\p{Bidi_Mirrored=Yes}")
+    end
+  end
+
+  describe "Name and Name_Alias queries (UTS #61 §2.5.3.4, §2.5.3.5)" do
+    test "Name matches a name or a name alias under UAX44-LM2" do
+      assert ranges("\\p{Name=SPACE}") == [{32, 32}]
+      assert ranges("\\p{na=latin small letter a}") == [{?a, ?a}]
+      assert ranges("\\p{Name=Latin_Small_Letter_A}") == [{?a, ?a}]
+      assert ranges("\\p{Name=NULL}") == [{0, 0}]
+      assert ranges("\\p{Name=LATIN CAPITAL LETTER GHA}") == [{0x01A2, 0x01A2}]
+
+      assert ranges("\\p{Name=PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET}") ==
+               [{0xFE18, 0xFE18}]
+    end
+
+    test "Name_Alias matches only a name alias" do
+      assert ranges("\\p{Name_Alias=NULL}") == [{0, 0}]
+      assert ranges("\\p{Name_Alias=SP}") == [{32, 32}]
+      assert ranges("\\p{Name Alias=BYTE ORDER MARK}") == [{0xFEFF, 0xFEFF}]
+      assert {:error, {_, message}} = Unicode.Set.parse("\\p{Name_Alias=SPACE}")
+      assert message =~ "is not known"
+    end
+
+    test "for a formal alias, Name_Alias and Name are the same set" do
+      for name <- ["LATIN CAPITAL LETTER GHA", "NULL", "BYTE ORDER MARK", "ZWJ"] do
+        assert ranges("\\p{Name_Alias=#{name}}") == ranges("\\p{Name=#{name}}"), name
+      end
+    end
+
+    test "negation is the code point complement" do
+      assert Unicode.Set.parse_and_reduce!("\\P{Name=SPACE}").parsed == {:not_in, [{32, 32}]}
+      assert count("[\\p{Name≠SPACE}-[]]") == 0x110000 - 1
+    end
+
+    test "an unknown name is ill-formed" do
+      assert {:error, {_, message}} = Unicode.Set.parse("\\p{Name=THIS IS NOT A CHARACTER}")
+      assert message =~ "is not known"
+      assert {:error, {_, _}} = Unicode.Set.parse("\\p{Name=}")
+    end
+
+    test "regular-expression queries on Name are rejected" do
+      assert {:error, {_, _}} = Unicode.Set.parse("\\p{Name=/CAPITAL LETTER/}")
+    end
+  end
+
+  describe "Numeric_Value queries (UTS #61 §2.5.3.4)" do
+    test "rational values match by rational equality" do
+      assert ranges("\\p{nv=2/12}") == ranges("\\p{Numeric_Value=1/6}")
+      # U+2159 VULGAR FRACTION ONE SIXTH
+      assert member?("\\p{nv=1/6}", 0x2159)
+      assert member?("\\p{nv=7}", ?7)
+      assert member?("\\p{nv=+7}", ?7)
+      assert member?("\\p{nv=14/2}", ?7)
+      # U+0F33 TIBETAN DIGIT HALF ZERO is -1/2
+      assert member?("\\p{nv=-1/2}", 0x0F33)
+      # U+5146 is one trillion
+      assert member?("\\p{nv=1000000000000}", 0x5146)
+    end
+
+    test "decimal values match by binary64 equality" do
+      assert member?("\\p{nv=0.5}", 0x00BD)
+      assert member?("\\p{nv=7.0}", ?7)
+      assert member?("\\p{nv=-0.5}", 0x0F33)
+      assert member?("\\p{nv=0.16666666666666667}", 0x2159)
+      # the standard's own example: eight decimal places do not round to 1/6
+      assert ranges("\\p{nv=0.16666667}") == []
+    end
+
+    test "a well-formed value that no character has is the empty set" do
+      assert ranges("\\p{nv=16666666666666667/100000000000000000}") == []
+      assert ranges("\\p{nv=123456789}") == []
+    end
+
+    test "NaN is every code point without a numeric value" do
+      refute member?("\\p{nv=NaN}", ?7)
+      assert member?("\\p{nv=nan}", ?a)
+      assert count("\\p{nv=NaN}") + count("[\\P{nv=NaN}-[]]") == 0x110000
+    end
+
+    test "a malformed value is an error" do
+      for expression <- [
+            "\\p{nv=seven}",
+            "\\p{nv=1/0}",
+            "\\p{nv=1/}",
+            "\\p{nv=.5}",
+            "\\p{nv=1.}",
+            "\\p{nv=1e3}"
+          ] do
+        assert {:error, {_, message}} = Unicode.Set.parse(expression), expression
+        assert message =~ "is not known"
+      end
     end
   end
 

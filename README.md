@@ -379,8 +379,8 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 
 ### Current limitations
 
-* `\N{NAME}` resolves character names, including the algorithmically-named characters — CJK and Tangut ideographs, Hangul syllables, and the Seal and Jurchen characters — as of `unicode` 2.1. Control character names (formal aliases such as `NULL`) are not resolvable.
-* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties are resolvable as of `unicode` 2.1. `\p{Age=X}` is cumulative, matching every code point assigned in version `X` or earlier. `Numeric_Value` (`nv`) cannot be matched by value — `\p{nv=7}` returns an error — because `unicode` keys numeric values by number rather than by string.
+* `\N{NAME}` resolves character names, including the algorithmically-named characters — CJK and Tangut ideographs, Hangul syllables, and the Seal and Jurchen characters — and, as of `unicode` 2.2, every name alias: control-character names such as `NULL`, abbreviations such as `LF`, corrections and alternates such as `BYTE ORDER MARK`.
+* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties are resolvable as of `unicode` 2.1. `\p{Age=X}` is cumulative, matching every code point assigned in version `X` or earlier. `Numeric_Value` (`nv`) accepts `NaN`, a rational such as `1/6` (matched by rational equality, so `2/12` is the same set) or a decimal such as `0.5` (matched by binary64 equality). `Name` (`na`) and `Name_Alias` resolve the single character whose name or alias matches, as `\p{Name=SPACE}` or `\p{Name_Alias=NUL}`.
 * The empty-string member `{}` is emitted as an empty alternative by `to_regex_string/1` but is dropped by `compile_pattern/1`, since a binary pattern cannot match the empty string.
 * Malformed or unsupported syntax returns `{:error, _}` rather than raising.
 

@@ -8,7 +8,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "raises a ParseError on failure" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.parse!("[:zzzz:]")
+        Unicode.Set.parse!("[:nonesuch:]")
       end
     end
   end
@@ -21,7 +21,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "raises on failure" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.parse_and_reduce!("[:zzzz:]")
+        Unicode.Set.parse_and_reduce!("[:nonesuch:]")
       end
     end
   end
@@ -37,7 +37,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "to_pattern!/1 raises on an invalid set" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.to_pattern!("[:zzzz:]")
+        Unicode.Set.to_pattern!("[:nonesuch:]")
       end
     end
   end
@@ -55,7 +55,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "compile_pattern!/1 raises on an invalid set" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.compile_pattern!("[:zzzz:]")
+        Unicode.Set.compile_pattern!("[:nonesuch:]")
       end
     end
   end
@@ -71,7 +71,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "to_utf8_char!/1 raises on an invalid set" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.to_utf8_char!("[:zzzz:]")
+        Unicode.Set.to_utf8_char!("[:nonesuch:]")
       end
     end
   end
@@ -87,7 +87,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "to_regex_string!/1 raises on an invalid set" do
       assert_raise Unicode.Set.ParseError, fn ->
-        Unicode.Set.to_regex_string!("[:zzzz:]")
+        Unicode.Set.to_regex_string!("[:nonesuch:]")
       end
     end
 
@@ -116,7 +116,7 @@ defmodule Unicode.Set.PublicApiTest do
 
     test "propagates parse errors" do
       assert {:error, {Unicode.Set.ParseError, _}} =
-               Unicode.Set.generate_matches("[:zzzz:]", quote(do: var))
+               Unicode.Set.generate_matches("[:nonesuch:]", quote(do: var))
     end
   end
 
