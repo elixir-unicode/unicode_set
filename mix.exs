@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.8.0"
+  @version "1.8.1"
 
   def project do
     [
@@ -52,6 +52,7 @@ defmodule UnicodeSet.MixProject do
       links: links(),
       files: [
         "lib",
+        "guides",
         "logo.png",
         "mix.exs",
         "README*",
@@ -92,10 +93,20 @@ defmodule UnicodeSet.MixProject do
       source_ref: "v#{@version}",
       main: "readme",
       logo: "logo.png",
+      formatters: ["html", "markdown"],
       extras: [
         "README.md",
+        "guides/tr61_conformance.md",
         "LICENSE.md",
         "CHANGELOG.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r/guides\/.*/
+      ],
+      groups_for_modules: [
+        "Set operations": [Unicode.Set.Operation],
+        "Regular expressions": [Unicode.Set.Regex],
+        Exceptions: [Unicode.Set.ParseError]
       ],
       skip_undefined_reference_warnings_on: ["changelog", "CHANGELOG.md"]
     ]

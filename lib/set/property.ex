@@ -120,6 +120,25 @@ defmodule Unicode.Set.Property do
     end
   end
 
+  # Age is cumulative (UTS #61 §2.5.3.1, as in ICU): `\p{Age=6.0}` is every code
+  # point assigned in Unicode 6.0 or earlier, and `\p{Age=Unassigned}` (alias
+  # `NA`) is every code point that has no age. A version may be written as its
+  # alias (`V6_0`) or as a version number with any number of fields, leading
+  # zeros and trailing zero fields being ignored (`6`, `6.0`, `06.00.00`).
+  def fetch_property("age" = property, value) do
+    case age_version(value) do
+      {:ok, :unassigned} ->
+        {:ok, Unicode.Utils.difference_ranges([{0x0, 0x10FFFF}], ages_up_to(:all))}
+
+      {:ok, version} ->
+        {:ok, ages_up_to(version)}
+
+      :error ->
+        {:error,
+         "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
+    end
+  end
+
   def fetch_property(property, value) do
     with {:ok, module} <- Unicode.fetch_property(property),
          {:ok, range_list} <- module.fetch(value) do
@@ -154,6 +173,60 @@ defmodule Unicode.Set.Property do
         {:error,
          "The unicode property #{inspect(property)} with value #{inspect(value)} is not known"}
     end
+  end
+
+  # Resolves an Age value to `{:ok, {major, minor}}`, `{:ok, :unassigned}` or
+  # `:error`. Numeric forms are compared field-wise after dropping trailing zero
+  # fields, so `6`, `6.0`, `6.0.0` and `06.00.00` all denote Unicode 6.0.
+  defp age_version(value) do
+    normalized = Unicode.Utils.downcase_and_remove_whitespace(value)
+
+    cond do
+      normalized in ["unassigned", "na"] ->
+        {:ok, :unassigned}
+
+      Regex.match?(~r/^\d+(\.\d+)*$/, normalized) ->
+        fields = version_fields(normalized)
+
+        case Enum.find(Unicode.Age.known_ages(), &(version_fields(Atom.to_string(&1)) == fields)) do
+          nil -> :error
+          age -> {:ok, version_tuple(age)}
+        end
+
+      true ->
+        case Map.fetch(Unicode.Age.aliases(), normalized) do
+          {:ok, age} -> {:ok, version_tuple(age)}
+          :error -> :error
+        end
+    end
+  end
+
+  # The integer fields of a dotted version number with trailing zero fields
+  # removed: "06.00.00" -> [6], "1.1" -> [1, 1].
+  defp version_fields(version) do
+    version
+    |> String.split(".")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.reverse()
+    |> Enum.drop_while(&(&1 == 0))
+    |> Enum.reverse()
+  end
+
+  defp version_tuple(age) do
+    case version_fields(Atom.to_string(age)) do
+      [major] -> {major, 0}
+      [major, minor | _rest] -> {major, minor}
+    end
+  end
+
+  # The union of the ranges of every known age less than or equal to `version`,
+  # or of every known age when `version` is `:all`.
+  defp ages_up_to(version) do
+    Unicode.Age.ages()
+    |> Enum.filter(fn {age, _ranges} -> version == :all or version_tuple(age) <= version end)
+    |> Enum.flat_map(fn {_age, ranges} -> ranges end)
+    |> Enum.sort()
+    |> Unicode.Utils.compact_ranges()
   end
 
   def fetch_property!(property, value) do

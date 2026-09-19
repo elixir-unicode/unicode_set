@@ -269,8 +269,24 @@ defmodule Unicode.Set do
   """
   @spec compile_pattern(binary()) :: {:ok, [binary()]} | {:error, {module(), binary()}}
   def compile_pattern(unicode_set) when is_binary(unicode_set) do
-    with {:ok, pattern} <- to_pattern(unicode_set) do
+    with {:ok, pattern} <- to_pattern(unicode_set),
+         {:ok, pattern} <- compilable_pattern(pattern) do
       {:ok, :binary.compile_pattern(pattern)}
+    end
+  end
+
+  # `:binary.compile_pattern/1` raises on an empty list and on an empty
+  # binary, so the empty set and the empty-string member `{}` (which no binary
+  # pattern can match) are reported as errors rather than allowed to crash.
+  defp compilable_pattern(pattern) do
+    case Enum.reject(pattern, &(&1 == "")) do
+      [] ->
+        {:error,
+         {Unicode.Set.ParseError,
+          "a unicode set with no non-empty string members cannot be compiled to a pattern"}}
+
+      pattern ->
+        {:ok, pattern}
     end
   end
 

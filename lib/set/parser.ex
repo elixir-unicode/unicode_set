@@ -458,9 +458,11 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  # Pattern_White_Space (UTS #61 §2). `utf8_char/1` rather than `ascii_char/1`
+  # because five of these code points are outside the ASCII range.
   @whitespace_chars [0x20, 0x9..0xD, 0x85, 0x200E, 0x200F, 0x2028, 0x2029]
   def whitespace_char do
-    ascii_char(@whitespace_chars)
+    utf8_char(@whitespace_chars)
   end
 
   @doc false
@@ -506,14 +508,24 @@ defmodule Unicode.Set.Parser do
     choice([
       ignore(ascii_char([?u])) |> concat(bracketed_hex()),
       ignore(ascii_char([?u])) |> times(hex(), 4) |> reduce(:hex_digits_to_codepoint),
-      ignore(ascii_char([?U])) |> times(hex(), 8) |> reduce(:hex_digits_to_codepoint),
+      ignore(ascii_char([?U]))
+      |> times(hex(), 8)
+      |> reduce(:hex_digits_to_codepoint)
+      |> post_traverse(:check_scalar_value),
       ignore(ascii_char([?x])) |> concat(bracketed_hex()),
       ignore(ascii_char([?x]))
       |> times(hex(), min: 1, max: 2)
       |> reduce(:hex_digits_to_codepoint),
-      ignore(string("N{"))
-      |> concat(property_name())
-      |> ignore(ascii_char([?}]))
+      # `\N{NAME}`, `\N{HEX:NAME}` or `\N{HEX:CHAR:NAME}` (UTS #61 §2.3). The
+      # braces are optional in the grammar only so that a malformed escape
+      # reaches `resolve_named_codepoint/5` and is reported as an error; it
+      # must never fall through to the literal-character clause below.
+      ignore(ascii_char([?N]))
+      |> optional(
+        ignore(ascii_char([?{]))
+        |> utf8_string([{:not, ?}}], min: 0)
+        |> ignore(ascii_char([?}]))
+      )
       |> post_traverse(:resolve_named_codepoint),
       # `\0ooo` octal escape: a leading 0 then up to three octal digits.
       ignore(ascii_char([?0]))
@@ -545,7 +557,20 @@ defmodule Unicode.Set.Parser do
   def hex_codepoint do
     times(hex(), min: 1, max: 6)
     |> reduce(:hex_digits_to_codepoint)
+    |> post_traverse(:check_scalar_value)
     |> label("hex codepoint")
+  end
+
+  @doc false
+  # An escape whose hexadecimal digits do not denote a code point (above
+  # U+10FFFF) makes the expression ill-formed (UTS #61 §2.2.1).
+  def check_scalar_value(rest, [codepoint] = args, context, _line, _offset)
+      when codepoint <= 0x10FFFF do
+    {rest, args, context}
+  end
+
+  def check_scalar_value(_rest, [codepoint], _context, _line, _offset) do
+    {:error, "the escaped value #{Integer.to_string(codepoint, 16)} is not a code point"}
   end
 
   @doc false
@@ -598,13 +623,57 @@ defmodule Unicode.Set.Parser do
   # Resolve `\N{NAME}` to a codepoint via the `unicode` dependency's character
   # name table. That table is only available in `unicode ~> 2.0`; on earlier
   # versions the escape is reported as unsupported rather than crashing.
-  def resolve_named_codepoint(rest, [name], context, _line, _offset) do
-    case named_codepoint(name) do
-      {:ok, codepoint} ->
-        {rest, [codepoint], context}
+  def resolve_named_codepoint(_rest, [], _context, _line, _offset) do
+    {:error, "\\N must be followed by a character name in braces, as \\N{NAME}"}
+  end
 
-      :error ->
-        {:error, "the codepoint name #{inspect(name)} is not known"}
+  def resolve_named_codepoint(rest, [body], context, _line, _offset) do
+    case named_element(body) do
+      {:ok, codepoint} -> {rest, [codepoint], context}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # The three forms of a named element. In the two- and three-part forms the
+  # hex digits (and the literal character) must agree with the named character.
+  defp named_element(body) do
+    case String.split(body, ":") do
+      [name] ->
+        named_codepoint(name)
+
+      [hex, name] ->
+        with {:ok, codepoint} <- named_codepoint(name) do
+          check_named_hex(hex, codepoint, name)
+        end
+
+      [hex, char, name] ->
+        with {:ok, codepoint} <- named_codepoint(name),
+             {:ok, codepoint} <- check_named_hex(hex, codepoint, name) do
+          check_named_char(char, codepoint, name)
+        end
+
+      _other ->
+        {:error, "the named element #{inspect(body)} is malformed"}
+    end
+  end
+
+  defp check_named_hex(hex, codepoint, name) do
+    case Integer.parse(String.trim(hex), 16) do
+      {^codepoint, ""} ->
+        {:ok, codepoint}
+
+      _other ->
+        {:error,
+         "the code point #{inspect(hex)} does not match the character named #{inspect(name)}"}
+    end
+  end
+
+  defp check_named_char(char, codepoint, name) do
+    if char == <<codepoint::utf8>> do
+      {:ok, codepoint}
+    else
+      {:error,
+       "the character #{inspect(char)} does not match the character named #{inspect(name)}"}
     end
   end
 
@@ -614,11 +683,13 @@ defmodule Unicode.Set.Parser do
     # when built against `unicode ~> 1.21`. (A variable-module call rather than
     # `apply/3`, which Credo flags for a known arity.)
     module = Unicode.CharacterName
+    name = String.trim(name)
 
-    if Code.ensure_loaded?(module) and function_exported?(module, :to_codepoint, 1) do
-      module.to_codepoint(name)
+    with true <- Code.ensure_loaded?(module) and function_exported?(module, :to_codepoint, 1),
+         {:ok, codepoint} <- module.to_codepoint(name) do
+      {:ok, codepoint}
     else
-      :error
+      _other -> {:error, "the codepoint name #{inspect(name)} is not known"}
     end
   end
 

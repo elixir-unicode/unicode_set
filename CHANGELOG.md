@@ -2,6 +2,30 @@
 
 As of `unicode_set` version 1.8.0, Elixir 1.17 or later is required.
 
+## Unicode Set 1.8.1
+
+This is the changelog for Unicode Set 1.8.1 released on September 20th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+
+### Enhancements
+
+* Adds the [UTS #61 conformance guide](guides/tr61_conformance.md), which records how this library's syntax and semantics relate to the draft Unicode Set Notation standard, including every known divergence and extension.
+
+* `\N{HEX:NAME}` and `\N{HEX:CHAR:NAME}` named elements (UTS #61 §2.3) are now supported, and the hex digits and character must agree with the named character.
+
+* `\p{Age=X}` is cumulative, as in UTS #61 and ICU: it now matches every code point assigned in version `X` or earlier, and accepts `6`, `6.0.0`, `06.00.00`, `V6_0` and `Unassigned`/`NA` as values. Previously only the code points first assigned in exactly that version matched.
+
+### Bug Fixes
+
+* A string member whose code points are not in ascending order (such as `{ba}`) is no longer expanded into a cartesian product when the set is part of an intersection, difference or complement; `to_regex_string("[[{ba}]-[a]]")` is now `(?:ba)`, not `(?:ab|aa|bb|ba)`.
+
+* The empty-string member `{}` no longer crashes `to_regex_string/1`, and `compile_pattern/1` returns an error rather than raising for it and for the empty set, since a binary pattern cannot match the empty string.
+
+* A malformed `\N{...}` escape is reported as an error instead of silently parsing as a literal `N` followed by a string member.
+
+* The non-ASCII Pattern_White_Space characters (U+0085, U+200E, U+200F, U+2028, U+2029) are now ignored between elements as UTS #61 requires, instead of being treated as literal characters.
+
+* Escapes denoting a value above U+10FFFF, such as `\x{110000}` and `\U00110000`, are rejected as ill-formed instead of producing an invalid code point.
+
 ## Unicode Set 1.8.0
 
 This is the changelog for Unicode Set 1.8.0 released on September 18th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

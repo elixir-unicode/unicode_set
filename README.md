@@ -12,7 +12,7 @@ A [Unicode Set](https://unicode-org.github.io/icu/userguide/strings/unicodeset.h
 * `Unicode.Set.to_utf8_char/1` that converts a unicode set into a form usable with [nimble_parsec](https://hex.pm/packages/nimble_parsec)
 * `Unicode.Set.compile_pattern/1` which converts a unicode set into a string that is then compiled with `:binary.compile_pattern/1`.
 
-The implementation conforms closely to the [Unicode Set specification](https://unicode.org/reports/tr35/#Unicode_Sets) but currently omits support for the `\N{codepoint_name}` syntax.
+The implementation follows the [Unicode Set specification](https://unicode.org/reports/tr35/#Unicode_Sets) in CLDR TR35 and the draft [UTS #61 Unicode Set Notation](https://www.unicode.org/reports/tr61/) standard. See the [UTS #61 conformance guide](guides/tr61_conformance.md) for the precise relationship.
 
 <!-- MDOC -->
 
@@ -361,7 +361,7 @@ When these are processed, case is ignored and whitespace within a name or value 
 
 ## Conformance
 
-This library implements the UnicodeSet syntax defined by [CLDR TR35](https://unicode.org/reports/tr35/#Unicode_Sets) and aligns with [UTS #18](https://unicode.org/reports/tr18/) Level 1 and the draft [UTS #61](https://www.unicode.org/reports/tr61/) formalization. It has been reviewed and tested against the ICU reference implementation. The following notes describe deliberate tailorings and current limitations.
+This library implements the UnicodeSet syntax defined by [CLDR TR35](https://unicode.org/reports/tr35/#Unicode_Sets) and aligns with [UTS #18](https://unicode.org/reports/tr18/) Level 1 and the draft [UTS #61](https://www.unicode.org/reports/tr61/) formalization. It has been reviewed and tested against the ICU reference implementation. The following notes summarise deliberate tailorings and current limitations; the [UTS #61 conformance guide](guides/tr61_conformance.md) records every known divergence from that standard, section by section.
 
 ### Supported
 
@@ -373,7 +373,7 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 * String members (`{abc}`), string ranges (`{ab}-{cd}`), and the empty-string member (`{}`).
 * Single-quote quoting: text within `'...'` is literal and `''` is a literal quote.
 * Escapes: `\uHHHH`, `\UHHHHHHHH`, `\xH`/`\xHH`, single- and multi-codepoint bracketed `\u{...}`/`\x{...}`, octal `\0ooo`, `\cX` control escapes, and the named control escapes `\a \b \e \f \n \r \t \v`. Any other `\<char>` is the literal character.
-* `\N{NAME}` named-codepoint escapes when built against `unicode ~> 2.0` (which provides the character-name table).
+* `\N{NAME}`, `\N{HEX:NAME}` and `\N{HEX:CHAR:NAME}` named elements, resolved through the character-name table in `unicode`.
 
 ### Tailorings
 
@@ -385,7 +385,8 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 ### Current limitations
 
 * `\N{NAME}` resolves character names, including the algorithmically-named characters — CJK and Tangut ideographs, Hangul syllables, and the Seal and Jurchen characters — as of `unicode` 2.1. Control character names (formal aliases such as `NULL`) are not resolvable.
-* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties are resolvable as of `unicode` 2.1. `Numeric_Value` (`nv`) cannot be matched by value — `\p{nv=7}` returns an error — because `unicode` keys numeric values by number rather than by string.
+* The `Script_Extensions` (`scx`), `Age` and `Numeric_Type` properties are resolvable as of `unicode` 2.1. `\p{Age=X}` is cumulative, matching every code point assigned in version `X` or earlier. `Numeric_Value` (`nv`) cannot be matched by value — `\p{nv=7}` returns an error — because `unicode` keys numeric values by number rather than by string.
+* The empty-string member `{}` is emitted as an empty alternative by `to_regex_string/1` but is dropped by `compile_pattern/1`, since a binary pattern cannot match the empty string.
 * Malformed or unsupported syntax returns `{:error, _}` rather than raising.
 
 <!-- MDOC -->

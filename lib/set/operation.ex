@@ -183,6 +183,11 @@ defmodule Unicode.Set.Operation do
     {from, to}
   end
 
+  # The empty-string member `{}` has nothing to expand.
+  def expand_string_range({[], []}) do
+    {[], []}
+  end
+
   def expand_string_range({from, to}) when is_list(from) and is_list(to) do
     prefix_length = length(from) - length(to)
     {prefix, from} = Enum.split(from, prefix_length)
@@ -236,16 +241,25 @@ defmodule Unicode.Set.Operation do
     {:not_in, Unicode.Utils.compact_ranges(ranges)}
   end
 
-  def compact_ranges([{from, to} | _rest] = ranges) when is_integer(from) and is_integer(to) do
-    Unicode.Utils.compact_ranges(ranges)
-  end
-
-  def compact_ranges(ranges) when is_list(ranges) do
-    ranges
+  # A list of `{:in, ranges}` / `{:not_in, ranges}` terms (the output of
+  # `combine/1`): merge the range lists under each key.
+  def compact_ranges([{key, _ranges} | _rest] = terms) when key in [:in, :not_in] do
+    terms
     |> Enum.group_by(fn {k, _v} -> k end, fn {_k, v} -> v end)
     |> Enum.map(fn {k, v} ->
       {k, v |> List.flatten() |> Enum.sort() |> Unicode.Utils.compact_ranges()}
     end)
+  end
+
+  # A plain range list. Codepoint ranges are merged; string members and string
+  # ranges are only deduplicated, since their endpoints are code point lists
+  # (not scalars) and must be kept exactly as written. Codepoint ranges sort
+  # before string ranges, matching the parser's term ordering.
+  def compact_ranges(ranges) when is_list(ranges) do
+    {codepoint_ranges, string_ranges} =
+      Enum.split_with(ranges, fn {from, _to} -> is_integer(from) end)
+
+    Unicode.Utils.compact_ranges(codepoint_ranges) ++ Enum.uniq(string_ranges)
   end
 
   @doc """
