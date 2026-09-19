@@ -435,7 +435,6 @@ defmodule UnicodeSetTest do
     end
 
     test "a backslash before a non-escape character yields that character" do
-      assert cp!("[\\c]") == ?c
       assert cp!("[\\d]") == ?d
       assert cp!("[\\g]") == ?g
       assert cp!("[\\w]") == ?w
@@ -618,10 +617,12 @@ defmodule UnicodeSetTest do
   end
 
   describe "additional escapes and quoting (Phase 7)" do
-    test "octal \\0ooo escapes" do
+    test "octal \\ooo escapes take one to three digits" do
       assert cp!("[\\0]") == 0x00
       assert cp!("[\\010]") == 0x08
-      assert cp!("[\\0101]") == ?A
+      assert cp!("[\\101]") == ?A
+      # a fourth digit is a separate literal element
+      assert Unicode.Set.parse_and_reduce!("[\\0101]").parsed == {:in, [{0o10, 0o10}, {?1, ?1}]}
     end
 
     test "\\cX control escapes" do

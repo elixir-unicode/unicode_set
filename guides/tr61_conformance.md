@@ -15,9 +15,9 @@ UTS #61 defines two grades of conformance.
 | --- | --- |
 | §2 Lexical elements, white space | Conformant, except the ignorable-format-control rule |
 | §2.1 Literal elements | Extended: `^`, `$`, `:` and `'` are given meanings the standard does not |
-| §2.2 Escaped elements | Conformant, except octal without a leading `0` and `\c` with a non-letter |
+| §2.2 Escaped elements | Conformant |
 | §2.3 Named elements | Conformant, all three forms |
-| §2.4 Bracketed elements and strings | Conformant, except that white space inside `{...}` is ignored; extended with string ranges |
+| §2.4 Bracketed elements and strings | Conformant; extended with string ranges |
 | §2.5 Property queries | Conformant for the recommended subset; unary block names and `Is`/`In` prefixes are extensions |
 | §2.5.3.1 Age queries | Conformant (cumulative) |
 | §2.5.3.4 Numeric values | Rejected |
@@ -47,10 +47,9 @@ Under the standard the only characters that are not literal are the set operator
 
 All of the standard's escapes are supported: `\xH`, `\xHH`, `\x{H...}`, `\uHHHH`, `\UHHHHHHHH`, `\N{...}`, the named controls `\a \b \e \f \n \r \t \v`, `\cX`, octal, and `\` before any other character, which is that character. Hexadecimal escapes that do not denote a code point, such as `\x{110000}`, are rejected as the standard requires.
 
-Two divergences:
+Octal escapes are one to three octal digits with maximal munch: `\7` is U+0007, `\134` is U+005C, and `\1234` is U+0053 followed by the literal `4`. As the standard notes, white space is needed to separate an octal escape from a following digit that would otherwise be absorbed (`\0 0` is U+0000 and `0`; `\00` is U+0000 alone).
 
-* **Octal without a leading `0`.** Under the standard `\7` is U+0007 and `\134` is U+005C. This library only recognises octal with a leading zero (`\0`, `\07`, `\0134`); `\7` and `\134` evaluate to the literal digits, as `\` before a non-special character. The standard does not allow a digit 0–7 to be an escapable character, so these expressions are ill-formed under the standard and this is a pure extension, but note that ICU evaluates them as octal.
-* **`\c` with a non-letter.** The standard defines `\c` followed by any printable ASCII character (`\c'` is U+0007, `\c[` is U+001B) and makes `\c?` and `\c` followed by a non-ASCII character ill-formed. This library only recognises `\c` followed by an ASCII letter; any other `\c` sequence is the literal `c` followed by that character. Pure extension for the ill-formed cases; a divergence for the printable-ASCII cases, which are not currently supported.
+`\cX` is defined for `X` in `@ A-Z [ \ ] ^ _` and is `X` AND 0x1F, so `\cG` is U+0007 and `\c[` is U+001B. Any other character after `\c` (including `?`, which the standard leaves undefined) is an error. As an ICU-compatible extension, a lowercase letter is also accepted and treated as its uppercase form.
 
 Extensions beyond the standard, all from TR35 or ICU: `\u{H...}` as a synonym for `\x{H...}`, multiple space-separated code points inside `\x{...}` or `\u{...}` forming a string member, and adjacent escaped surrogates (`\uD83D\uDE00`) kept as two code points rather than requiring a separating space.
 
@@ -81,7 +80,7 @@ Names are resolved through the character-name table in the `unicode` library, wh
 
 Divergences and extensions:
 
-* **White space inside braces.** Under the standard every character other than `\` and `}` is literal inside braces, so `{a b}` is the three-code-point string `"a b"`. This library ignores Pattern_White_Space inside braces, so `{a b}` is `"ab"`. This is a divergence on a valid expression.
+* **Everything is literal inside braces.** As the standard requires, every character other than `\` and `}` is literal, so `{a b}` is the three-code-point string `"a b"`, `{a-b}` contains a hyphen and `{[}` is the single code point `[`. Single quotes have no quoting role inside braces.
 * **Bracketed range endpoints.** The standard allows a single-code-point bracketed element as a range endpoint, so `[{a}-z]` and `[a-{z}]` are both `[a-z]`. This library accepts `[{a}-{z}]` but rejects the mixed forms. Consistent (rejection), but a gap.
 * **String ranges.** `[{ab}-{cd}]` is a TR35 string range, which the standard removed. This library supports it as an extension; the endpoints must have the same length.
 
@@ -157,11 +156,10 @@ The ICU extension of a trailing `$` meaning U+FFFF is not supported; `$` is a li
 
 It is *consistent* with UTS #61 except for the following valid expressions, which it evaluates differently:
 
-* `['a']` and any other use of `'`, which is a TR35 quoting character here and a literal under the standard.
+* `['a']` and any other use of `'` outside braces, which is a TR35 quoting character here and a literal under the standard.
 * `[-]`, which is the empty set here and `{-}` under the standard.
-* `{a b}` and any string member containing Pattern_White_Space, which is dropped here and literal under the standard.
 
-The following are *pure extensions*, accepted here although ill-formed under the standard: unescaped `^` and `$` mid-set; `[::]`; `\7` and `\134` as literal digits; `\c` followed by a non-letter as a literal `c`; ignorable format controls as separators; `\u{...}`; multi-code-point `\x{...}`; string ranges; adjacent escaped surrogates; surrogates in strings; `[a-a]`; `Is` and `In` prefixes; POSIX compatibility names; `Any`, `ASCII`, `Assigned`; escapes in property values.
+The following are *pure extensions*, accepted here although ill-formed under the standard: unescaped `^` and `$` mid-set; `[::]`; `\c` followed by a lowercase letter; ignorable format controls as separators; `\u{...}`; multi-code-point `\x{...}`; string ranges; adjacent escaped surrogates; surrogates in strings; `[a-a]`; `Is` and `In` prefixes; POSIX compatibility names; `Any`, `ASCII`, `Assigned`; escapes in property values.
 
 Everything else the standard defines is either evaluated as specified or rejected.
 

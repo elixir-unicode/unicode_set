@@ -26,6 +26,12 @@ This is the changelog for Unicode Set 1.8.1 released on September 20th, 2026. Fo
 
 * Escapes denoting a value above U+10FFFF, such as `\x{110000}` and `\U00110000`, are rejected as ill-formed instead of producing an invalid code point.
 
+* Octal escapes follow UTS #61 and ICU: one to three octal digits with no leading `0` required, so `\7` is U+0007 and `\134` is U+005C. Previously `\7` was the literal digit and `\0` accepted a fourth digit.
+
+* `\cX` control escapes accept `@ A-Z [ \ ] ^ _` (and lowercase letters as an extension) and compute `X` AND 0x1F, so `\c[` is U+001B; any other character after `\c` is an error rather than a literal `c`.
+
+* White space and set-syntax characters are literal inside a string member, so `{a b}` is the string `"a b"` and `{a-b}` contains a hyphen, as UTS #61 requires. Previously white space inside braces was dropped and `-`, `[`, `]` and `&` were rejected.
+
 ## Unicode Set 1.8.0
 
 This is the changelog for Unicode Set 1.8.0 released on September 18th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)

@@ -96,6 +96,31 @@ defmodule Unicode.Set.TR61ConformanceTest do
     end
   end
 
+  describe "everything inside braces is literal (UTS #61 §2.4)" do
+    test "white space is part of the string" do
+      assert ranges("[{a b}]") == [{~c"a b", ~c"a b"}]
+      assert ranges("[{ }]") == [{32, 32}]
+      assert ranges("[{a" <> <<0x2028::utf8>> <> "b}]") == [{[?a, 0x2028, ?b], [?a, 0x2028, ?b]}]
+    end
+
+    test "set-syntax characters are literal" do
+      assert ranges("[{a-b}]") == [{~c"a-b", ~c"a-b"}]
+      assert ranges("[{a[b]}]") == [{~c"a[b]", ~c"a[b]"}]
+      assert ranges("[{a&b}]") == [{~c"a&b", ~c"a&b"}]
+      assert ranges("[{[}]") == [{?[, ?[}]
+      assert ranges("[{'}]") == [{?', ?'}]
+    end
+
+    test "escapes are still honoured" do
+      assert ranges("[{a\\}b}]") == [{~c"a}b", ~c"a}b"}]
+      assert ranges("[{a\\\\b}]") == [{~c"a\\b", ~c"a\\b"}]
+    end
+
+    test "string ranges are unaffected" do
+      assert Unicode.Set.to_regex_string("[{ab}-{ad}]") == {:ok, "(?:ab|ac|ad)"}
+    end
+  end
+
   describe "Pattern_White_Space (UTS #61 §2)" do
     test "the non-ASCII white-space characters are ignored between elements" do
       assert ranges("[a" <> <<0x2028::utf8>> <> "b]") == [{97, 98}]
@@ -115,6 +140,48 @@ defmodule Unicode.Set.TR61ConformanceTest do
       assert message =~ "not a code point"
       assert {:error, {_, _}} = Unicode.Set.parse("[\\U00110000]")
       assert {:error, {_, _}} = Unicode.Set.parse("[\\u{110000}]")
+    end
+
+    test "octal escapes are one to three digits without a leading zero" do
+      assert ranges("[\\7]") == [{7, 7}]
+      assert ranges("[\\134]") == [{0x5C, 0x5C}]
+      assert ranges("[\\0]") == [{0, 0}]
+      assert ranges("[\\00]") == [{0, 0}]
+      assert ranges("[\\0 0]") == [{0, 0}, {?0, ?0}]
+      # maximal munch: three digits, then a literal 4
+      assert ranges("[\\1234]") == [{?4, ?4}, {0o123, 0o123}]
+      # 8 and 9 are not octal digits, so `\8` is the literal digit
+      assert ranges("[\\8]") == [{?8, ?8}]
+    end
+
+    test "the standard's U+0007 and U+005C examples all agree" do
+      for escape <- ["\\a", "\\7", "\\x7", "\\cG"] do
+        assert ranges("[#{escape}]") == [{7, 7}], escape
+      end
+
+      for escape <- ["\\\\", "\\134", "\\x5C", "\\u005C", "\\x{05C}", "\\U0000005C"] do
+        assert ranges("[#{escape}]") == [{0x5C, 0x5C}], escape
+      end
+    end
+
+    test "\\c takes @, A-Z, [, backslash, ], ^ or _ and ANDs with 0x1F" do
+      assert ranges("[\\c@]") == [{0, 0}]
+      assert ranges("[\\cA]") == [{1, 1}]
+      assert ranges("[\\cH]") == [{8, 8}]
+      assert ranges("[\\c[]") == [{0x1B, 0x1B}]
+      assert ranges("[\\c\\]") == [{0x1C, 0x1C}]
+      assert ranges("[\\c]]") == [{0x1D, 0x1D}]
+      assert ranges("[\\c^]") == [{0x1E, 0x1E}]
+      assert ranges("[\\c_]") == [{0x1F, 0x1F}]
+      # lowercase is an extension
+      assert ranges("[\\cg]") == [{7, 7}]
+    end
+
+    test "\\c followed by anything else is an error" do
+      for expression <- ["[\\c?]", "[\\c']", "[\\c1]", "[\\c" <> <<0x1226D::utf8>> <> "]"] do
+        assert {:error, {_, message}} = Unicode.Set.parse(expression), expression
+        assert message =~ "must be followed by one of"
+      end
     end
 
     test "the last code point is still accepted" do

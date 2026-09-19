@@ -471,13 +471,23 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  # Inside braces every character other than `\` and `}` is literal (UTS #61
+  # §2.4), including white space and the set-syntax characters, so `{a b}` is
+  # the three-code-point string "a b" and `{a-b}` contains a hyphen.
   def string do
     ignore(ascii_char([?{]))
     # `min: 0` so the empty-string member `{}` is accepted (ICU 69+); it reduces
     # to the empty charlist string member `{~c"", ~c""}`.
-    |> times(ignore(optional(whitespace())) |> concat(char()), min: 0)
-    |> ignore(optional(whitespace()))
+    |> times(string_char(), min: 0)
     |> ignore(ascii_char([?}]))
+  end
+
+  @doc false
+  def string_char do
+    choice([
+      ignore(ascii_char([?\\])) |> concat(quoted()),
+      utf8_char([{:not, ?\\}, {:not, ?}}])
+    ])
   end
 
   @doc false
@@ -527,14 +537,18 @@ defmodule Unicode.Set.Parser do
         |> ignore(ascii_char([?}]))
       )
       |> post_traverse(:resolve_named_codepoint),
-      # `\0ooo` octal escape: a leading 0 then up to three octal digits.
-      ignore(ascii_char([?0]))
-      |> times(ascii_char([?0..?7]), min: 0, max: 3)
+      # `\ooo` octal escape: one to three octal digits, maximal munch, so
+      # `\7` is U+0007, `\134` is U+005C and `\1234` is U+0053 followed by `4`
+      # (UTS #61 §2.2).
+      times(ascii_char([?0..?7]), min: 1, max: 3)
       |> reduce(:octal_to_codepoint),
-      # `\cX` control escape: Ctrl-<letter>, e.g. `\cH` -> U+0008.
+      # `\cX` control escape: `X` is any of `@ A-Z [ \ ] ^ _` (UTS #61 §2.2,
+      # "shifted-c0") and the result is `X` AND 0x1F, so `\cH` is U+0008 and
+      # `\c[` is U+001B. Lowercase letters are accepted as an ICU-compatible
+      # extension. Any other character after `\c` is an error.
       ignore(ascii_char([?c]))
-      |> ascii_char([?a..?z, ?A..?Z])
-      |> reduce(:control_char),
+      |> optional(ascii_char([0x40..0x5F, ?a..?z]))
+      |> post_traverse(:control_char),
       ascii_char([?a, ?b, ?e, ?f, ?n, ?r, ?t, ?v]) |> reduce(:control_escape),
       utf8_char([0x0..0x10FFFF])
     ])
@@ -598,15 +612,15 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  def octal_to_codepoint([]), do: 0
   def octal_to_codepoint(digits), do: digits |> List.to_string() |> String.to_integer(8)
 
   @doc false
-  # `\cX` is Ctrl-<letter>: upper-case the letter and subtract 0x40, giving the
-  # control code in 0x01..0x1A.
-  def control_char([char]) do
-    upper = if char in ?a..?z, do: char - 32, else: char
-    upper - 0x40
+  def control_char(rest, [char], context, _line, _offset) do
+    {rest, [Bitwise.band(char, 0x1F)], context}
+  end
+
+  def control_char(_rest, [], _context, _line, _offset) do
+    {:error, "\\c must be followed by one of @, A-Z, [, \\, ], ^ or _"}
   end
 
   @doc false

@@ -370,9 +370,9 @@ This library implements the UnicodeSet syntax defined by [CLDR TR35](https://uni
 * Set operations — union, intersection (`&`), and set difference (`-`) — with equal precedence binding strictly left-to-right, matching TR35. Group with nested `[...]` to override.
 * POSIX (`[:prop:]`, `[:^prop:]`) and Perl (`\p{...}`, `\P{...}`) property syntax, including `type=value`, the `≠` (U+2260) operator, and the `Is`/`In` prefixes. Property and value names are matched loosely (case, whitespace, `_` and `-` are ignored per UAX44-LM3).
 * Properties: general category (including group categories such as `L`), script, block, canonical combining class (numeric and named), and the boolean/enumerated properties provided by the [`unicode`](https://hex.pm/packages/unicode) library (`Word_Break`, `Grapheme_Cluster_Break`, `Line_Break`, `Sentence_Break`, `East_Asian_Width`, `Indic_Syllabic_Category`, `Indic_Conjunct_Break`, the binary properties, and more).
-* String members (`{abc}`), string ranges (`{ab}-{cd}`), and the empty-string member (`{}`).
+* String members (`{abc}`), string ranges (`{ab}-{cd}`), and the empty-string member (`{}`). Inside braces every character other than `\` and `}` is literal, including white space.
 * Single-quote quoting: text within `'...'` is literal and `''` is a literal quote.
-* Escapes: `\uHHHH`, `\UHHHHHHHH`, `\xH`/`\xHH`, single- and multi-codepoint bracketed `\u{...}`/`\x{...}`, octal `\0ooo`, `\cX` control escapes, and the named control escapes `\a \b \e \f \n \r \t \v`. Any other `\<char>` is the literal character.
+* Escapes: `\uHHHH`, `\UHHHHHHHH`, `\xH`/`\xHH`, single- and multi-codepoint bracketed `\u{...}`/`\x{...}`, octal `\ooo` (one to three digits), `\cX` control escapes (`X` is any of `@ A-Z [ \ ] ^ _`), and the named control escapes `\a \b \e \f \n \r \t \v`. Any other `\<char>` is the literal character.
 * `\N{NAME}`, `\N{HEX:NAME}` and `\N{HEX:CHAR:NAME}` named elements, resolved through the character-name table in `unicode`.
 
 ### Tailorings
