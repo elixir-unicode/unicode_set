@@ -19,7 +19,7 @@ defmodule Unicode.Set.Parser do
     |> optional(ascii_char([?^]) |> replace(:not))
     |> ignore(optional(whitespace()))
     |> optional(literal_hyphen())
-    |> times(sequence(), min: 1)
+    |> repeat(sequence())
     |> optional(literal_hyphen())
     |> ignore(ascii_char([?]]))
     |> reduce(:reduce_set_operations)
@@ -29,8 +29,8 @@ defmodule Unicode.Set.Parser do
   @doc false
   # A `-` immediately after `[`/`[^` or immediately before `]` has no operand to
   # its left/right, so it is a literal hyphen rather than a range or difference
-  # operator (matching ICU): `[-a]`, `[a-]`, `[a-z-]`. (`[-]` alone is the empty
-  # set, handled by `empty_set/0` which is tried first.)
+  # operator (UTS #61 §3, "UnescapedHyphenMinus"): `[-a]`, `[a-]`, `[a-z-]`,
+  # and `[-]` and `[--]` are both the one-element set containing the hyphen.
   def literal_hyphen do
     ascii_char([?-])
     |> replace({:in, [{?-, ?-}]})
@@ -38,54 +38,24 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
-  # `[]` is the empty set (TR61). `[-]` is also treated as the empty set; this
-  # is a deliberate tailoring — a lone hyphen elsewhere (`[-a]`, `[a-]`) is a
-  # literal hyphen (see `literal_hyphen/0`), but `[-]` alone stays empty for
-  # backwards compatibility with earlier versions of this library.
+  # `[]` is the empty set (UTS #61 §3.1). `[ ]` with white space is handled by
+  # `basic_set/0`, whose content may be empty.
   def empty_set do
-    choice([string("[-]"), string("[]")])
+    string("[]")
     |> replace({:in, []})
     |> label("empty set")
   end
 
   @doc false
+  # A single quote is an ordinary literal character (UTS #61 §2.1); the CLDR
+  # TR35 `'...'` quoting convention is deliberately not implemented.
   def sequence do
     choice([
       maybe_repeated_set(),
-      quoted_literal(),
       range()
     ])
     |> ignore(optional(whitespace()))
     |> label("sequence")
-  end
-
-  @doc false
-  # Single-quote quoting (CLDR TR35): text within `'...'` is literal — special
-  # characters lose their meaning — and two adjacent single quotes `''` are one
-  # literal quote (inside or outside a quoted span). An unterminated `'` falls
-  # through to being a literal quote character.
-  def quoted_literal do
-    choice([
-      string("''") |> replace(?'),
-      ignore(ascii_char([?']))
-      |> repeat(quoted_char())
-      |> ignore(ascii_char([?']))
-    ])
-    |> reduce(:quoted_to_set)
-    |> label("quoted literal")
-  end
-
-  @doc false
-  def quoted_char do
-    choice([
-      string("''") |> replace(?'),
-      utf8_char([{:not, ?'}])
-    ])
-  end
-
-  @doc false
-  def quoted_to_set(codepoints) do
-    {:in, codepoints |> Enum.sort() |> Enum.map(&{&1, &1})}
   end
 
   @doc false
@@ -121,6 +91,15 @@ defmodule Unicode.Set.Parser do
   end
 
   @doc false
+  # An empty content (`[ ]`) is the empty set and `[^ ]` is every code point.
+  def reduce_set_operations([]) do
+    {:in, []}
+  end
+
+  def reduce_set_operations([:not]) do
+    {:not_in, []}
+  end
+
   def reduce_set_operations([set_a]) do
     tracer(0, [set_a])
     set_a

@@ -7,14 +7,14 @@ UTS #61 defines two grades of conformance.
 * An implementation is **consistent** if, for every valid UnicodeSet expression, it either rejects the expression or evaluates it exactly as the standard specifies. Rejecting is always allowed; evaluating to a different set is not. Where a consistent implementation accepts expressions that the standard calls ill-formed, those are **pure extensions**, which are permitted provided they are declared.
 * An implementation is **syntactically complete** if it supports every production of the set-operation grammar (Section 3), whatever subset of lexical elements it chooses to accept.
 
-`unicode_set` is syntactically complete. It is consistent for the set-operation grammar and for property queries, with the divergences declared in the [conformance statement](#section-4-conformance-statement) below. Everything the standard marks as *not recommended for general-purpose APIs* (version qualifiers, property comparisons, regular-expression queries) is rejected.
+`unicode_set` is consistent and syntactically complete. Every valid expression it accepts evaluates as the standard specifies; the pure extensions it accepts are declared in the [conformance statement](#section-4-conformance-statement) below. Everything the standard marks as *not recommended for general-purpose APIs* (version qualifiers, property comparisons, regular-expression queries) is rejected.
 
 ## Summary
 
 | UTS #61 area | Status |
 | --- | --- |
 | §2 Lexical elements, white space | Conformant, except the ignorable-format-control rule |
-| §2.1 Literal elements | Extended: `^`, `$`, `:` and `'` are given meanings the standard does not |
+| §2.1 Literal elements | Conformant; `^`, `$` and `:` are accepted as literals in positions the standard makes ill-formed |
 | §2.2 Escaped elements | Conformant |
 | §2.3 Named elements | Conformant, all three forms |
 | §2.4 Bracketed elements and strings | Conformant; extended with string ranges |
@@ -22,8 +22,8 @@ UTS #61 defines two grades of conformance.
 | §2.5.3.1 Age queries | Conformant (cumulative) |
 | §2.5.3.4 Numeric values | Rejected |
 | §2.5.3.2, §2.5.3.3, §2.5.3.6 | Rejected, as the standard recommends for APIs |
-| §3 Set operations | Conformant; `[-]` and `[a-a]` diverge as declared |
-| §4 Conformance | Consistent with declared divergences; syntactically complete |
+| §3 Set operations | Conformant; `[a-a]` is accepted as an extension |
+| §4 Conformance | Consistent and syntactically complete |
 
 ## Section 2: Lexical elements
 
@@ -37,9 +37,10 @@ Leading and trailing white space around a whole expression is not accepted; `" \
 
 ### §2.1 Literal elements
 
-Under the standard the only characters that are not literal are the set operators `& - [ ] ^`, the braces `{ }`, `$` and `\`, and Pattern_White_Space. This library gives two further characters a meaning, both inherited from CLDR TR35 and ICU.
+Under the standard the only characters that are not literal are the set operators `& - [ ] ^`, the braces `{ }`, `$` and `\`, and Pattern_White_Space. Everything else, including the single quote, is a literal: `['a']` is the set `{', a}`. The CLDR TR35 and ICU convention of `'...'` quoting is deliberately not implemented, because it changes the meaning of a valid UTS #61 expression; escape a special character with `\` instead.
 
-* **Single quotes.** Text within `'...'` is literal and `''` is a literal quote. UTS #61 treats `'` as an ordinary literal, so `['a']` is the set `{', a}` under the standard but `{a}` here. An unterminated `'` is a literal quote. This is the one place where the library is not consistent with the standard on a *valid* expression; it is a deliberate TR35 tailoring.
+Two characters are accepted as literals in positions where the standard makes the expression ill-formed, following ICU.
+
 * **`^` and `$` mid-set.** `[a^b]` and `[a$]` are ill-formed under the standard, since `^` is a set operator and `$` is reserved. This library treats both as literal characters when they cannot be an operator, as ICU does. Pure extension.
 * **`:` after `[`.** The standard requires white space between `[` and a literal `:` so that `[:` is always a POSIX query start. `[::]` and `[:^:]` are ill-formed under the standard; this library accepts them as sets containing a literal colon. Pure extension. `[ :a]` is `{:, a}` in both.
 
@@ -138,13 +139,12 @@ The full grammar is implemented: `[...]`, `[^...]`, ranges, juxtaposition as uni
 
 The right-hand operand of `&` and `-` must be a set: `[[a-z]-c]`, `[a-z-[c]]` and `[&[a]]` are ill-formed and rejected. A top-level expression must be a bracketed set or a property query: `[A-Z]-[C]` and `\p{L}&\p{Latn}` without an enclosing `[...]` are rejected.
 
-A leading or trailing `-` is a literal hyphen: `[-a]`, `[a-]`, `[a-z-]` and `[-a-]` all contain U+002D.
+A leading or trailing `-` is a literal hyphen: `[-a]`, `[a-]`, `[a-z-]`, `[-a-]`, `[-]` and `[--]` all contain U+002D. `[]` is the empty set, as is `[ ]`, and `[^ ]` is every code point.
 
 Complement is the *code point* complement (§1.1): `[^{ab}]` is every code point, `[[{ab}a]&[^a]]` is empty, and `[[{ab}a]-[^a]]` is `{a, "ab"}`.
 
-Divergences:
+One extension:
 
-* **`[-]` and `[--]`.** Under the standard both are the one-element set `{-}`. This library treats `[-]` as the empty set for backwards compatibility with earlier releases, and rejects `[--]`. The first is a divergence on a valid expression; the second is a consistent rejection.
 * **`[a-a]`.** The standard makes a range whose endpoints are equal ill-formed; this library accepts it as the single code point. Pure extension.
 * **`[z-a]`** is rejected, as the standard requires.
 
@@ -154,10 +154,7 @@ The ICU extension of a trailing `$` meaning U+FFFF is not supported; `$` is a li
 
 `unicode_set` implements every production of the UTS #61 set-operation grammar and is therefore *syntactically complete*.
 
-It is *consistent* with UTS #61 except for the following valid expressions, which it evaluates differently:
-
-* `['a']` and any other use of `'` outside braces, which is a TR35 quoting character here and a literal under the standard.
-* `[-]`, which is the empty set here and `{-}` under the standard.
+It is *consistent* with UTS #61: no valid expression is evaluated to a different set than the standard specifies. Earlier releases departed from the standard for single-quote quoting (`['a']`) and the empty-set spelling `[-]`; both were brought into line in version 1.8.1.
 
 The following are *pure extensions*, accepted here although ill-formed under the standard: unescaped `^` and `$` mid-set; `[::]`; `\c` followed by a lowercase letter; ignorable format controls as separators; `\u{...}`; multi-code-point `\x{...}`; string ranges; adjacent escaped surrogates; surrogates in strings; `[a-a]`; `Is` and `In` prefixes; POSIX compatibility names; `Any`, `ASCII`, `Assigned`; escapes in property values.
 

@@ -354,15 +354,15 @@ defmodule UnicodeSetTest do
 
   # --- Phase 1: contract boundary / crash-stopping regressions ---
 
-  describe "empty set [-]" do
+  describe "empty set []" do
     test "reduces to an empty :in set" do
-      assert Unicode.Set.parse_and_reduce!("[-]").parsed == {:in, []}
+      assert Unicode.Set.parse_and_reduce!("[]").parsed == {:in, []}
     end
 
     test "produces empty pattern / utf8 lists and a never-matching regex" do
-      assert Unicode.Set.to_pattern("[-]") == {:ok, []}
-      assert Unicode.Set.to_utf8_char("[-]") == {:ok, []}
-      assert Unicode.Set.to_regex_string("[-]") == {:ok, "(?!)"}
+      assert Unicode.Set.to_pattern("[]") == {:ok, []}
+      assert Unicode.Set.to_utf8_char("[]") == {:ok, []}
+      assert Unicode.Set.to_regex_string("[]") == {:ok, "(?!)"}
       assert Regex.match?(Unicode.Regex.compile!("(?!)"), "x") == false
     end
   end
@@ -593,9 +593,9 @@ defmodule UnicodeSetTest do
   end
 
   describe "empty set and boundary hyphens (Phase 6)" do
-    test "[] and [-] are the empty set" do
+    test "[] is the empty set and [-] is the hyphen" do
       assert Unicode.Set.parse_and_reduce!("[]").parsed == {:in, []}
-      assert Unicode.Set.parse_and_reduce!("[-]").parsed == {:in, []}
+      assert Unicode.Set.parse_and_reduce!("[-]").parsed == {:in, [{?-, ?-}]}
     end
 
     test "a hyphen at the start or end of a set is a literal hyphen" do
@@ -631,10 +631,11 @@ defmodule UnicodeSetTest do
       assert cp!("[\\cZ]") == 0x1A
     end
 
-    test "single-quote quoting makes the enclosed text literal" do
-      assert members("['a-z']") == ["-", "a", "z"]
+    test "a single quote is an ordinary literal character" do
+      assert members("['a-c']") == ["'", "a", "b", "c"]
       assert members("['']") == ["'"]
-      assert members("['[]']") == ["[", "]"]
+      assert members("[']") == ["'"]
+      assert members("['\\[\\]']") == ["'", "[", "]"]
     end
 
     test "the empty-string member [{}] is supported" do

@@ -19,7 +19,7 @@ defmodule Unicode.Set.ParserTest do
       assert {:in, [{?a, ?c}]} = set.parsed
     end
 
-    test "the empty set [-]" do
+    test "the hyphen set [-]" do
       assert {:ok, %Unicode.Set{}} = parse("[-]")
     end
 

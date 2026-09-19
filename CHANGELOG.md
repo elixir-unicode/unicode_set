@@ -30,6 +30,10 @@ This is the changelog for Unicode Set 1.8.1 released on September 20th, 2026. Fo
 
 * `\cX` control escapes accept `@ A-Z [ \ ] ^ _` (and lowercase letters as an extension) and compute `X` AND 0x1F, so `\c[` is U+001B; any other character after `\c` is an error rather than a literal `c`.
 
+* `[-]` and `[--]` are the one-element set containing U+002D, as UTS #61 specifies; `[]` remains the empty set, and `[ ]` and `[^ ]` (empty content with white space) now parse as the empty set and its complement. Previously `[-]` was the empty set and the others were errors.
+
+* A single quote is an ordinary literal character, so `['a']` is the set of `'` and `a`, as UTS #61 specifies. The CLDR TR35 `'...'` quoting convention, and `''` as an escaped quote, are no longer recognised; escape a quote as `\'` if desired.
+
 * White space and set-syntax characters are literal inside a string member, so `{a b}` is the string `"a b"` and `{a-b}` contains a hyphen, as UTS #61 requires. Previously white space inside braces was dropped and `-`, `[`, `]` and `&` were rejected.
 
 ## Unicode Set 1.8.0

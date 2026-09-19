@@ -121,6 +121,35 @@ defmodule Unicode.Set.TR61ConformanceTest do
     end
   end
 
+  describe "literal elements (UTS #61 §2.1)" do
+    test "a single quote is a literal, not a quoting character" do
+      assert ranges("[']") == [{?', ?'}]
+      assert ranges("['']") == [{?', ?'}]
+      assert ranges("['a']") == [{?', ?'}, {?a, ?a}]
+      assert ranges("['a-c']") == [{?', ?'}, {?a, ?c}]
+      assert ranges("[\\']") == [{?', ?'}]
+    end
+  end
+
+  describe "hyphens and empty content (UTS #61 §3.1)" do
+    test "[-] and [--] are the set containing U+002D" do
+      assert ranges("[-]") == [{?-, ?-}]
+      assert ranges("[--]") == [{?-, ?-}]
+      assert ranges("[-a]") == [{?-, ?-}, {?a, ?a}]
+      assert ranges("[a-]") == [{?-, ?-}, {?a, ?a}]
+      assert ranges("[-a-]") == [{?-, ?-}, {?a, ?a}]
+      assert Unicode.Set.parse_and_reduce!("[^-]").parsed == {:not_in, [{?-, ?-}]}
+    end
+
+    test "[] and [ ] are the empty set and [^ ] is every code point" do
+      assert ranges("[]") == []
+      assert ranges("[ ]") == []
+      assert Unicode.Set.parse_and_reduce!("[^ ]").parsed == {:not_in, []}
+      assert Unicode.Set.parse_and_reduce!("[[^ ]]").parsed == {:not_in, []}
+      assert count("[[^ ]-[]]") == 0x110000
+    end
+  end
+
   describe "Pattern_White_Space (UTS #61 §2)" do
     test "the non-ASCII white-space characters are ignored between elements" do
       assert ranges("[a" <> <<0x2028::utf8>> <> "b]") == [{97, 98}]
