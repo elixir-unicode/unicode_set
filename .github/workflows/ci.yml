@@ -27,20 +27,20 @@ jobs:
       matrix:
         include:
           # minimum required versions
-          - otp: "27.2.4"
+          - otp: "27.3.4.17"
             elixir: "1.17.3-otp-27"
-          - otp: "27.2.4"
+          - otp: "27.3.4.17"
             elixir: "1.18.4-otp-27"
-          - otp: "28.3.1"
+          - otp: "28.5.0.6"
             elixir: "1.18.4-otp-28"
-          - otp: "27.2.4"
+          - otp: "27.3.4.17"
             elixir: "1.19.5-otp-27"
-          - otp: "28.3.1"
+          - otp: "28.5.0.6"
             elixir: "1.19.5-otp-28"
-          - otp: "28.3.1"
-            elixir: "1.20.2-otp-28"
-          - otp: "29.0.1"
-            elixir: "1.20.2-otp-29"
+          - otp: "28.5.0.6"
+            elixir: "1.20.4-otp-28"
+          - otp: "29.1"
+            elixir: "1.20.4-otp-29"
             lint: true
     steps:
     # Step: Setup Elixir + Erlang image as the base.

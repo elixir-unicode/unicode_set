@@ -1,13 +1,33 @@
 defmodule Unicode.Set.Sigil do
-  @moduledoc false
+  @moduledoc """
+  Provides the `~u` sigil, which parses a Unicode Set
+  expression at compile time into a `t:Unicode.Set.t/0`.
+
+  `import Unicode.Set.Sigil` to use it.
+
+  """
 
   @doc """
-  A convenience function to allow expressing
-  unicode sets. For example:
+  Parses a Unicode Set expression at compile time.
 
-     require Unicode.Set.Sigil
-     ~u"[[:Lu:]&[:thai:]]"
-     => ~u"[[:Lu:]&[:thai:]]"
+  ### Arguments
+
+  * `string` is a Unicode Set expression. It must be a literal
+    binary, since the set is parsed when the enclosing module
+    is compiled.
+
+  ### Returns
+
+  * A `t:Unicode.Set.t/0`, or
+
+  * raises `Unicode.Set.ParseError` at compile time if the
+    expression is not a valid Unicode Set.
+
+  ### Examples
+
+      iex> import Unicode.Set.Sigil
+      iex> ~u"[[:Lu:]&[:thai:]]"
+      #Unicode.Set<[[:Lu:]&[:thai:]]>
 
   """
   defmacro sigil_u({:<<>>, _meta, [string]}, []) when is_binary(string) do

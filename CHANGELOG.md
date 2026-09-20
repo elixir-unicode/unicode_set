@@ -2,19 +2,19 @@
 
 As of `unicode_set` version 1.8.0, Elixir 1.17 or later is required.
 
-## Unicode Set 1.8.1
+## Unicode Set 1.9.0
 
-This is the changelog for Unicode Set 1.8.1 released on September 20th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
+This is the changelog for Unicode Set 1.9.0 released on September 20th, 2026. For older changelogs please consult the release tag on [GitHub](https://github.com/elixir-unicode/unicode_set/tags)
 
 ### Enhancements
 
-* Requires `unicode ~> 2.2`, so every UCD property value resolves, including the `@missing` defaults (`\p{jt=U}`, `\p{bpt=None}`, `\p{sc=Unknown}`) separator-bearing aliases such as `\p{Bidi_M}`, and every character name alias, so `\N{NULL}`, `\N{LF}` and `\N{BYTE ORDER MARK}` resolve. Note that `Zzzz` is now a valid script, so `\p{zzzz}` is the Unknown script rather than an error.
-
-* Removes the local workaround for digit-bearing block names such as `\p{block=Latin-1 Supplement}`, which `unicode` 2.2 resolves directly.
+* Requires `unicode ~> 2.2`, so every UCD property value resolves, including the `@missing` defaults (`\p{jt=U}`, `\p{bpt=None}`, `\p{sc=Unknown}`), separator-bearing aliases such as `\p{Bidi_M}`, and every character name alias, so `\N{NULL}`, `\N{LF}` and `\N{BYTE ORDER MARK}` resolve. Note that `Zzzz` is now a valid script, so `\p{zzzz}` is the Unknown script rather than an error.
 
 * `\p{Numeric_Value=...}` (`nv`) resolves per UTS #61: `NaN`, a rational such as `1/6` or `2/12` matched by rational equality, or a decimal such as `0.5` matched by binary64 equality. Previously every numeric value was an error.
 
 * `\p{Name=...}` (`na`) and `\p{Name_Alias=...}` resolve the single character whose name or alias matches under UAX44-LM2, so `\p{Name=SPACE}` and `\p{Name_Alias=NUL}` answer as UTS #61 specifies.
+
+* Adds a [user guide](guides/user_guide.md) covering the expression syntax and each use of a set: guards, binary patterns, `nimble_parsec` ranges and regular expressions.
 
 * Adds the [UTS #61 conformance guide](guides/tr61_conformance.md), which records how this library's syntax and semantics relate to the draft Unicode Set Notation standard, including every known divergence and extension.
 

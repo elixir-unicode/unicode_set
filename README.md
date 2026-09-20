@@ -12,7 +12,7 @@ A [Unicode Set](https://unicode-org.github.io/icu/userguide/strings/unicodeset.h
 * `Unicode.Set.to_utf8_char/1` that converts a unicode set into a form usable with [nimble_parsec](https://hex.pm/packages/nimble_parsec)
 * `Unicode.Set.compile_pattern/1` which converts a unicode set into a string that is then compiled with `:binary.compile_pattern/1`.
 
-The implementation follows the [Unicode Set specification](https://unicode.org/reports/tr35/#Unicode_Sets) in CLDR TR35 and the draft [UTS #61 Unicode Set Notation](https://www.unicode.org/reports/tr61/) standard. See the [UTS #61 conformance guide](guides/tr61_conformance.md) for the precise relationship.
+The implementation follows the [Unicode Set specification](https://unicode.org/reports/tr35/#Unicode_Sets) in CLDR TR35 and the draft [UTS #61 Unicode Set Notation](https://www.unicode.org/reports/tr61/) standard. The [user guide](guides/user_guide.md) walks through the syntax and each use, and the [UTS #61 conformance guide](guides/tr61_conformance.md) records the precise relationship to the standard.
 
 <!-- MDOC -->
 
@@ -85,9 +85,9 @@ For example:
 iex> Unicode.Regex.compile("\\p{Zs}")
 {:ok, ~r/[\x{20}\x{A0}\x{1680}\x{2000}-\x{200A}\x{202F}\x{205F}\x{3000}]/u}
 
-iex> Unicode.Regex.compile("[:graphic:]")
+iex> Unicode.Regex.compile("[:graph:]")
 {:ok,
- ~r/[\x{20}-\x{7E}\x{A0}-\x{AC}\x{AE}-\x{377}\x{37A}-\x{37F}...]/u}
+ ~r/[^\x{0}-\x{20}\x{7F}-\x{A0}\x{378}-\x{379}\x{380}-...]/u}
 ```
 
 ### Other Examples

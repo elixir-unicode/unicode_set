@@ -14,36 +14,37 @@ defmodule Unicode.Regex do
   Compiles a binary regular expression after
   expanding any Unicode Sets.
 
-  ## Arguments
+  ### Arguments
 
   * `string` is a regular expression in
-    string form
+    string form.
 
   * `options` is a string or a list which is
     passed unchanged to `Regex.compile/2`.
     The default is "u" meaning the regular
-    expression will operate in Unicode mode
+    expression will operate in Unicode mode.
 
-  ## Returns
+  ### Returns
 
-  * `{:ok, regex}` or
+  * `{:ok, regex}`.
 
-  * `{:error, {message, index}}`
+  * `{:error, {message, index}}`.
 
-  ## Notes
+  ### Notes
 
   This function operates by splitting the string
   at the boundaries of Unicode Set markers which
   are:
 
-  * Posix style: `[:` and `:]`
-  * Perl style: `\\p{` and `}`
+  * Posix style: `[:` and `:]`.
+
+  * Perl style: `\\p{` and `}`.
 
   This parsing is naive meaning that is does not
   take any character escaping into account when s
   plitting the string.
 
-  ## Example
+  ### Examples
 
       ==> Unicode.Regex.compile("[:Zs:]")
       {:ok, ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u}
@@ -67,7 +68,7 @@ defmodule Unicode.Regex do
   Compiles a binary regular expression after
   interpolating any Unicode Sets.
 
-  ## Arguments
+  ### Arguments
 
   * `string` is a regular expression in
     string form.
@@ -75,15 +76,15 @@ defmodule Unicode.Regex do
   * `options` is a string or a list which is
     passed unchanged to `Regex.compile/2`.
     The default is "u" meaning the regular
-    expression will operate in Unicode mode
+    expression will operate in Unicode mode.
 
-  ## Returns
+  ### Returns
 
-  * `regex` or
+  * `regex`.
 
-  * raises an exception
+  * raises an exception.
 
-  ## Example
+  ### Examples
 
       ==> Unicode.Regex.compile!("[:Zs:]")
       ~r/[\\x{20}\\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{202F}\\x{205F}\\x{3000}]/u
@@ -100,27 +101,27 @@ defmodule Unicode.Regex do
   Returns a boolean indicating whether there was a match or not
   with a Unicode Set.
 
-  ## Arguments
+  ### Arguments
 
   * `regex_string` is a regular expression in
     string form.
 
   * `string` is any string against which
-    the regex match is executed
+    the regex match is executed.
 
   * `options` is a string or a list which is
     passed unchanged to `Regex.compile/2`.
     The default is "u" meaning the regular
-    expression will operate in Unicode mode
+    expression will operate in Unicode mode.
 
-  ## Returns
+  ### Returns
 
-  * a boolean indicating if there was a match or
+  * a boolean indicating if there was a match.
 
   * raises an exception if `regex` is not
     a valid regular expression.
 
-  ## Example
+  ### Examples
 
       iex> Unicode.Regex.match?("[:Sc:]", "$")
       true
@@ -141,12 +142,12 @@ defmodule Unicode.Regex do
   Expand a Unicode Set regex string into a regex string
   supported OTP's `:re` module.
 
-  ## Arguments
+  ### Arguments
 
   * `string` is a regular expression in
     string form.
 
-  ## Returns
+  ### Returns
 
   * A regex string that can be compiled by
     the `:re` module.
@@ -169,17 +170,17 @@ defmodule Unicode.Regex do
   Split a regex into character classes
   so that these can then be later compiled.
 
-  ## Arguments
+  ### Arguments
 
   * `string` is a regular expression in
     string form.
 
-  ## Returns
+  ### Returns
 
   * A list of string split at the
-    boundaries of unicode sets
+    boundaries of unicode sets.
 
-  ## Example
+  ### Examples
 
       iex> Unicode.Regex.split_character_classes("This is [:Zs:] and more")
       ["This is ", "[:Zs:]", " and more"]

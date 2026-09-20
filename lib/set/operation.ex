@@ -36,29 +36,34 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Reduces all sets, properties and ranges to a list
-  of 2-tuples expressing a range of codepoints.
+  Evaluates the set operations of a parsed set, leaving
+  a list of code point ranges.
 
-  It can return one of two forms
+  A complement is preserved as `{:not_in, ranges}` for as
+  long as possible, since guards, regexes and `nimble_parsec`
+  can all consume an exclusion directly. Only an intersection
+  or difference forces the ranges to be expanded into
+  positive form.
 
-  `[{:in, [tuple_list]}]` for an inclusion list
+  ### Arguments
 
-  `[{:not_in, [tuple_list]}]` for an exclusion list
+  * `unicode_set` is a `t:Unicode.Set.t/0` returned by
+    `Unicode.Set.parse/1`. A set that is already reduced or
+    expanded is returned unchanged.
 
-  or a combination of both.
+  ### Returns
 
-  Attempts are made to preserve `:not_in` clauses
-  as long as possible since many uses, like regexes
-  and `nimble_parsec` can consume `:not_in` style
-  ranges.
+  * The `t:Unicode.Set.t/0` with its `:parsed` field replaced by
+    `{:in, ranges}`, `{:not_in, ranges}` or a list of such terms,
+    and its `:state` set to `:reduced`.
 
-  When only single character classes are presented,
-  or several classes which are `unions`, `:not_in`
-  can be preserved.
+  ### Examples
 
-  When intersections and differences are required,
-  the ranges must be both reduced and expanded in
-  order for this set operations to complete.
+      iex> Unicode.Set.parse!("[[a-z]&[m-z]]") |> Unicode.Set.Operation.reduce() |> Map.get(:parsed)
+      {:in, [{109, 122}]}
+
+      iex> Unicode.Set.parse!("[^a-z]") |> Unicode.Set.Operation.reduce() |> Map.get(:parsed)
+      {:not_in, [{97, 122}]}
 
   """
   def reduce(%Unicode.Set{state: :reduced} = unicode_set) do
@@ -101,8 +106,27 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Expand takes a reduced AST and expands
-  it into a single list of codepoint tuples.
+  Expands a reduced set, or a reduced expression tree, into a
+  single positive list of code point ranges.
+
+  ### Arguments
+
+  * `unicode_set` is a reduced `t:Unicode.Set.t/0`, or a reduced
+    expression term such as `{:not_in, ranges}` or
+    `{:union, [this, that]}`.
+
+  ### Returns
+
+  * For a `t:Unicode.Set.t/0`, the set with its `:parsed` field
+    replaced by the expanded range list and its `:state` set to
+    `:expanded`.
+
+  * For a term, the expanded range list.
+
+  ### Examples
+
+      iex> Unicode.Set.parse_and_reduce!("[^a]") |> Unicode.Set.Operation.expand() |> Map.get(:parsed)
+      [{0, 96}, {98, 1114111}]
 
   """
   def expand(%Unicode.Set{state: :expanded} = unicode_set) do
@@ -163,7 +187,24 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Expand string ranges like `{ab}-{cd}`
+  Expands any string ranges in a range list into their
+  individual string members.
+
+  ### Arguments
+
+  * `ranges` is a list of code point ranges and string ranges,
+    where a string range is a `{from, to}` pair of charlists of
+    the same length.
+
+  ### Returns
+
+  * The range list with each string range replaced by one
+    `{string, string}` member per string in the range.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.expand_string_ranges([{97, 97}, {~c"ab", ~c"ad"}])
+      [{97, 97}, {~c"ab", ~c"ab"}, {~c"ac", ~c"ac"}, {~c"ad", ~c"ad"}]
 
   """
   def expand_string_ranges(ranges) when is_list(ranges) do
@@ -208,13 +249,21 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Combines all the ranges into a single list
+  Combines the terms of a union-only expression tree into a
+  flat list of `{:in, ranges}` and `{:not_in, ranges}` terms.
 
-  This function is called iff the Unicode
-  Sets are formed by unions only. If
-  the set operations of intersection or
-  difference are present then the ranges
-  will need to be expanded via `expand/1`.
+  This is the fast path used by `reduce/1` when an expression
+  contains no intersection or difference; otherwise the tree
+  must be expanded with `expand/1`.
+
+  ### Arguments
+
+  * `ast` is a parsed expression term.
+
+  ### Returns
+
+  * A list of `{:in, ranges}` and `{:not_in, ranges}` terms, or
+    a single such term.
 
   """
   def combine([ast]) do
@@ -231,7 +280,28 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Compact overlapping and adjacent ranges
+  Merges overlapping and adjacent code point ranges.
+
+  ### Arguments
+
+  * `ranges` is a sorted list of `{first, last}` code point
+    ranges and string members, or an `{:in, ranges}` or
+    `{:not_in, ranges}` term, or a list of such terms.
+
+  ### Returns
+
+  * The same shape with overlapping and adjacent code point
+    ranges merged. String members are deduplicated but
+    otherwise kept as written.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.compact_ranges([{1, 2}, {3, 4}, {4, 9}])
+      [{1, 9}]
+
+      iex> Unicode.Set.Operation.compact_ranges({:in, [{97, 98}, {99, 99}]})
+      {:in, [{97, 99}]}
+
   """
   def compact_ranges({:in, ranges}) do
     {:in, Unicode.Utils.compact_ranges(ranges)}
@@ -263,15 +333,28 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Returns a boolean indicating whether the given
-  AST includes set operations intersection or
-  difference.
+  Returns whether an expression tree contains an intersection
+  or a difference.
 
-  When these operations exist then all ranges - including
-  `^` ranges needs to be expanded.  If there are no
-  intersections or differences then the `^` ranges can
-  be directly translated to guard clauses or a list of
-  elixir ranges.
+  When it does, every range, including a complement, must be
+  expanded before the operation can be evaluated. When it does
+  not, a complement can be passed through as `{:not_in, ranges}`.
+
+  ### Arguments
+
+  * `ast` is a parsed expression term.
+
+  ### Returns
+
+  * `true` or `false`.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.has_difference_or_intersection?(Unicode.Set.parse!("[[a-z]&[m-z]]").parsed)
+      true
+
+      iex> Unicode.Set.Operation.has_difference_or_intersection?(Unicode.Set.parse!("[[a-z][m-z]]").parsed)
+      false
 
   """
   def has_difference_or_intersection?([ast]) do
@@ -292,11 +375,22 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Merges two lists of 2-tuples representing
-  ranges of codepoints.  The result is a
-  single list of 2-tuple codepoint ranges
-  that includes all codepoint from the
-  two lists.
+  Returns the union of two lists of code point ranges.
+
+  ### Arguments
+
+  * `a_list` and `b_list` are lists of `{first, last}` code
+    point ranges.
+
+  ### Returns
+
+  * A sorted, compacted list of the code point ranges in
+    either list.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.union([{1, 3}, {10, 12}], [{4, 6}])
+      [{1, 6}, {10, 12}]
 
   """
   def union(a_list, b_list) when is_list(a_list) and is_list(b_list) do
@@ -307,17 +401,22 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Returns the intersection of two lists of
-  2-tuples representing codepoint ranges.
+  Returns the intersection of two lists of code point ranges.
 
-  The result is a single list of codepoint
-  ranges that represents the common codepoints
-  in the two lists.
+  ### Arguments
 
-  Both arguments must be sorted and contain no
-  overlapping ranges. Internal callers guarantee
-  this via `compact_ranges/1`; pass compacted
-  lists when calling directly.
+  * `a` and `b` are sorted lists of `{first, last}` code point
+    ranges with no overlapping ranges, as `compact_ranges/1`
+    returns them.
+
+  ### Returns
+
+  * A sorted list of the code point ranges common to both.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.intersect([{1, 5}, {10, 20}], [{3, 12}])
+      [{3, 5}, {10, 12}]
 
   """
 
@@ -486,18 +585,23 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Removes one list of 2-tuples
-  representing Unicode codepoints from
-  another.
+  Returns the difference of two lists of code point ranges.
 
-  Returns the first list of codepoint
-  ranges minus the codepoints in the second
-  list.
+  ### Arguments
 
-  Both arguments must be sorted and contain no
-  overlapping ranges. Internal callers guarantee
-  this via `compact_ranges/1`; pass compacted
-  lists when calling directly.
+  * `a` and `b` are sorted lists of `{first, last}` code point
+    ranges with no overlapping ranges, as `compact_ranges/1`
+    returns them.
+
+  ### Returns
+
+  * A sorted list of the code point ranges in `a` that are not
+    in `b`.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.difference([{1, 10}], [{3, 4}, {8, 20}])
+      [{1, 2}, {5, 7}]
 
   """
 
@@ -690,13 +794,23 @@ defmodule Unicode.Set.Operation do
   # end
 
   @doc """
-  Returns the difference of two lists of
-  2-tuples representing codepoint ranges.
+  Returns the symmetric difference of two lists of code point
+  ranges.
 
-  The result is a single list of codepoint
-  ranges that represents the codepoints
-  that are in either of the two lists but
-  not both.
+  ### Arguments
+
+  * `this` and `that` are lists of `{first, last}` code point
+    ranges.
+
+  ### Returns
+
+  * A sorted list of the code point ranges in either list but
+    not in both.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.symmetric_difference([{1, 5}], [{3, 8}])
+      [{1, 2}, {6, 8}]
 
   """
   def symmetric_difference(this, that) do
@@ -706,7 +820,25 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Returns the complement (inverse) of a set.
+  Returns the code point complement of a set or a range list.
+
+  ### Arguments
+
+  * `set` is a `t:Unicode.Set.t/0` in any state, or a list of
+    `{first, last}` code point ranges.
+
+  ### Returns
+
+  * For a `t:Unicode.Set.t/0`, the set with `{:in, ranges}` and
+    `{:not_in, ranges}` exchanged.
+
+  * For a range list, the list of code points from U+0000 to
+    U+10FFFF that are not in it.
+
+  ### Examples
+
+      iex> Unicode.Set.Operation.complement([{0, 96}, {98, 1114111}])
+      [{97, 97}]
 
   """
   def complement(%Unicode.Set{parsed: {:in, parsed}} = set) do
@@ -732,9 +864,26 @@ defmodule Unicode.Set.Operation do
   end
 
   @doc """
-  Prewalks the expanded AST from a parsed
-  Unicode Set invoking a function on each
-  codepoint range in the set.
+  Walks a reduced set, invoking a function on each code point
+  range, and returns the results.
+
+  This is how the transforms to guards, patterns, `utf8_char/1`
+  lists and regex strings are built.
+
+  ### Arguments
+
+  * `set` is a reduced `t:Unicode.Set.t/0`, or its `:parsed`
+    field.
+
+  * `var` is an optional term passed through to `fun`, used to
+    build guard clauses around a variable.
+
+  * `fun` is a function of a range, the accumulated result and
+    `var`.
+
+  ### Returns
+
+  * The result of applying `fun` across the ranges.
 
   """
   def traverse(%Unicode.Set{parsed: ranges}, fun) do

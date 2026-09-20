@@ -11,7 +11,7 @@ UTS #61 defines two grades of conformance.
 
 ## Summary
 
-The table gives the status of each area of the standard as of version 1.8.1 with `unicode` 2.2. *Conformant* means every valid expression in that area evaluates as the standard specifies. *Extension* means the library additionally accepts expressions the standard makes ill-formed, which the standard permits provided they are declared. *Rejected* means the expressions are refused with an error, which is always consistent.
+The table gives the status of each area of the standard as of version 1.9.0 with `unicode` 2.2. *Conformant* means every valid expression in that area evaluates as the standard specifies. *Extension* means the library additionally accepts expressions the standard makes ill-formed, which the standard permits provided they are declared. *Rejected* means the expressions are refused with an error, which is always consistent.
 
 | UTS #61 area | Status | Notes |
 | --- | --- | --- |
@@ -193,7 +193,7 @@ The ICU extension of a trailing `$` meaning U+FFFF is not supported; `$` is a li
 
 `unicode_set` implements every production of the UTS #61 set-operation grammar and is therefore *syntactically complete*.
 
-It is *consistent* with UTS #61: no valid expression is evaluated to a different set than the standard specifies. Earlier releases departed from the standard for single-quote quoting (`['a']`) and the empty-set spelling `[-]`; both were brought into line in version 1.8.1.
+It is *consistent* with UTS #61: no valid expression is evaluated to a different set than the standard specifies. Earlier releases departed from the standard for single-quote quoting (`['a']`) and the empty-set spelling `[-]`; both were brought into line in version 1.9.0.
 
 The following are *pure extensions*, accepted here although ill-formed under the standard: unescaped `^` and `$` mid-set; `[::]`; `\c` followed by a lowercase letter; ignorable format controls as separators; `\u{...}`; multi-code-point `\x{...}`; string ranges; adjacent escaped surrogates; surrogates in strings; `[a-a]`; `Is` and `In` prefixes; POSIX compatibility names; `Any`, `ASCII`, `Assigned`; escapes in property values.
 

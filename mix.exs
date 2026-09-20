@@ -1,7 +1,7 @@
 defmodule UnicodeSet.MixProject do
   use Mix.Project
 
-  @version "1.8.1"
+  @version "1.9.0"
 
   def project do
     [
@@ -96,6 +96,7 @@ defmodule UnicodeSet.MixProject do
       formatters: ["html", "markdown"],
       extras: [
         "README.md",
+        "guides/user_guide.md",
         "guides/tr61_conformance.md",
         "LICENSE.md",
         "CHANGELOG.md"
@@ -105,7 +106,8 @@ defmodule UnicodeSet.MixProject do
       ],
       groups_for_modules: [
         "Set operations": [Unicode.Set.Operation],
-        "Regular expressions": [Unicode.Set.Regex],
+        "Regular expressions": [Unicode.Regex],
+        Sigils: [Unicode.Set.Sigil],
         Exceptions: [Unicode.Set.ParseError]
       ],
       skip_undefined_reference_warnings_on: ["changelog", "CHANGELOG.md"]

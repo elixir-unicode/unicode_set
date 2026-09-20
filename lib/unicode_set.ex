@@ -46,6 +46,34 @@ defmodule Unicode.Set do
     |> eos()
   )
 
+  @doc """
+  Parses a Unicode Set expression into a `t:Unicode.Set.t/0`.
+
+  The set is parsed but not evaluated: property queries are
+  resolved to code point ranges, but set operations such as
+  intersection and difference are kept as an expression tree.
+  Use `parse_and_reduce/1` to evaluate them.
+
+  ### Arguments
+
+  * `unicode_set` is a string representation of a Unicode Set.
+
+  ### Returns
+
+  * `{:ok, set}` where `set` is a `t:Unicode.Set.t/0`.
+
+  * `{:error, {exception, reason}}` where `exception` is the
+    module to raise and `reason` describes why the expression
+    could not be parsed.
+
+  ### Examples
+
+      iex> Unicode.Set.parse("[a-z]")
+      {:ok, #Unicode.Set<[a-z]>}
+
+      iex> {:error, {Unicode.Set.ParseError, _reason}} = Unicode.Set.parse("[a-z")
+
+  """
   @spec parse(binary) :: {:ok, t()} | {:error, {module(), binary()}}
   def parse(unicode_set) do
     case parse_one(unicode_set) do
@@ -69,6 +97,26 @@ defmodule Unicode.Set do
        parse_error(unicode_set, "it contains invalid, malformed, or unsupported syntax", "")}
   end
 
+  @doc """
+  Parses a Unicode Set expression into a `t:Unicode.Set.t/0`,
+  raising on error.
+
+  ### Arguments
+
+  * `unicode_set` is a string representation of a Unicode Set.
+
+  ### Returns
+
+  * A `t:Unicode.Set.t/0`.
+
+  * raises `Unicode.Set.ParseError`.
+
+  ### Examples
+
+      iex> Unicode.Set.parse!("[a-z]")
+      #Unicode.Set<[a-z]>
+
+  """
   @spec parse!(binary) :: t() | no_return()
   def parse!(unicode_set) do
     case parse(unicode_set) do
@@ -81,9 +129,26 @@ defmodule Unicode.Set do
   end
 
   @doc """
-  Parses a unicode set and expands the
-  set expressions then compacts the
-  character ranges.
+  Parses a Unicode Set expression and evaluates its set
+  operations, leaving a compact list of code point ranges
+  and string members.
+
+  ### Arguments
+
+  * `unicode_set` is a string representation of a Unicode Set.
+
+  ### Returns
+
+  * `{:ok, set}` where `set` is a `t:Unicode.Set.t/0` whose
+    `:parsed` field is `{:in, ranges}` or `{:not_in, ranges}`.
+
+  * `{:error, {exception, reason}}`.
+
+  ### Examples
+
+      iex> {:ok, set} = Unicode.Set.parse_and_reduce("[[a-z]-[c]&[d]]")
+      iex> set.parsed
+      {:in, [{100, 100}]}
 
   """
   @spec parse_and_reduce(binary) :: {:ok, t()} | {:error, {module(), binary()}}
@@ -93,6 +158,27 @@ defmodule Unicode.Set do
     end
   end
 
+  @doc """
+  Parses a Unicode Set expression and evaluates its set
+  operations, raising on error.
+
+  ### Arguments
+
+  * `unicode_set` is a string representation of a Unicode Set.
+
+  ### Returns
+
+  * A `t:Unicode.Set.t/0` whose `:parsed` field is `{:in, ranges}`
+    or `{:not_in, ranges}`.
+
+  * raises `Unicode.Set.ParseError`.
+
+  ### Examples
+
+      iex> Unicode.Set.parse_and_reduce!("[[a-z]-[c]&[d]]").parsed
+      {:in, [{100, 100}]}
+
+  """
   @spec parse_and_reduce!(binary) :: t() | no_return()
   def parse_and_reduce!(unicode_set) do
     case parse_and_reduce(unicode_set) do
@@ -108,20 +194,20 @@ defmodule Unicode.Set do
   Returns a boolean based upon whether `var`
   matches the provided `unicode_set`.
 
-  ## Arguments
+  ### Arguments
 
   * `var` is any integer variable (since codepoints
-    are integers)
+    are integers).
 
   * `unicode_set` is a binary representation of
     a unicode set. An exception will be raised if `unicode_set`
-    is not a compile time binary
+    is not a compile time binary.
 
-  ## Returns
+  ### Returns
 
-  * `true` or `false`
+  * `true` or `false`.
 
-  ## Examples
+  ### Examples
 
   * `Unicode.Set.match?/2` can be used with `defguard/1`.
     For example:
@@ -163,18 +249,18 @@ defmodule Unicode.Set do
   that can be used with `String.split/3`
   and `String.replace/3`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `{:ok, pattern}` or
+  * `{:ok, pattern}`.
 
-  * `{:error, {exception, reason}}`
+  * `{:error, {exception, reason}}`.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
       {:ok,
@@ -209,18 +295,18 @@ defmodule Unicode.Set do
   that can be used with `String.split/3`
   and `String.replace/3`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `pattern` or
+  * `pattern`.
 
-  * raises an exception
+  * raises an exception.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.to_pattern "[[:digit:]]"
       ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "٠", "١", "٢", "٣",
@@ -248,18 +334,18 @@ defmodule Unicode.Set do
   [Compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1)
   can be the more performant when matching strings.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `{:ok, compiled_pattern}` or
+  * `{:ok, compiled_pattern}`.
 
-  * `{:error, {exception, reason}}`
+  * `{:error, {exception, reason}}`.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.compile_pattern("[[:digit:]]")
       {:ok, {:ac, #Reference<0.2927979228.2367029250.255911>}}
@@ -299,18 +385,18 @@ defmodule Unicode.Set do
   [Compiled patterns](http://erlang.org/doc/man/binary.html#compile_pattern-1)
   can be the more performant when matching strings.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `compiled_pattern` or
+  * `compiled_pattern`.
 
   * raises an exception.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.compile_pattern!("[[:digit:]]")
       {:ac, #Reference<0.2927979228.2367029250.255911>}
@@ -337,18 +423,18 @@ defmodule Unicode.Set do
   The list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `{:ok, list_of_codepoints}` or
+  * `{:ok, list_of_codepoints}`.
 
-  * `{:error, {exception, reason}}`
+  * `{:error, {exception, reason}}`.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.to_utf8_char "[[:digit:]-[:Zs]]"
       {:ok,
@@ -381,18 +467,18 @@ defmodule Unicode.Set do
   The list of codepoints can be used as an
   argument to `NimbleParsec.utf8_char/1`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `list_of_codepoints` or
+  * `list_of_codepoints`.
 
-  * raises an exception
+  * raises an exception.
 
-  ## Example
+  ### Examples
 
       iex> pattern = Unicode.Set.to_utf8_char! "[[:digit:]-[:Zs]]"
       [48..57, 1632..1641, 1776..1785, 1984..1993, 2406..2415, 2534..2543,
@@ -422,18 +508,18 @@ defmodule Unicode.Set do
   string that can be used as an argument
   to `Regex.compile/1`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `{:ok, regex_string}` or
+  * `{:ok, regex_string}`.
 
-  * `{:error, {exception, reason}}`
+  * `{:error, {exception, reason}}`.
 
-  ## Example
+  ### Examples
 
       iex> Unicode.Set.to_regex_string("[[abc]-[b]]")
       {:ok, "[\\x{61}\\x{63}]"}
@@ -459,18 +545,18 @@ defmodule Unicode.Set do
   string that can be used as an argument
   to `Regex.compile/1`.
 
-  ## Arguments
+  ### Arguments
 
   * `unicode_set` is a string representation
-    of a Unicode Set
+    of a Unicode Set.
 
-  ## Returns
+  ### Returns
 
-  * `regex_string` or
+  * `regex_string`.
 
-  * raises an exception
+  * raises an exception.
 
-  ## Example
+  ### Examples
 
       iex> Unicode.Set.to_regex_string!("[[abc]-[b]]")
       "[\\x{61}\\x{63}]"
